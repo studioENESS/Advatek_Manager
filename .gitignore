@@ -16,7 +16,6 @@
 # Visual Studio Files
 Debug
 Release
-External
 .vs
 *.suo
 *.csproj.user
