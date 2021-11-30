@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
@@ -40,8 +41,13 @@
 
 #define bswap_16(x) x=((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
+bool b_refreshAdaptorsRequest = false;
+int currentAdaptor = 0;
 bool b_pollRequest = false;
 int id_networkConfigRequest = -1;
+
+std::vector <std::string> networkAdaptors;
+static std::string adaptor_string = "Select Adaptor";
 
 typedef struct sAdvatekDevice {
 	uint8_t ProtVer; // Protocol version
@@ -695,8 +701,35 @@ void process_udp_message( uint8_t * data ) {
 	}
 }
 
+void refreshAdaptors() {
+	networkAdaptors.clear();
+
+	boost::asio::io_service io_service;
+	boost::asio::ip::tcp::resolver resolver(io_service);
+	boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "");
+	boost::asio::ip::tcp::resolver::iterator it = resolver.resolve(query);
+
+	while (it != boost::asio::ip::tcp::resolver::iterator())
+	{
+		boost::asio::ip::address addr = (it++)->endpoint().address();
+		if (addr.is_v4()) {
+			networkAdaptors.push_back(addr.to_string());
+		}
+	}
+}
+
+void connect(std::string ip) {
+	boost::asio::io_context io_context;
+	boost::asio::ip::udp::endpoint receiver(boost::asio::ip::address::from_string(ip), AdvPort);
+	boost::asio::ip::udp::socket(io_context, receiver);
+}
+
 int main(int, char**)
 {
+
+	refreshAdaptors();
+	adaptor_string = networkAdaptors[0];
+
 	boost::asio::io_context io_context;
 	boost::asio::ip::udp::endpoint receiver(boost::asio::ip::udp::v4(), AdvPort);
 	boost::asio::ip::udp::socket socket(io_context, receiver);
@@ -776,10 +809,10 @@ int main(int, char**)
     while (!glfwWindowShouldClose(window))
     {
 		uint8_t buffer[100000];
-		boost::asio::ip::udp::endpoint sender;
-		if (socket.available() >0)
+		
+		if (socket.available() > 0)
 		{ 
-			std::size_t bytes_transferred = socket.receive_from(boost::asio::buffer(buffer), sender);
+			std::size_t bytes_transferred = socket.receive_from(boost::asio::buffer(buffer), receiver);
 			if (bytes_transferred > 1) {  // we have data
 				process_udp_message(buffer);
 			}
@@ -809,6 +842,37 @@ int main(int, char**)
 			window_flags |= ImGuiWindowFlags_NoResize;
 			window_flags |= ImGuiWindowFlags_NoCollapse;
 			ImGui::Begin("Advatek Assistant", NULL, window_flags);                    
+
+			if (ImGui::Button("Refresh Adaptors"))
+			{
+				b_refreshAdaptorsRequest = true;
+			} ImGui::SameLine();
+
+			ImGui::PushItemWidth(120);
+
+			if (ImGui::BeginCombo("###Adaptor", adaptor_string.c_str(), 0))
+			{
+				for (int n = 0; n < networkAdaptors.size(); n++)
+				{
+					const bool is_selected = (currentAdaptor == n);
+					if (ImGui::Selectable(networkAdaptors[n].c_str(), is_selected))
+					{
+						currentAdaptor = n;
+						adaptor_string = networkAdaptors[n];
+						socket.close();
+						socket.open(boost::asio::ip::udp::v4());
+						socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort));
+						b_pollRequest = true;
+					}
+
+					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+				ImGui::PopItemWidth();
+			}
+
 
 			if (ImGui::Button("Search"))
 			{
@@ -1042,6 +1106,10 @@ int main(int, char**)
 
         glfwSwapBuffers(window);
 
+		if (b_refreshAdaptorsRequest) {
+			refreshAdaptors();
+			b_refreshAdaptorsRequest = false;
+		}
 		if (b_pollRequest) {
 			poll();
 			b_pollRequest = false;
