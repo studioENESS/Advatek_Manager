@@ -231,19 +231,22 @@ bool deviceExist(uint8_t * Mac) {
 
 void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message)
 {
+	std::cout << "Start setup UDP socket" << std::endl;
 	boost::asio::io_service io_service;
-	boost::asio::ip::udp::socket socket(io_service);
+	boost::asio::ip::udp::socket _socket(io_service);
 
-	socket.open(boost::asio::ip::udp::v4());
-	socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
+	_socket.open(boost::asio::ip::udp::v4());
+	_socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
 
 	boost::asio::ip::udp::endpoint senderEndpoint(boost::asio::ip::address::from_string(ip_address), port);
 
+	std::cout << "End setup UDP socket" << std::endl;
+
 	try
 	{
-		socket.send_to(boost::asio::buffer(message), senderEndpoint);
-		socket.close();
-		//printf("Message sent to %s\n", ip_address.c_str());
+		_socket.send_to(boost::asio::buffer(message), senderEndpoint);
+		_socket.close();
+		printf("Message sent to %s\n", ip_address.c_str());
 
 	}
 	catch (std::exception e)
@@ -716,19 +719,15 @@ void refreshAdaptors() {
 			networkAdaptors.push_back(addr.to_string());
 		}
 	}
-}
-
-void connect(std::string ip) {
-	boost::asio::io_context io_context;
-	boost::asio::ip::udp::endpoint receiver(boost::asio::ip::address::from_string(ip), AdvPort);
-	boost::asio::ip::udp::socket(io_context, receiver);
+	if (networkAdaptors.size() > 0 ) {
+		adaptor_string = networkAdaptors[0];
+	}
 }
 
 int main(int, char**)
 {
 
 	refreshAdaptors();
-	adaptor_string = networkAdaptors[0];
 
 	boost::asio::io_context io_context;
 	boost::asio::ip::udp::endpoint receiver(boost::asio::ip::udp::v4(), AdvPort);
@@ -811,7 +810,7 @@ int main(int, char**)
 		uint8_t buffer[100000];
 		
 		if (socket.available() > 0)
-		{ 
+		{
 			std::size_t bytes_transferred = socket.receive_from(boost::asio::buffer(buffer), receiver);
 			if (bytes_transferred > 1) {  // we have data
 				process_udp_message(buffer);
