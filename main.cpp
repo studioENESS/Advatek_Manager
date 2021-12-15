@@ -230,8 +230,8 @@ bool deviceExist(uint8_t * Mac) {
 }
 
 boost::asio::io_context io_context;
-//boost::asio::ip::udp::endpoint receiver(boost::asio::ip::udp::v4(), AdvPort);
-boost::asio::ip::udp::endpoint receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), AdvPort);
+boost::asio::ip::udp::endpoint receiver(boost::asio::ip::udp::v4(), AdvPort);
+//boost::asio::ip::udp::endpoint receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), AdvPort);
 
 boost::asio::ip::udp::socket s_socket(io_context);
 boost::asio::ip::udp::socket r_socket = boost::asio::ip::udp::socket(io_context, receiver);
@@ -717,6 +717,7 @@ void refreshAdaptors() {
 	while (it != boost::asio::ip::tcp::resolver::iterator())
 	{
 		boost::asio::ip::address addr = (it++)->endpoint().address();
+		std::cout << "adaptor found: " << addr.to_string() << std::endl;
 		if (addr.is_v4()) {
 			networkAdaptors.push_back(addr.to_string());
 		}
@@ -856,11 +857,12 @@ int main(int, char**)
 					{
 						currentAdaptor = n;
 						adaptor_string = networkAdaptors[n];
-						//r_socket.close();
+						r_socket.close();
 						//r_socket.open(boost::asio::ip::udp::v4());
 						//r_socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort));
 
-						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort);
+						//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort);
+						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), AdvPort);
 						r_socket = boost::asio::ip::udp::socket(io_context, receiver);
 
 						b_pollRequest = true;
