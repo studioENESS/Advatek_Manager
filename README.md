@@ -12,4 +12,10 @@
     ./b2 or b2
     
     sudo apt-get install libglfw3-dev
+    
+    mkdir build && cd build
+    
+    cmake ../
+    
+    make
 

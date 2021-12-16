@@ -22,3 +22,8 @@ Release
 *.vbproj.user
 ipch
 *sdf
+
+/build
+
+#Executables
+advatek_assistor

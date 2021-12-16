@@ -3,6 +3,8 @@
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
+#define IMGUI_IMPL_OPENGL_ES2 // RPI
+
 #include <sstream>
 #include <iostream>
 #include <iomanip>
@@ -861,8 +863,8 @@ int main(int, char**)
 						//r_socket.open(boost::asio::ip::udp::v4());
 						//r_socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort));
 
-						//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort);
-						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), AdvPort);
+						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort);
+						//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), AdvPort);
 						r_socket = boost::asio::ip::udp::socket(io_context, receiver);
 
 						b_pollRequest = true;

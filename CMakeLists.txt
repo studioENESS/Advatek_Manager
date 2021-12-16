@@ -22,3 +22,5 @@ add_executable(advatek_assistor main.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${BOOST_ROOT} ${IMGUI_ROOT} ${IMGUI_BACKENDS} )
+
+target_link_libraries(${PROJECT_NAME} GLESv2 EGL X11 pthread rt m c dl glfw)
