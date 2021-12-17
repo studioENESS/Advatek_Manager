@@ -1082,6 +1082,14 @@ int main(int, char**)
 						ImGui::InputScalar("Fan Control On Temp", ImGuiDataType_U8, &devices[i]->MaxTargetTemp, 0, 0, 0);
 						ImGui::PopItemWidth();
 
+						int * tempVoltage = new int[devices[i]->NumBanks];
+
+						for (uint8_t bank = 0; bank < devices[i]->NumBanks; bank++) {
+							ImGui::PushID(bank);
+							ImGui::Text("Bank %i: %.2f V", bank + 1, ((float)devices[i]->VoltageBanks[bank] / 10.f));
+							ImGui::PopID();
+						}
+
 						ImGui::EndTabItem();
 					}
 					ImGui::EndTabBar();
