@@ -1,5 +1,10 @@
 # Advatek Assisitor
 
+## Dependencies
+
+  - [ImGui](https://github.com/ocornut/imgui) [Interavctive Manual](https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html)  
+  - [Boost](https://github.com/boostorg/boost)  
+
 ## Build
     
     git clone <this repo>
