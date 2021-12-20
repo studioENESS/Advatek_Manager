@@ -1029,11 +1029,18 @@ int main(int, char**)
 						}
 
 
-						int * tempOutputColOrder = new int[devices[i]->NumOutputs];
+						ImGui::Text("Set All  "); ImGui::SameLine();
+						int tempAllColOrder = (int)&devices[i]->OutputColOrder[0];
+						if (ImGui::Combo("Order ##all", &tempAllColOrder, RGBW_Order, 24)) {
+							for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
+								devices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
+							}
+						}
 
-						for (uint8_t output = 0; output < devices[i]->NumOutputs; output++) {
+						int * tempOutputColOrder = new int[devices[i]->NumOutputs];
+						for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
 							ImGui::PushID(output);
-							ImGui::Text("Output %i", output + 1); ImGui::SameLine();
+							ImGui::Text("Output %02i", output + 1); ImGui::SameLine();
 							tempOutputColOrder[output] = devices[i]->OutputColOrder[output];
 							if (ImGui::Combo("Order", &tempOutputColOrder[output], RGBW_Order, 24)) {
 								devices[i]->OutputColOrder[output] = (uint8_t)tempOutputColOrder[output];
