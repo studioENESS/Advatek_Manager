@@ -1061,6 +1061,8 @@ int main(int, char**)
 					}
 					if (ImGui::BeginTabItem("Test"))
 					{
+						ImGui::Text("Prior to running test mode all other setings should be saved to controller (Press Update).");
+
 						ImGui::PushItemWidth(200);
 
 						if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, 9)) {
@@ -1083,6 +1085,12 @@ int main(int, char**)
 							setTest(i);
 						}
 
+						ImGui::PopItemWidth();
+						ImGui::PushItemWidth(150);
+						ImGui::Text("All Outputs (0)"); ImGui::SameLine();
+						if (ImGui::SliderInt("Output Channel", (int*)&devices[i]->TestOutputNum, 0, (int)(devices[i]->NumOutputs*0.5))) {
+							setTest(i);
+						}
 						ImGui::PopItemWidth();
 
 						ImGui::EndTabItem();
@@ -1122,6 +1130,7 @@ int main(int, char**)
 					if (ImGui::Button("Update"))
 					{
 						updateDevice(i);
+						// b_pollRequest = true; 
 					}
 
 					ImGui::TreePop();
