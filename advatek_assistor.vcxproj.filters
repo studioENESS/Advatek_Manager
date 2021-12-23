@@ -34,6 +34,9 @@
     <ClCompile Include="External\imgui\backends\imgui_impl_opengl3.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="advatek_assistor.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\imgui\imconfig.h">
@@ -52,6 +55,9 @@
       <Filter>sources</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui\backends\imgui_impl_opengl3_loader.h">
+      <Filter>sources</Filter>
+    </ClInclude>
+    <ClInclude Include="advatek_assistor.h">
       <Filter>sources</Filter>
     </ClInclude>
   </ItemGroup>

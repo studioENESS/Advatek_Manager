@@ -155,6 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="advatek_assistor.cpp" />
     <ClCompile Include="External\imgui\imgui.cpp" />
     <ClCompile Include="External\imgui\imgui_demo.cpp" />
     <ClCompile Include="External\imgui\imgui_draw.cpp" />
@@ -165,6 +166,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="advatek_assistor.h" />
     <ClInclude Include="External\imgui\imconfig.h" />
     <ClInclude Include="External\imgui\imgui.h" />
     <ClInclude Include="External\imgui\imgui_internal.h" />
