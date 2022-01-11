@@ -1,10 +1,5 @@
 #include "advatek_assistor.h"
 
-bool b_refreshAdaptorsRequest = false;
-int currentAdaptor = 0;
-bool b_pollRequest = false;
-int id_networkConfigRequest = -1;
-
 std::vector<sAdvatekDevice*> devices;
 std::vector <std::string> networkAdaptors;
 
@@ -79,7 +74,7 @@ std::string macString(uint8_t * address) {
 	return ss.str();
 }
 
-std::string addressString(uint8_t * address) {
+std::string ipString(uint8_t * address) {
 	std::stringstream ss;
 
 	for (int i(0); i < 4; i++) {
@@ -204,7 +199,7 @@ void updateDevice(int d) {
 
 	dataTape.push_back(devices[d]->MaxTargetTemp);
 
-	unicast_udp_message(addressString(devices[d]->CurrentIP), dataTape);
+	unicast_udp_message(ipString(devices[d]->CurrentIP), dataTape);
 }
 
 void setTest(int d) {
@@ -239,7 +234,7 @@ void setTest(int d) {
 	//buf[24] = 0;//devices[d]->TestPixelNum;
 	//buf[25] = 0;//devices[d]->TestPixelNum >> 8;
 
-	unicast_udp_message(addressString(devices[d]->CurrentIP), dataTape);
+	unicast_udp_message(ipString(devices[d]->CurrentIP), dataTape);
 }
 
 void clearDevices() {
@@ -614,4 +609,28 @@ void refreshAdaptors() {
 	if (networkAdaptors.size() > 0) {
 		adaptor_string = networkAdaptors[0];
 	}
+}
+
+std::string advatek_manager::macStr(uint8_t * address)
+{
+	std::stringstream ss;
+
+	for (int i(0); i < 6; i++) {
+		ss << std::hex << std::setw(2) << static_cast<int>(address[i]);
+		if (i < 5) ss << ":";
+	}
+
+	return ss.str();
+}
+
+std::string advatek_manager::ipStr(uint8_t * address)
+{
+	std::stringstream ss;
+
+	for (int i(0); i < 4; i++) {
+		ss << static_cast<int>(address[i]);
+		if (i < 3) ss << ".";
+	}
+
+	return ss.str();
 }

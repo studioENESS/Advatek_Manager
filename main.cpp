@@ -30,6 +30,13 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
+advatek_manager man;
+
+int b_pollRequest = 0;
+int b_refreshAdaptorsRequest = 0;
+int id_networkConfigRequest = -1;
+int currentAdaptor = 0;
+
 int main(int, char**)
 {
 
@@ -189,7 +196,7 @@ int main(int, char**)
 
 			for (uint8_t i = 0; i < devices.size(); i++) {
 				std::stringstream Title;
-				Title << devices[i]->Model << "	" << devices[i]->Firmware << "	" << addressString(devices[i]->CurrentIP) << "		" << "Temp: " << (float)devices[i]->Temperature*0.1 << "		" << devices[i]->Nickname;
+				Title << devices[i]->Model << "	" << devices[i]->Firmware << "	" << ipString(devices[i]->CurrentIP) << "		" << "Temp: " << (float)devices[i]->Temperature*0.1 << "		" << devices[i]->Nickname;
 				Title << "###" << macString(devices[i]->Mac);
 				bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns | ImGuiTreeNodeFlags_OpenOnArrow);
 

@@ -23,12 +23,6 @@
 #define bswap_16(x) x=((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
 extern std::vector <std::string> networkAdaptors;
-
-extern bool b_refreshAdaptorsRequest;
-extern int currentAdaptor;
-extern bool b_pollRequest;
-extern int id_networkConfigRequest;
-
 static std::string adaptor_string = "Select Adaptor";
 
 typedef struct tAdvatekDevice {
@@ -94,7 +88,7 @@ typedef struct tAdvatekDevice {
 extern std::vector<sAdvatekDevice*> devices;
 
 std::string macString(uint8_t * address);
-std::string addressString(uint8_t * address);
+std::string ipString(uint8_t * address);
 
 extern const char* RGBW_Order[24];
 extern const char* DriverTypes[3];
@@ -126,3 +120,14 @@ void process_opPollReply(uint8_t * data);
 void process_opTestAnnounce(uint8_t * data);
 void process_udp_message(uint8_t * data);
 void refreshAdaptors();
+
+class advatek_manager
+{
+public:
+	bool deviceExist(uint8_t * Mac);
+	std::string macStr(uint8_t * address);
+	std::string ipStr(uint8_t * address);
+
+private:
+	std::vector <std::string> networkAdaptors;
+};
