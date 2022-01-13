@@ -75,7 +75,7 @@ int main(int, char**)
 	int window_w = 800;
 	int window_h = 600;
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(window_w, window_h, "Advatek Assistant", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(window_w, window_h, "Advatek Assistor", NULL, NULL);
     if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
@@ -149,7 +149,7 @@ int main(int, char**)
 			window_flags |= ImGuiWindowFlags_NoMove;
 			window_flags |= ImGuiWindowFlags_NoResize;
 			window_flags |= ImGuiWindowFlags_NoCollapse;
-			ImGui::Begin("Advatek Assistant", NULL, window_flags);                    
+			ImGui::Begin("Advatek Assistor", NULL, window_flags);                    
 
 			if (ImGui::Button("Refresh Adaptors"))
 			{
@@ -395,7 +395,18 @@ int main(int, char**)
 								devices[i]->TestCols[2] = (int)(tempTestCols[2] * 255);
 								devices[i]->TestCols[3] = (int)(tempTestCols[3] * 255);
 							}
-							setTest(i);
+
+							if (ImGui::Checkbox("Cycle Colour Per Output", &devices[i]->TestModeCycle)) {
+								for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
+									ImGui::PushID(output);
+									ImGui::Text("Output %02i", output + 1); ImGui::SameLine();
+									
+									ImGui::PopID();
+								}
+							}
+							else {
+								setTest(i);
+							}
 						}
 
 						ImGui::PopItemWidth();

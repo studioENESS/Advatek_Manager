@@ -1,5 +1,7 @@
 # Advatek Assisitor
 
+![preview](img/preview2.png)
+
 ## Dependencies
 
   - [ImGui](https://github.com/ocornut/imgui) [Interavctive Manual](https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html)  

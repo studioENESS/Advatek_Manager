@@ -83,6 +83,8 @@ typedef struct tAdvatekDevice {
 	int TestCols[4];
 	uint8_t TestOutputNum;
 	uint16_t TestPixelNum;
+	int* TestCycleCols; //[NumOutputs]
+	bool TestModeCycle = false;
 } sAdvatekDevice;
 
 extern std::vector<sAdvatekDevice*> devices;
