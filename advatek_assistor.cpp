@@ -3,38 +3,11 @@
 //std::vector<sAdvatekDevice*> advatek_manager::devices;
 std::vector <std::string> networkAdaptors;
 
-static const char* advatek_manager::RGBW_Order[24] = {
-		"R-G-B/R-G-B-W",
-		"R-B-G/R-B-G-W",
-		"G-R-B/G-R-B-W",
-		"B-R-G/B-R-G-W",
-		"G-B-R/G-B-R-W",
-		"B-G-R/B-G-R-W",
-		"R-G-W-B",
-		"R-B-W-G",
-		"G-R-W-B",
-		"B-R-W-G",
-		"G-B-W-R",
-		"B-G-W-R",
-		"R-W-G-B",
-		"R-W-B-G",
-		"G-W-R-B",
-		"B-W-R-G",
-		"G-W-B-R",
-		"B-W-G-R",
-		"W-R-G-B",
-		"W-R-B-G",
-		"W-G-R-B",
-		"W-B-R-G",
-		"W-G-B-R",
-		"W-B-G-R"
-};
-
 const char* DriverTypes[3] = {
 		"RGB only",
 		"RGBW only",
 		"Either RGB or RGBW"
-};
+};	
 
 const char* DriverSpeedsMhz[12] = {
 	"0.4 MHz", // Data Only Slow
@@ -118,6 +91,9 @@ boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "");
 
 void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message)
 {
+	if(s_socket.is_open()){
+		s_socket.close();
+	}
 	s_socket.open(boost::asio::ip::udp::v4());
 	s_socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
 
@@ -146,10 +122,10 @@ void broadcast_udp_message(std::vector<uint8_t> message)
 	send_udp_message(AdvAdr, AdvPort, true, message);
 }
 
-void updateDevice(int d) {
-	
+void advatek_manager::updateDevice(int d) {
+
+	auto device = advatek_manager::devices[d];
 	std::vector<uint8_t> dataTape;
-	sAdvatekDevice* device = advatek_manager::devices[d];
 
 	dataTape.resize(12);
 	dataTape[0] = 'A';
@@ -165,8 +141,6 @@ void updateDevice(int d) {
 	dataTape[10] = 0x05;  // OpCode
 	dataTape[11] = 0x08;  // ProtVer
 
-	
-	
 	dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
 
 	dataTape.push_back(device->DHCP);
@@ -207,7 +181,7 @@ void updateDevice(int d) {
 	unicast_udp_message(ipString(device->CurrentIP), dataTape);
 }
 
-void setTest(int d) {
+void advatek_manager::setTest(int d) {
 
 	auto device = advatek_manager::devices[d];
 
@@ -244,7 +218,7 @@ void setTest(int d) {
 	unicast_udp_message(ipString(device->CurrentIP), dataTape);
 }
 
-void clearDevices() {
+void advatek_manager::clearDevices() {
 	for (auto device : advatek_manager::devices)
 	{
 		if (device)
@@ -283,7 +257,7 @@ void setEndUniverseChannel(int startUniverse, int startChannel, int pixelCount, 
 	endChannel = (startChannel + pixelChannels - 1) % 510;
 }
 
-void bc_networkConfig(int d) {
+void advatek_manager::bc_networkConfig(int d) {
 	auto device = advatek_manager::devices[d];
 	std::vector<uint8_t> dataTape;
 	dataTape.resize(12);
@@ -310,7 +284,7 @@ void bc_networkConfig(int d) {
 	broadcast_udp_message(dataTape);
 }
 
-void poll() {
+void advatek_manager::poll() {
 
 	clearDevices();
 
@@ -333,7 +307,7 @@ void poll() {
 
 }
 
-void process_opPollReply(uint8_t * data) {
+void advatek_manager::process_opPollReply(uint8_t * data) {
 	sAdvatekDevice * rec_data = new sAdvatekDevice();
 
 	memcpy(&rec_data->ProtVer, data, sizeof(uint8_t));
@@ -558,11 +532,11 @@ void process_opPollReply(uint8_t * data) {
 
 }
 
-void process_opTestAnnounce(uint8_t * data) {
+void advatek_manager::process_opTestAnnounce(uint8_t * data) {
 	return;
 }
 
-void process_udp_message(uint8_t * data) {
+void advatek_manager::process_udp_message(uint8_t * data) {
 	char ID[9];
 	memcpy(ID, data, sizeof(uint8_t) * 9);
 	data += 9;

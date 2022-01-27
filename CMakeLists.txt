@@ -12,6 +12,7 @@ set(IMGUI_ROOT "${PROJECT_SOURCE_DIR}/External/imgui")
 set(IMGUI_BACKENDS "${PROJECT_SOURCE_DIR}/External/imgui/backends")
 
 add_executable(advatek_assistor main.cpp
+	advatek_assistor.cpp
 	${IMGUI_ROOT}/imgui.cpp
 	${IMGUI_ROOT}/imgui_draw.cpp
 	${IMGUI_ROOT}/imgui_widgets.cpp

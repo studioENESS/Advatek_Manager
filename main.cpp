@@ -42,7 +42,7 @@ int main(int, char**)
 
 	refreshAdaptors();
 
-	poll();
+	adv.poll();
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -122,7 +122,7 @@ int main(int, char**)
 		{
 			std::size_t bytes_transferred = r_socket.receive_from(boost::asio::buffer(buffer), receiver);
 			if (bytes_transferred > 1) {  // we have data
-				process_udp_message(buffer);
+				adv.process_udp_message(buffer);
 			}
 		}
 
@@ -160,14 +160,16 @@ int main(int, char**)
 
 			if (ImGui::BeginCombo("###Adaptor", adaptor_string.c_str(), 0))
 			{
-				for (int n = 0; n < networkAdaptors.size(); n++)
+				for (int n = 1; n < networkAdaptors.size(); n++)
 				{
 					const bool is_selected = (currentAdaptor == n);
 					if (ImGui::Selectable(networkAdaptors[n].c_str(), is_selected))
 					{
 						currentAdaptor = n;
 						adaptor_string = networkAdaptors[n];
-						r_socket.close();
+						if(r_socket.is_open()) {
+							r_socket.close();	
+						}
 						//r_socket.open(boost::asio::ip::udp::v4());
 						//r_socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort));
 
@@ -379,7 +381,7 @@ int main(int, char**)
 						ImGui::PushItemWidth(200);
 
 						if (ImGui::Combo("Set Test", &adv.devices[i]->TestMode, TestModes, 9)) {
-							setTest(i);
+							adv.setTest(i);
 						}
 
 						if ((adv.devices[i]->TestMode == 6) || (adv.devices[i]->TestMode == 8)) {
@@ -405,7 +407,7 @@ int main(int, char**)
 								}
 							}
 							else {
-								setTest(i);
+								adv.setTest(i);
 							}
 						}
 
@@ -413,7 +415,7 @@ int main(int, char**)
 						ImGui::PushItemWidth(150);
 						ImGui::Text("All Outputs (0)"); ImGui::SameLine();
 						if (ImGui::SliderInt("Output Channel", (int*)&adv.devices[i]->TestOutputNum, 0, (int)(adv.devices[i]->NumOutputs*0.5))) {
-							setTest(i);
+							adv.setTest(i);
 						}
 						ImGui::PopItemWidth();
 
@@ -453,7 +455,7 @@ int main(int, char**)
 
 					if (ImGui::Button("Update"))
 					{
-						updateDevice(i);
+						adv.updateDevice(i);
 						// b_pollRequest = true; 
 					}
 
@@ -480,11 +482,11 @@ int main(int, char**)
 			b_refreshAdaptorsRequest = false;
 		}
 		if (b_pollRequest) {
-			poll();
+			adv.poll();
 			b_pollRequest = false;
 		}
 		if (id_networkConfigRequest > -1) {
-			bc_networkConfig(id_networkConfigRequest);
+			adv.bc_networkConfig(id_networkConfigRequest);
 			id_networkConfigRequest = -1;
 		}
     }

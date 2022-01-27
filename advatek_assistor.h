@@ -112,15 +112,7 @@ extern boost::asio::ip::tcp::resolver::query query;
 void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message);
 void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message);
 void broadcast_udp_message(std::vector<uint8_t> message);
-void updateDevice(int d);
-void setTest(int d);
-void clearDevices();
 void setEndUniverseChannel(int startUniverse, int startChannel, int pixelCount, int outputGrouping, int &endUniverse, int &endChannel);
-void bc_networkConfig(int d);
-void poll();
-void process_opPollReply(uint8_t * data);
-void process_opTestAnnounce(uint8_t * data);
-void process_udp_message(uint8_t * data);
 void refreshAdaptors();
 
 class advatek_manager
@@ -132,8 +124,43 @@ public:
 
 	std::vector<sAdvatekDevice*> devices;
 
-	static const char* RGBW_Order;
+	void updateDevice(int d);
+	void setTest(int d);
+	void clearDevices();
+	void bc_networkConfig(int d);
+	void poll();
+	void process_opPollReply(uint8_t * data);
+	void process_opTestAnnounce(uint8_t * data);
+	void process_udp_message(uint8_t * data);
+	
+	constexpr static const char* RGBW_Order[24] = {
+		"R-G-B/R-G-B-W",
+		"R-B-G/R-B-G-W",
+		"G-R-B/G-R-B-W",
+		"B-R-G/B-R-G-W",
+		"G-B-R/G-B-R-W",
+		"B-G-R/B-G-R-W",
+		"R-G-W-B",
+		"R-B-W-G",
+		"G-R-W-B",
+		"B-R-W-G",
+		"G-B-W-R",
+		"B-G-W-R",
+		"R-W-G-B",
+		"R-W-B-G",
+		"G-W-R-B",
+		"B-W-R-G",
+		"G-W-B-R",
+		"B-W-G-R",
+		"W-R-G-B",
+		"W-R-B-G",
+		"W-G-R-B",
+		"W-B-R-G",
+		"W-G-B-R",
+		"W-B-G-R"
+	};
 
 private:
 	std::vector <std::string> networkAdaptors;
+
 };
