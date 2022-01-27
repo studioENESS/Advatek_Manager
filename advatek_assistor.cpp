@@ -1,9 +1,9 @@
 #include "advatek_assistor.h"
 
-std::vector<sAdvatekDevice*> devices;
+//std::vector<sAdvatekDevice*> advatek_manager::devices;
 std::vector <std::string> networkAdaptors;
 
-const char* RGBW_Order[24] = {
+static const char* advatek_manager::RGBW_Order[24] = {
 		"R-G-B/R-G-B-W",
 		"R-B-G/R-B-G-W",
 		"G-R-B/G-R-B-W",
@@ -95,12 +95,12 @@ void insertSwapped16(std::vector<uint8_t> &dest, uint16_t* pData, int32_t size)
 	}
 }
 
-bool deviceExist(uint8_t * Mac) {
+bool advatek_manager::deviceExist(uint8_t * Mac) {
 
-	for (int d(0); d < devices.size(); d++) {
+	for (int d(0); d < advatek_manager::devices.size(); d++) {
 		bool exist = true;
 		for (int i(0); i < 6; i++) {
-			if (devices[d]->Mac[i] != Mac[i]) exist = false;
+			if (advatek_manager::devices[d]->Mac[i] != Mac[i]) exist = false;
 		}
 		if (exist) return true;
 	}
@@ -147,7 +147,10 @@ void broadcast_udp_message(std::vector<uint8_t> message)
 }
 
 void updateDevice(int d) {
+	
 	std::vector<uint8_t> dataTape;
+	sAdvatekDevice* device = advatek_manager::devices[d];
+
 	dataTape.resize(12);
 	dataTape[0] = 'A';
 	dataTape[1] = 'd';
@@ -162,47 +165,51 @@ void updateDevice(int d) {
 	dataTape[10] = 0x05;  // OpCode
 	dataTape[11] = 0x08;  // ProtVer
 
-	dataTape.insert(dataTape.end(), devices[d]->Mac, devices[d]->Mac + 6);
+	
+	
+	dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
 
-	dataTape.push_back(devices[d]->DHCP);
+	dataTape.push_back(device->DHCP);
 
-	dataTape.insert(dataTape.end(), devices[d]->StaticIP, devices[d]->StaticIP + 4);
-	dataTape.insert(dataTape.end(), devices[d]->StaticSM, devices[d]->StaticSM + 4);
+	dataTape.insert(dataTape.end(), device->StaticIP, device->StaticIP + 4);
+	dataTape.insert(dataTape.end(), device->StaticSM, device->StaticSM + 4);
 
-	dataTape.push_back(devices[d]->Protocol);
-	dataTape.push_back(devices[d]->HoldLastFrame);
-	dataTape.push_back(devices[d]->SimpleConfig);
+	dataTape.push_back(device->Protocol);
+	dataTape.push_back(device->HoldLastFrame);
+	dataTape.push_back(device->SimpleConfig);
 
-	insertSwapped16(dataTape, devices[d]->OutputPixels, devices[d]->NumOutputs);
-	insertSwapped16(dataTape, devices[d]->OutputUniv, devices[d]->NumOutputs);
-	insertSwapped16(dataTape, devices[d]->OutputChan, devices[d]->NumOutputs);
+	insertSwapped16(dataTape, device->OutputPixels, device->NumOutputs);
+	insertSwapped16(dataTape, device->OutputUniv, device->NumOutputs);
+	insertSwapped16(dataTape, device->OutputChan, device->NumOutputs);
 
-	dataTape.insert(dataTape.end(), devices[d]->OutputNull, devices[d]->OutputNull + devices[d]->NumOutputs);
-	insertSwapped16(dataTape, devices[d]->OutputZig, devices[d]->NumOutputs);
+	dataTape.insert(dataTape.end(), device->OutputNull, device->OutputNull + device->NumOutputs);
+	insertSwapped16(dataTape, device->OutputZig, device->NumOutputs);
 
-	dataTape.insert(dataTape.end(), devices[d]->OutputReverse, devices[d]->OutputReverse + devices[d]->NumOutputs);
-	dataTape.insert(dataTape.end(), devices[d]->OutputColOrder, devices[d]->OutputColOrder + devices[d]->NumOutputs);
-	insertSwapped16(dataTape, devices[d]->OutputGrouping, devices[d]->NumOutputs);
+	dataTape.insert(dataTape.end(), device->OutputReverse, device->OutputReverse + device->NumOutputs);
+	dataTape.insert(dataTape.end(), device->OutputColOrder, device->OutputColOrder + device->NumOutputs);
+	insertSwapped16(dataTape, device->OutputGrouping, device->NumOutputs);
 
-	dataTape.insert(dataTape.end(), devices[d]->OutputBrightness, devices[d]->OutputBrightness + devices[d]->NumOutputs);
-	dataTape.insert(dataTape.end(), devices[d]->DmxOutOn, devices[d]->DmxOutOn + devices[d]->NumDMXOutputs);
-	insertSwapped16(dataTape, devices[d]->DmxOutUniv, devices[d]->NumDMXOutputs);
+	dataTape.insert(dataTape.end(), device->OutputBrightness, device->OutputBrightness + device->NumOutputs);
+	dataTape.insert(dataTape.end(), device->DmxOutOn, device->DmxOutOn + device->NumDMXOutputs);
+	insertSwapped16(dataTape, device->DmxOutUniv, device->NumDMXOutputs);
 
-	dataTape.push_back(devices[d]->CurrentDriver);
-	dataTape.push_back(devices[d]->CurrentDriverType);
+	dataTape.push_back(device->CurrentDriver);
+	dataTape.push_back(device->CurrentDriverType);
 
-	dataTape.push_back(devices[d]->CurrentDriverSpeed);
-	dataTape.push_back(devices[d]->CurrentDriverExpanded);
+	dataTape.push_back(device->CurrentDriverSpeed);
+	dataTape.push_back(device->CurrentDriverExpanded);
 
-	dataTape.insert(dataTape.end(), devices[d]->Gamma, devices[d]->Gamma + 4);
-	dataTape.insert(dataTape.end(), devices[d]->Nickname, devices[d]->Nickname + 40);
+	dataTape.insert(dataTape.end(), device->Gamma, device->Gamma + 4);
+	dataTape.insert(dataTape.end(), device->Nickname, device->Nickname + 40);
 
-	dataTape.push_back(devices[d]->MaxTargetTemp);
+	dataTape.push_back(device->MaxTargetTemp);
 
-	unicast_udp_message(ipString(devices[d]->CurrentIP), dataTape);
+	unicast_udp_message(ipString(device->CurrentIP), dataTape);
 }
 
 void setTest(int d) {
+
+	auto device = advatek_manager::devices[d];
 
 	std::vector<uint8_t> dataTape;
 	dataTape.resize(12);
@@ -219,26 +226,26 @@ void setTest(int d) {
 	dataTape[10] = 0x08;  // OpCode
 	dataTape[11] = 0x08;  // ProtVer
 
-	dataTape.insert(dataTape.end(), devices[d]->Mac, devices[d]->Mac + 6);
+	dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
 
-	dataTape.push_back(devices[d]->TestMode);
+	dataTape.push_back(device->TestMode);
 
-	dataTape.insert(dataTape.end(), devices[d]->TestCols, devices[d]->TestCols + 4);
+	dataTape.insert(dataTape.end(), device->TestCols, device->TestCols + 4);
 
-	dataTape.push_back(devices[d]->TestOutputNum);
+	dataTape.push_back(device->TestOutputNum);
 
-	dataTape.push_back((uint8_t)(devices[d]->TestPixelNum >> 8));
-	dataTape.push_back((uint8_t)devices[d]->TestPixelNum);
+	dataTape.push_back((uint8_t)(device->TestPixelNum >> 8));
+	dataTape.push_back((uint8_t)device->TestPixelNum);
 
-	//buf[23] = 0;// devices[d]->TestOutputNum;
-	//buf[24] = 0;//devices[d]->TestPixelNum;
-	//buf[25] = 0;//devices[d]->TestPixelNum >> 8;
+	//buf[23] = 0;// device->TestOutputNum;
+	//buf[24] = 0;//device->TestPixelNum;
+	//buf[25] = 0;//device->TestPixelNum >> 8;
 
-	unicast_udp_message(ipString(devices[d]->CurrentIP), dataTape);
+	unicast_udp_message(ipString(device->CurrentIP), dataTape);
 }
 
 void clearDevices() {
-	for (auto device : devices)
+	for (auto device : advatek_manager::devices)
 	{
 		if (device)
 		{
@@ -264,7 +271,7 @@ void clearDevices() {
 		}
 	}
 
-	devices.clear();
+	advatek_manager::devices.clear();
 }
 
 void setEndUniverseChannel(int startUniverse, int startChannel, int pixelCount, int outputGrouping, int &endUniverse, int &endChannel) {
@@ -277,6 +284,7 @@ void setEndUniverseChannel(int startUniverse, int startChannel, int pixelCount, 
 }
 
 void bc_networkConfig(int d) {
+	auto device = advatek_manager::devices[d];
 	std::vector<uint8_t> dataTape;
 	dataTape.resize(12);
 	dataTape[0] = 'A';
@@ -292,12 +300,12 @@ void bc_networkConfig(int d) {
 	dataTape[10] = 0x07;  // OpCode
 	dataTape[11] = 0x08;  // ProtVer
 
-	dataTape.insert(dataTape.end(), devices[d]->Mac, devices[d]->Mac + 6);
+	dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
 
-	dataTape.push_back(devices[d]->DHCP);
+	dataTape.push_back(device->DHCP);
 
-	dataTape.insert(dataTape.end(), devices[d]->StaticIP, devices[d]->StaticIP + 4);
-	dataTape.insert(dataTape.end(), devices[d]->StaticSM, devices[d]->StaticSM + 4);
+	dataTape.insert(dataTape.end(), device->StaticIP, device->StaticIP + 4);
+	dataTape.insert(dataTape.end(), device->StaticSM, device->StaticSM + 4);
 
 	broadcast_udp_message(dataTape);
 }
@@ -546,7 +554,7 @@ void process_opPollReply(uint8_t * data) {
 	data += 2;
 	bswap_16(rec_data->TestPixelNum);
 
-	if (!deviceExist(rec_data->Mac)) devices.emplace_back(rec_data);
+	if (!deviceExist(rec_data->Mac)) advatek_manager::devices.emplace_back(rec_data);
 
 }
 
@@ -588,6 +596,7 @@ void process_udp_message(uint8_t * data) {
 void refreshAdaptors() {
 
 	networkAdaptors.clear();
+	networkAdaptors.push_back("Choose Network Adaptor");
 	boost::asio::ip::tcp::resolver::iterator it;
 	try
 	{
@@ -607,7 +616,7 @@ void refreshAdaptors() {
 		}
 	}
 	if (networkAdaptors.size() > 0) {
-		adaptor_string = networkAdaptors[0];
+		adaptor_string = networkAdaptors[1];
 	}
 }
 

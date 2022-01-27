@@ -87,12 +87,12 @@ typedef struct tAdvatekDevice {
 	bool TestModeCycle = false;
 } sAdvatekDevice;
 
-extern std::vector<sAdvatekDevice*> devices;
+//extern std::vector<sAdvatekDevice*> devices;
 
 std::string macString(uint8_t * address);
 std::string ipString(uint8_t * address);
 
-extern const char* RGBW_Order[24];
+//extern const char* RGBW_Order[24];
 extern const char* DriverTypes[3];
 extern const char* DriverSpeeds[5];
 extern const char* DriverSpeedsMhz[12];
@@ -129,6 +129,10 @@ public:
 	bool deviceExist(uint8_t * Mac);
 	std::string macStr(uint8_t * address);
 	std::string ipStr(uint8_t * address);
+
+	std::vector<sAdvatekDevice*> devices;
+
+	static const char* RGBW_Order;
 
 private:
 	std::vector <std::string> networkAdaptors;

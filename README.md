@@ -26,3 +26,6 @@
     
     make
 
+
+> To use the WiFi for internet make sure you set the Wired connection to `Only use connection for resources on it's network`
+

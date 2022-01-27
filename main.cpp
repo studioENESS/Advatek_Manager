@@ -30,7 +30,7 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-advatek_manager man;
+advatek_manager adv;
 
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
@@ -192,12 +192,12 @@ int main(int, char**)
 				b_pollRequest = true;
 			} ImGui::SameLine();
 
-			ImGui::Text("%i Device(s) Connected", devices.size());
+			ImGui::Text("%li Device(s) Connected", adv.devices.size());
 
-			for (uint8_t i = 0; i < devices.size(); i++) {
+			for (uint8_t i = 0; i < adv.devices.size(); i++) {
 				std::stringstream Title;
-				Title << devices[i]->Model << "	" << devices[i]->Firmware << "	" << ipString(devices[i]->CurrentIP) << "		" << "Temp: " << (float)devices[i]->Temperature*0.1 << "		" << devices[i]->Nickname;
-				Title << "###" << macString(devices[i]->Mac);
+				Title << adv.devices[i]->Model << "	" << adv.devices[i]->Firmware << "	" << ipString(adv.devices[i]->CurrentIP) << "		" << "Temp: " << (float)adv.devices[i]->Temperature*0.1 << "		" << adv.devices[i]->Nickname;
+				Title << "###" << macString(adv.devices[i]->Mac);
 				bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns | ImGuiTreeNodeFlags_OpenOnArrow);
 
 				if (node_open)
@@ -210,40 +210,40 @@ int main(int, char**)
 
 						ImGui::PushItemWidth(30);
 
-						ImGui::InputScalar(".##CurrentIP0", ImGuiDataType_U8, &devices[i]->StaticIP[0], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentIP0", ImGuiDataType_U8, &adv.devices[i]->StaticIP[0], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar(".##CurrentIP1", ImGuiDataType_U8, &devices[i]->StaticIP[1], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentIP1", ImGuiDataType_U8, &adv.devices[i]->StaticIP[1], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar(".##CurrentIP2", ImGuiDataType_U8, &devices[i]->StaticIP[2], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentIP2", ImGuiDataType_U8, &adv.devices[i]->StaticIP[2], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar("##CurrentIP3", ImGuiDataType_U8, &devices[i]->StaticIP[3], 0, 0, 0);
+						ImGui::InputScalar("##CurrentIP3", ImGuiDataType_U8, &adv.devices[i]->StaticIP[3], 0, 0, 0);
 
 
 						ImGui::Text("Static Subnet Mask:");
 
-						ImGui::InputScalar(".##CurrentSM0", ImGuiDataType_U8, &devices[i]->StaticSM[0], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentSM0", ImGuiDataType_U8, &adv.devices[i]->StaticSM[0], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar(".##CurrentSM1", ImGuiDataType_U8, &devices[i]->StaticSM[1], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentSM1", ImGuiDataType_U8, &adv.devices[i]->StaticSM[1], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar(".##CurrentSM2", ImGuiDataType_U8, &devices[i]->StaticSM[2], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentSM2", ImGuiDataType_U8, &adv.devices[i]->StaticSM[2], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar("##CurrentSM3", ImGuiDataType_U8, &devices[i]->StaticSM[3], 0, 0, 0);
+						ImGui::InputScalar("##CurrentSM3", ImGuiDataType_U8, &adv.devices[i]->StaticSM[3], 0, 0, 0);
 
 						ImGui::PopItemWidth();
 
 						ImGui::Text("IP Type: "); ImGui::SameLine();
-						int tempDHCP = (int)devices[i]->DHCP;
+						int tempDHCP = (int)adv.devices[i]->DHCP;
 						if (ImGui::RadioButton("DHCP", &tempDHCP, 1)) {
-							devices[i]->DHCP = 1;
+							adv.devices[i]->DHCP = 1;
 						} ImGui::SameLine();
 						if (ImGui::RadioButton("Static", &tempDHCP, 0)) {
-							devices[i]->DHCP = 0;
+							adv.devices[i]->DHCP = 0;
 						}
 
 						if (ImGui::Button("Update Network Config"))
@@ -256,22 +256,22 @@ int main(int, char**)
 					if (ImGui::BeginTabItem("Control"))
 					{
 						ImGui::Text("Ethernet Control: "); ImGui::SameLine();
-						int tempProtocol = (int)devices[i]->Protocol;
+						int tempProtocol = (int)adv.devices[i]->Protocol;
 						if (ImGui::RadioButton("ArtNet", &tempProtocol, 1)) {
-							devices[i]->Protocol = 1;
+							adv.devices[i]->Protocol = 1;
 						} ImGui::SameLine();
 						if (ImGui::RadioButton("sACN (E1.31)", &tempProtocol, 0)) {
-							devices[i]->Protocol = 0;
+							adv.devices[i]->Protocol = 0;
 						}
 						ImGui::SameLine();
-						static bool tempHoldLastFrame = (bool)devices[i]->HoldLastFrame;
+						static bool tempHoldLastFrame = (bool)adv.devices[i]->HoldLastFrame;
 						if (ImGui::Checkbox("Hold LastFrame", &tempHoldLastFrame)) {
-							devices[i]->HoldLastFrame = tempHoldLastFrame;
+							adv.devices[i]->HoldLastFrame = tempHoldLastFrame;
 						}
 
-						bool * tempReversed = new bool[devices[i]->NumOutputs];
-						int  * tempEndUniverse = new int[devices[i]->NumOutputs];
-						int  * tempEndChannel = new int[devices[i]->NumOutputs];
+						bool * tempReversed = new bool[adv.devices[i]->NumOutputs];
+						int  * tempEndUniverse = new int[adv.devices[i]->NumOutputs];
+						int  * tempEndChannel = new int[adv.devices[i]->NumOutputs];
 
 						ImGui::PushItemWidth(50);
 
@@ -290,27 +290,27 @@ int main(int, char**)
 							ImGui::TableSetupColumn("Reversed");
 							ImGui::TableHeadersRow();
 
-							for (int output = 0; output < devices[i]->NumOutputs*0.5; output++)
+							for (int output = 0; output < adv.devices[i]->NumOutputs*0.5; output++)
 							{
 								ImGui::TableNextRow();
 
-								setEndUniverseChannel((int)devices[i]->OutputUniv[output], (int)devices[i]->OutputChan[output], (int)devices[i]->OutputPixels[output], (int)devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
+								setEndUniverseChannel((int)adv.devices[i]->OutputUniv[output], (int)adv.devices[i]->OutputChan[output], (int)adv.devices[i]->OutputPixels[output], (int)adv.devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
 								ImGui::PushID(output);
 								
 								ImGui::TableNextColumn();
 								ImGui::Text("Output %i", output + 1); ImGui::TableNextColumn();
-								ImGui::InputScalar("##StartUniv", ImGuiDataType_U16, &devices[i]->OutputUniv[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##StartChan", ImGuiDataType_U16, &devices[i]->OutputChan[output], 0, 0, 0); ImGui::TableNextColumn();
+								ImGui::InputScalar("##StartUniv", ImGuiDataType_U16, &adv.devices[i]->OutputUniv[output], 0, 0, 0); ImGui::TableNextColumn();
+								ImGui::InputScalar("##StartChan", ImGuiDataType_U16, &adv.devices[i]->OutputChan[output], 0, 0, 0); ImGui::TableNextColumn();
 								ImGui::InputScalar("##EndUniv", ImGuiDataType_U16, &tempEndUniverse[output], 0, 0, 0); ImGui::TableNextColumn();
 								ImGui::InputScalar("##EndChan", ImGuiDataType_U16, &tempEndChannel[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##NumPix", ImGuiDataType_U16, &devices[i]->OutputPixels[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##NullPix", ImGuiDataType_U8, &devices[i]->OutputNull[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##ZigZag", ImGuiDataType_U16, &devices[i]->OutputZig[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##Group", ImGuiDataType_U16, &devices[i]->OutputGrouping[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("%##BrightLim", ImGuiDataType_U8, &devices[i]->OutputBrightness[output], 0, 0, 0); ImGui::TableNextColumn();
-								tempReversed[output] = (bool)devices[i]->OutputReverse[output];
+								ImGui::InputScalar("##NumPix", ImGuiDataType_U16, &adv.devices[i]->OutputPixels[output], 0, 0, 0); ImGui::TableNextColumn();
+								ImGui::InputScalar("##NullPix", ImGuiDataType_U8, &adv.devices[i]->OutputNull[output], 0, 0, 0); ImGui::TableNextColumn();
+								ImGui::InputScalar("##ZigZag", ImGuiDataType_U16, &adv.devices[i]->OutputZig[output], 0, 0, 0); ImGui::TableNextColumn();
+								ImGui::InputScalar("##Group", ImGuiDataType_U16, &adv.devices[i]->OutputGrouping[output], 0, 0, 0); ImGui::TableNextColumn();
+								ImGui::InputScalar("%##BrightLim", ImGuiDataType_U8, &adv.devices[i]->OutputBrightness[output], 0, 0, 0); ImGui::TableNextColumn();
+								tempReversed[output] = (bool)adv.devices[i]->OutputReverse[output];
 								if (ImGui::Checkbox("##Reversed", &tempReversed[output])) {
-									devices[i]->OutputReverse[output] = (uint8_t)tempReversed[output];
+									adv.devices[i]->OutputReverse[output] = (uint8_t)tempReversed[output];
 								}
 								ImGui::PopID();
 								
@@ -327,47 +327,47 @@ int main(int, char**)
 					if (ImGui::BeginTabItem("LEDs"))
 					{
 						ImGui::PushItemWidth(120);
-						ImGui::Combo("Pixel IC", &devices[i]->CurrentDriver, devices[i]->DriverNames, devices[i]->NumDrivers);
-						ImGui::Combo("Clock Speed", &devices[i]->CurrentDriverSpeed, DriverSpeedsMhz, 12);
-						bool tempExpanded = (bool)devices[i]->CurrentDriverExpanded;
+						ImGui::Combo("Pixel IC", &adv.devices[i]->CurrentDriver, adv.devices[i]->DriverNames, adv.devices[i]->NumDrivers);
+						ImGui::Combo("Clock Speed", &adv.devices[i]->CurrentDriverSpeed, DriverSpeedsMhz, 12);
+						bool tempExpanded = (bool)adv.devices[i]->CurrentDriverExpanded;
 						if (ImGui::Checkbox("Expanded Mode", &tempExpanded)) {
-							devices[i]->CurrentDriverExpanded = (uint8_t)tempExpanded;
+							adv.devices[i]->CurrentDriverExpanded = (uint8_t)tempExpanded;
 						}
 
 
 						ImGui::Text("Set All  "); ImGui::SameLine();
-						int tempAllColOrder = (int)&devices[i]->OutputColOrder[0];
-						if (ImGui::Combo("Order ##all", &tempAllColOrder, RGBW_Order, 24)) {
-							for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
-								devices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
+						int tempAllColOrder = adv.devices[i]->OutputColOrder[0];
+						if (ImGui::Combo("Order ##all", &tempAllColOrder, adv.RGBW_Order, 24)) {
+							for (uint8_t output = 0; output < adv.devices[i]->NumOutputs*0.5; output++) {
+								adv.devices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
 							}
 						}
 
-						int * tempOutputColOrder = new int[devices[i]->NumOutputs];
-						for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
-							ImGui::PushID(output);
-							ImGui::Text("Output %02i", output + 1); ImGui::SameLine();
-							tempOutputColOrder[output] = devices[i]->OutputColOrder[output];
-							if (ImGui::Combo("Order", &tempOutputColOrder[output], RGBW_Order, 24)) {
-								devices[i]->OutputColOrder[output] = (uint8_t)tempOutputColOrder[output];
-							}
-							ImGui::PopID();
-						}
+						//int * tempOutputColOrder = new int[adv.devices[i]->NumOutputs];
+						//for (uint8_t output = 0; output < adv.devices[i]->NumOutputs*0.5; output++) {
+						//	ImGui::PushID(output);
+						//	ImGui::Text("Output %02i", output + 1); ImGui::SameLine();
+						//	tempOutputColOrder[output] = adv.devices[i]->OutputColOrder[output];
+						//	if (ImGui::Combo("Order", &tempOutputColOrder[output], adv.RGBW_Order, 24)) {
+						//		adv.devices[i]->OutputColOrder[output] = (uint8_t)tempOutputColOrder[output];
+						//	}
+						//	ImGui::PopID();
+						//}
 
 						ImGui::Separator();
 						ImGui::Text("Gamma Correction only applied to chips that are higher then 8bit:");
 
-						if (ImGui::SliderFloat("Red", &devices[i]->Gammaf[0], 1.0, 3.0, "%.01f")) {
-							devices[i]->Gamma[0] = (int)(devices[i]->Gammaf[0] * 10);
+						if (ImGui::SliderFloat("Red", &adv.devices[i]->Gammaf[0], 1.0, 3.0, "%.01f")) {
+							adv.devices[i]->Gamma[0] = (int)(adv.devices[i]->Gammaf[0] * 10);
 						};
-						if (ImGui::SliderFloat("Green", &devices[i]->Gammaf[1], 1.0, 3.0, "%.01f")) {
-							devices[i]->Gamma[1] = (int)(devices[i]->Gammaf[1] * 10);
+						if (ImGui::SliderFloat("Green", &adv.devices[i]->Gammaf[1], 1.0, 3.0, "%.01f")) {
+							adv.devices[i]->Gamma[1] = (int)(adv.devices[i]->Gammaf[1] * 10);
 						};
-						if (ImGui::SliderFloat("Blue", &devices[i]->Gammaf[2], 1.0, 3.0, "%.01f")) {
-							devices[i]->Gamma[2] = (int)(devices[i]->Gammaf[2] * 10);
+						if (ImGui::SliderFloat("Blue", &adv.devices[i]->Gammaf[2], 1.0, 3.0, "%.01f")) {
+							adv.devices[i]->Gamma[2] = (int)(adv.devices[i]->Gammaf[2] * 10);
 						};
-						if (ImGui::SliderFloat("White", &devices[i]->Gammaf[3], 1.0, 3.0, "%.01f")) {
-							devices[i]->Gamma[3] = (int)(devices[i]->Gammaf[3] * 10);
+						if (ImGui::SliderFloat("White", &adv.devices[i]->Gammaf[3], 1.0, 3.0, "%.01f")) {
+							adv.devices[i]->Gamma[3] = (int)(adv.devices[i]->Gammaf[3] * 10);
 						};
 						ImGui::PopItemWidth();
 						ImGui::EndTabItem();
@@ -378,26 +378,26 @@ int main(int, char**)
 
 						ImGui::PushItemWidth(200);
 
-						if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, 9)) {
+						if (ImGui::Combo("Set Test", &adv.devices[i]->TestMode, TestModes, 9)) {
 							setTest(i);
 						}
 
-						if ((devices[i]->TestMode == 6) || (devices[i]->TestMode == 8)) {
+						if ((adv.devices[i]->TestMode == 6) || (adv.devices[i]->TestMode == 8)) {
 							float tempTestCols[4];
-							tempTestCols[0] = ((float)devices[i]->TestCols[0] / 255);
-							tempTestCols[1] = ((float)devices[i]->TestCols[1] / 255);
-							tempTestCols[2] = ((float)devices[i]->TestCols[2] / 255);
-							tempTestCols[3] = ((float)devices[i]->TestCols[3] / 255);
+							tempTestCols[0] = ((float)adv.devices[i]->TestCols[0] / 255);
+							tempTestCols[1] = ((float)adv.devices[i]->TestCols[1] / 255);
+							tempTestCols[2] = ((float)adv.devices[i]->TestCols[2] / 255);
+							tempTestCols[3] = ((float)adv.devices[i]->TestCols[3] / 255);
 
 							if (ImGui::ColorEdit4("Test Colour", tempTestCols)) {
-								devices[i]->TestCols[0] = (int)(tempTestCols[0] * 255);
-								devices[i]->TestCols[1] = (int)(tempTestCols[1] * 255);
-								devices[i]->TestCols[2] = (int)(tempTestCols[2] * 255);
-								devices[i]->TestCols[3] = (int)(tempTestCols[3] * 255);
+								adv.devices[i]->TestCols[0] = (int)(tempTestCols[0] * 255);
+								adv.devices[i]->TestCols[1] = (int)(tempTestCols[1] * 255);
+								adv.devices[i]->TestCols[2] = (int)(tempTestCols[2] * 255);
+								adv.devices[i]->TestCols[3] = (int)(tempTestCols[3] * 255);
 							}
 
-							if (ImGui::Checkbox("Cycle Colour Per Output", &devices[i]->TestModeCycle)) {
-								for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
+							if (ImGui::Checkbox("Cycle Colour Per Output", &adv.devices[i]->TestModeCycle)) {
+								for (uint8_t output = 0; output < adv.devices[i]->NumOutputs*0.5; output++) {
 									ImGui::PushID(output);
 									ImGui::Text("Output %02i", output + 1); ImGui::SameLine();
 									
@@ -412,7 +412,7 @@ int main(int, char**)
 						ImGui::PopItemWidth();
 						ImGui::PushItemWidth(150);
 						ImGui::Text("All Outputs (0)"); ImGui::SameLine();
-						if (ImGui::SliderInt("Output Channel", (int*)&devices[i]->TestOutputNum, 0, (int)(devices[i]->NumOutputs*0.5))) {
+						if (ImGui::SliderInt("Output Channel", (int*)&adv.devices[i]->TestOutputNum, 0, (int)(adv.devices[i]->NumOutputs*0.5))) {
 							setTest(i);
 						}
 						ImGui::PopItemWidth();
@@ -425,23 +425,23 @@ int main(int, char**)
 					{
 						ImGui::PushItemWidth(200);
 						char sName[40];
-						memcpy(sName, devices[i]->Nickname, 40);
+						memcpy(sName, adv.devices[i]->Nickname, 40);
 						if (ImGui::InputText("Nickname", sName, 40)) {
-							memset(devices[i]->Nickname, 0, 40);
-							strcpy(devices[i]->Nickname, sName);
+							memset(adv.devices[i]->Nickname, 0, 40);
+							strcpy(adv.devices[i]->Nickname, sName);
 						}
 						ImGui::PopItemWidth();
 
 						ImGui::PushItemWidth(30);
 
-						ImGui::InputScalar("Fan Control On Temp", ImGuiDataType_U8, &devices[i]->MaxTargetTemp, 0, 0, 0);
+						ImGui::InputScalar("Fan Control On Temp", ImGuiDataType_U8, &adv.devices[i]->MaxTargetTemp, 0, 0, 0);
 						ImGui::PopItemWidth();
 
-						int * tempVoltage = new int[devices[i]->NumBanks];
+						int * tempVoltage = new int[adv.devices[i]->NumBanks];
 
-						for (uint8_t bank = 0; bank < devices[i]->NumBanks; bank++) {
+						for (uint8_t bank = 0; bank < adv.devices[i]->NumBanks; bank++) {
 							ImGui::PushID(bank);
-							ImGui::Text("Bank %i: %.2f V", bank + 1, ((float)devices[i]->VoltageBanks[bank] / 10.f));
+							ImGui::Text("Bank %i: %.2f V", bank + 1, ((float)adv.devices[i]->VoltageBanks[bank] / 10.f));
 							ImGui::PopID();
 						}
 
