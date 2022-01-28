@@ -37,12 +37,12 @@ int b_refreshAdaptorsRequest = 0;
 int id_networkConfigRequest = -1;
 int currentAdaptor = 0;
 
+static std::string adaptor_string = "Select Adaptor";
+
 int main(int, char**)
 {
 
-	refreshAdaptors();
-
-	adv.poll();
+	adv.refreshAdaptors();
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -156,33 +156,32 @@ int main(int, char**)
 				b_refreshAdaptorsRequest = true;
 			} ImGui::SameLine();
 
-			ImGui::PushItemWidth(120);
+			ImGui::PushItemWidth(130);
 
 			if (ImGui::BeginCombo("###Adaptor", adaptor_string.c_str(), 0))
 			{
-				for (int n = 1; n < networkAdaptors.size(); n++)
+				for (int n = 0; n < adv.networkAdaptors.size(); n++)
 				{
 					const bool is_selected = (currentAdaptor == n);
-					if (ImGui::Selectable(networkAdaptors[n].c_str(), is_selected))
+					if (ImGui::Selectable(adv.networkAdaptors[n].c_str(), is_selected))
 					{
-						currentAdaptor = n;
-						adaptor_string = networkAdaptors[n];
+						adaptor_string = adv.networkAdaptors[n];
+						std::cout << "Selected adaptor: " << adv.networkAdaptors[n] << std::endl;
 						if(r_socket.is_open()) {
 							r_socket.close();	
 						}
-						//r_socket.open(boost::asio::ip::udp::v4());
-						//r_socket.bind(boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort));
+						
+						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adv.networkAdaptors[n].c_str()), AdvPort);
 
-						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adaptor_string), AdvPort);
-						//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), AdvPort);
-						r_socket = boost::asio::ip::udp::socket(io_context, receiver);
+						try {
+							r_socket = boost::asio::ip::udp::socket(io_context, receiver);
+						}
+						catch (boost::exception& e) {
+							std::cout << "Failed to setup receiver socket" << std::endl;
+						}
 
 						b_pollRequest = true;
 					}
-
-					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-					if (is_selected)
-						ImGui::SetItemDefaultFocus();
 				}
 				ImGui::EndCombo();
 				ImGui::PopItemWidth();
@@ -478,7 +477,7 @@ int main(int, char**)
         glfwSwapBuffers(window);
 
 		if (b_refreshAdaptorsRequest) {
-			refreshAdaptors();
+			adv.refreshAdaptors();
 			b_refreshAdaptorsRequest = false;
 		}
 		if (b_pollRequest) {

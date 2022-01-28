@@ -8,6 +8,7 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
+#include <boost/exception/diagnostic_information.hpp>
 
 #define AdvAdr "255.255.255.255" // Advatek zero network broadcast address
 #define AdvPort 49150 // Advatek UDP Port
@@ -21,9 +22,6 @@
 #define OpVisualIdent 0x000a // A broadcast to request the controller of the designated MAC to identify its location by flashing its status LED.
 
 #define bswap_16(x) x=((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
-
-extern std::vector <std::string> networkAdaptors;
-static std::string adaptor_string = "Select Adaptor";
 
 typedef struct tAdvatekDevice {
 	uint8_t ProtVer; // Protocol version
@@ -87,8 +85,6 @@ typedef struct tAdvatekDevice {
 	bool TestModeCycle = false;
 } sAdvatekDevice;
 
-//extern std::vector<sAdvatekDevice*> devices;
-
 std::string macString(uint8_t * address);
 std::string ipString(uint8_t * address);
 
@@ -113,7 +109,6 @@ void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::v
 void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message);
 void broadcast_udp_message(std::vector<uint8_t> message);
 void setEndUniverseChannel(int startUniverse, int startChannel, int pixelCount, int outputGrouping, int &endUniverse, int &endChannel);
-void refreshAdaptors();
 
 class advatek_manager
 {
@@ -122,6 +117,7 @@ public:
 	std::string macStr(uint8_t * address);
 	std::string ipStr(uint8_t * address);
 
+	std::vector <std::string> networkAdaptors;
 	std::vector<sAdvatekDevice*> devices;
 
 	void updateDevice(int d);
@@ -132,6 +128,7 @@ public:
 	void process_opPollReply(uint8_t * data);
 	void process_opTestAnnounce(uint8_t * data);
 	void process_udp_message(uint8_t * data);
+	void refreshAdaptors();
 	
 	constexpr static const char* RGBW_Order[24] = {
 		"R-G-B/R-G-B-W",
@@ -161,6 +158,5 @@ public:
 	};
 
 private:
-	std::vector <std::string> networkAdaptors;
 
 };

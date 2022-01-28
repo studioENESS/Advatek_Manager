@@ -1,7 +1,5 @@
 #include "advatek_assistor.h"
-
-//std::vector<sAdvatekDevice*> advatek_manager::devices;
-std::vector <std::string> networkAdaptors;
+//std::vector <std::string> networkAdaptors;
 
 const char* DriverTypes[3] = {
 		"RGB only",
@@ -286,7 +284,7 @@ void advatek_manager::bc_networkConfig(int d) {
 
 void advatek_manager::poll() {
 
-	clearDevices();
+	advatek_manager::clearDevices();
 
 	std::vector<uint8_t> dataTape;
 	dataTape.resize(12);
@@ -567,10 +565,10 @@ void advatek_manager::process_udp_message(uint8_t * data) {
 	}
 }
 
-void refreshAdaptors() {
+void advatek_manager::refreshAdaptors() {
 
-	networkAdaptors.clear();
-	networkAdaptors.push_back("Choose Network Adaptor");
+	advatek_manager::networkAdaptors.clear();
+
 	boost::asio::ip::tcp::resolver::iterator it;
 	try
 	{
@@ -578,7 +576,8 @@ void refreshAdaptors() {
 	}
 	catch (boost::exception& e)
 	{
-		std::cout << "Query didn't resolve Any adaptors" << std::endl;
+		std::cout << "Query didn't resolve Any adaptors - " << boost::diagnostic_information(e) << std::endl;
+		return;
 	}
 
 	while (it != boost::asio::ip::tcp::resolver::iterator())
@@ -586,12 +585,12 @@ void refreshAdaptors() {
 		boost::asio::ip::address addr = (it++)->endpoint().address();
 		std::cout << "adaptor found: " << addr.to_string() << std::endl;
 		if (addr.is_v4()) {
-			networkAdaptors.push_back(addr.to_string());
+			advatek_manager::networkAdaptors.push_back(addr.to_string());
 		}
 	}
-	if (networkAdaptors.size() > 0) {
-		adaptor_string = networkAdaptors[1];
-	}
+	//if (advatek_manager::networkAdaptors.size() > 0) {
+	//	currentAdaptor = 1;
+	//}
 }
 
 std::string advatek_manager::macStr(uint8_t * address)
