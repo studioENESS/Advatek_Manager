@@ -43,6 +43,10 @@ int main(int, char**)
 {
 
 	adv.refreshAdaptors();
+	if(adv.networkAdaptors.size() > 0) {
+		adaptor_string = adv.networkAdaptors[0];
+		b_pollRequest = true;
+	}
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -166,12 +170,13 @@ int main(int, char**)
 					if (ImGui::Selectable(adv.networkAdaptors[n].c_str(), is_selected))
 					{
 						adaptor_string = adv.networkAdaptors[n];
-						std::cout << "Selected adaptor: " << adv.networkAdaptors[n] << std::endl;
+						//std::cout << "Selected adaptor: " << adv.networkAdaptors[n] << std::endl;
 						if(r_socket.is_open()) {
 							r_socket.close();	
 						}
 						
 						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adv.networkAdaptors[n].c_str()), AdvPort);
+						//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), AdvPort);
 
 						try {
 							r_socket = boost::asio::ip::udp::socket(io_context, receiver);

@@ -22,10 +22,18 @@
     
     mkdir build && cd build
     
-    cmake ../
+    cmake ../ 
     
     make
 
 
+ **For debug use GDB**
+
+    cmake -DCMAKE_BUILD_TYPE=Debug ../
+    
+    make
+    
+    gdb ./advatek_assistor
+`
 > To use the WiFi for internet make sure you set the Wired connection to `Only use connection for resources on it's network`
 

@@ -81,6 +81,8 @@ bool advatek_manager::deviceExist(uint8_t * Mac) {
 
 boost::asio::io_context io_context;
 boost::asio::ip::udp::endpoint receiver(boost::asio::ip::udp::v4(), AdvPort);
+//boost::asio::ip::udp::endpoint receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), AdvPort);
+
 boost::asio::ip::udp::socket s_socket(io_context);
 boost::asio::ip::udp::socket r_socket = boost::asio::ip::udp::socket(io_context, receiver);
 
@@ -89,25 +91,32 @@ boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "");
 
 void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message)
 {
+
+	//boost::asio::ip::udp::endpoint senderEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port);
+	try {
+		
+		// Open the socket
+
+		s_socket.open(boost::asio::ip::udp::v4());
+		//s_socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
+		s_socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
+		
+		boost::asio::ip::udp::endpoint senderEndpoint(boost::asio::ip::address::from_string(ip_address), port);
+
+		// And send the string... (synchronous / blocking)
+		s_socket.send_to(boost::asio::buffer(message), senderEndpoint);
+
+		printf("Message sent to %s\n", ip_address.c_str());
+	
+	} catch (const boost::system::system_error& ex) {
+		std::cout << "Failed to send message to " <<  ip_address.c_str() << std::endl;
+		std::cout << ex.what() << std::endl;
+	}
+
 	if(s_socket.is_open()){
 		s_socket.close();
 	}
-	s_socket.open(boost::asio::ip::udp::v4());
-	s_socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
 
-	boost::asio::ip::udp::endpoint senderEndpoint(boost::asio::ip::address::from_string(ip_address), port);
-
-	try
-	{
-		s_socket.send_to(boost::asio::buffer(message), senderEndpoint);
-		s_socket.close();
-		printf("Message sent to %s\n", ip_address.c_str());
-
-	}
-	catch (std::exception e)
-	{
-		printf("Cannot broadcast message to %s \n", ip_address.c_str());
-	}
 }
 
 void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message)
