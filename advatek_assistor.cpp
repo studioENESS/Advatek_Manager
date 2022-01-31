@@ -33,6 +33,33 @@ const char* TestModes[9] = {
 	"Single Pixel"
 };
 
+ const char* advatek_manager::RGBW_Order[24] = {
+		"R-G-B/R-G-B-W",
+		"R-B-G/R-B-G-W",
+		"G-R-B/G-R-B-W",
+		"B-R-G/B-R-G-W",
+		"G-B-R/G-B-R-W",
+		"B-G-R/B-G-R-W",
+		"R-G-W-B",
+		"R-B-W-G",
+		"G-R-W-B",
+		"B-R-W-G",
+		"G-B-W-R",
+		"B-G-W-R",
+		"R-W-G-B",
+		"R-W-B-G",
+		"G-W-R-B",
+		"B-W-R-G",
+		"G-W-B-R",
+		"B-W-G-R",
+		"W-R-G-B",
+		"W-R-B-G",
+		"W-G-R-B",
+		"W-B-R-G",
+		"W-G-B-R",
+		"W-B-G-R"
+	};
+
 std::string macString(uint8_t * address) {
 	std::stringstream ss;
 
@@ -99,6 +126,7 @@ boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "");
 void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message)
 {
 
+	/*
 	boost::asio::io_service io_service;
 	boost::asio::ip::udp::socket socket(io_service);
 	boost::asio::ip::udp::endpoint local_endpoint;
@@ -120,15 +148,14 @@ void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_
 	} catch (boost::system::system_error e) {
 		std::cout << e.what() << std::endl;
 	}
+	*/
 
-/*
+
 	//boost::asio::ip::udp::endpoint senderEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port);
 	try {
 		
-		// Open the socket
-
 		s_socket.open(boost::asio::ip::udp::v4());
-		//s_socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
+		s_socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
 		s_socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
 
 		// Set which interface to use 
@@ -138,11 +165,10 @@ void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_
 
 		boost::asio::ip::udp::endpoint senderEndpoint(boost::asio::ip::address::from_string(ip_address), port);
 
-		// And send the string... (synchronous / blocking)
 		s_socket.send_to(boost::asio::buffer(message), senderEndpoint);
+		
+		std::cout << "Message send from " << advatek_manager::networkAdaptors[currentAdaptor].c_str() << " to " <<  ip_address.c_str() << std::endl;
 
-		printf("Message sent to %s\n", ip_address.c_str());
-	
 	} catch (const boost::system::system_error& ex) {
 		std::cout << "Failed to send message from " << advatek_manager::networkAdaptors[currentAdaptor].c_str() << " to " <<  ip_address.c_str() << std::endl;
 		std::cout << ex.what() << std::endl;
@@ -151,7 +177,7 @@ void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_
 	if(s_socket.is_open()){
 		s_socket.close();
 	}
-*/
+
 }
 
 void advatek_manager::unicast_udp_message(std::string ip_address, std::vector<uint8_t> message)

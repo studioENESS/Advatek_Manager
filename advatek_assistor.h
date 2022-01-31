@@ -133,32 +133,7 @@ public:
 
 	void refreshAdaptors();
 	
-	constexpr static const char* RGBW_Order[24] = {
-		"R-G-B/R-G-B-W",
-		"R-B-G/R-B-G-W",
-		"G-R-B/G-R-B-W",
-		"B-R-G/B-R-G-W",
-		"G-B-R/G-B-R-W",
-		"B-G-R/B-G-R-W",
-		"R-G-W-B",
-		"R-B-W-G",
-		"G-R-W-B",
-		"B-R-W-G",
-		"G-B-W-R",
-		"B-G-W-R",
-		"R-W-G-B",
-		"R-W-B-G",
-		"G-W-R-B",
-		"B-W-R-G",
-		"G-W-B-R",
-		"B-W-G-R",
-		"W-R-G-B",
-		"W-R-B-G",
-		"W-G-R-B",
-		"W-B-R-G",
-		"W-G-B-R",
-		"W-B-G-R"
-	};
+	static const char* RGBW_Order[24];
 
 private:
 

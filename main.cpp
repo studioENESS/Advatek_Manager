@@ -3,9 +3,9 @@
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
-#if defined(__ARM__)
+//#if defined(__ARM__)
 #define IMGUI_IMPL_OPENGL_ES2 // RPI
-#endif
+//#endif
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -347,7 +347,7 @@ int main(int, char**)
 
 						ImGui::Text("Set All  "); ImGui::SameLine();
 						int tempAllColOrder = adv.devices[i]->OutputColOrder[0];
-						if (ImGui::Combo("Order ##all", &tempAllColOrder, adv.RGBW_Order, 24)) {
+						if (ImGui::Combo("Order ##all", &tempAllColOrder, advatek_manager::RGBW_Order, 24)) {
 							for (uint8_t output = 0; output < adv.devices[i]->NumOutputs*0.5; output++) {
 								adv.devices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
 							}
@@ -404,6 +404,7 @@ int main(int, char**)
 								adv.devices[i]->TestCols[1] = (int)(tempTestCols[1] * 255);
 								adv.devices[i]->TestCols[2] = (int)(tempTestCols[2] * 255);
 								adv.devices[i]->TestCols[3] = (int)(tempTestCols[3] * 255);
+								adv.setTest(i);
 							}
 
 							if (ImGui::Checkbox("Cycle Colour Per Output", &adv.devices[i]->TestModeCycle)) {
@@ -413,9 +414,6 @@ int main(int, char**)
 									
 									ImGui::PopID();
 								}
-							}
-							else {
-								adv.setTest(i);
 							}
 						}
 
