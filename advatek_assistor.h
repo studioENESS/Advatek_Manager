@@ -105,9 +105,6 @@ extern boost::asio::ip::udp::socket r_socket;
 extern boost::asio::ip::tcp::resolver resolver;
 extern boost::asio::ip::tcp::resolver::query query;
 
-void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message);
-void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message);
-void broadcast_udp_message(std::vector<uint8_t> message);
 void setEndUniverseChannel(int startUniverse, int startChannel, int pixelCount, int outputGrouping, int &endUniverse, int &endChannel);
 
 class advatek_manager
@@ -118,6 +115,8 @@ public:
 	std::string ipStr(uint8_t * address);
 
 	std::vector <std::string> networkAdaptors;
+	int currentAdaptor = 0;
+	
 	std::vector<sAdvatekDevice*> devices;
 
 	void updateDevice(int d);
@@ -128,6 +127,10 @@ public:
 	void process_opPollReply(uint8_t * data);
 	void process_opTestAnnounce(uint8_t * data);
 	void process_udp_message(uint8_t * data);
+	void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message);
+	void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message);
+	void broadcast_udp_message(std::vector<uint8_t> message);
+
 	void refreshAdaptors();
 	
 	constexpr static const char* RGBW_Order[24] = {

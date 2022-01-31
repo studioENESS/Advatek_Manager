@@ -35,7 +35,6 @@ advatek_manager adv;
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
 int id_networkConfigRequest = -1;
-int currentAdaptor = 0;
 
 static std::string adaptor_string = "Select Adaptor";
 
@@ -171,7 +170,7 @@ int main(int, char**)
 			{
 				for (int n = 0; n < adv.networkAdaptors.size(); n++)
 				{
-					const bool is_selected = (currentAdaptor == n);
+					const bool is_selected = (adv.currentAdaptor == n);
 					if (ImGui::Selectable(adv.networkAdaptors[n].c_str(), is_selected))
 					{
 						adaptor_string = adv.networkAdaptors[n];
