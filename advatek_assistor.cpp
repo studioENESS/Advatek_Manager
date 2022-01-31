@@ -1,5 +1,7 @@
 #include "advatek_assistor.h"
 
+namespace pt = boost::property_tree;
+
 const char* DriverTypes[3] = {
 		"RGB only",
 		"RGBW only",
@@ -661,6 +663,28 @@ void advatek_manager::refreshAdaptors() {
 	if (advatek_manager::networkAdaptors.size() > 0) {
 		currentAdaptor = 0;
 	}
+}
+
+void advatek_manager::importJSON(int d) {
+	
+}
+
+void advatek_manager::exportJSON(int d) {
+	auto device = advatek_manager::devices[d];
+	pt::ptree root;
+	root.put("Protocol", device->Protocol);
+	root.put("HoldLastFrame", device->HoldLastFrame);
+
+	pt::ptree OutputPixels;
+	
+	for (int output = 0; output < device->NumOutputs; output++)
+	{
+		OutputPixels.put(std::to_string(output), std::to_string(device->OutputPixels[output]));
+	}
+
+	root.add_child("OutputPixels", OutputPixels);
+
+	pt::write_json(std::cout, root);
 }
 
 std::string advatek_manager::macStr(uint8_t * address)

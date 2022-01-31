@@ -3,9 +3,9 @@
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
-//#if defined(__ARM__)
+#if defined(__arm__)
 #define IMGUI_IMPL_OPENGL_ES2 // RPI
-//#endif
+#endif
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -34,9 +34,31 @@ advatek_manager adv;
 
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
-int id_networkConfigRequest = -1;
 
 static std::string adaptor_string = "Select Adaptor";
+
+void button_update_controller_settings(int i) {
+	if (ImGui::Button("Update"))
+	{
+		adv.updateDevice(i);
+		b_pollRequest = true;
+	}
+}
+
+void button_import_export_JSON(int i) {
+
+	if (ImGui::Button("Import JSON"))
+	{
+		adv.importJSON(i);
+	}
+	
+	ImGui::SameLine();
+
+	if (ImGui::Button("Export JSON"))
+	{
+		adv.exportJSON(i);
+	}
+}
 
 int main(int, char**)
 {
@@ -256,9 +278,10 @@ int main(int, char**)
 							adv.devices[i]->DHCP = 0;
 						}
 
-						if (ImGui::Button("Update Network Config"))
+						if (ImGui::Button("Update Network"))
 						{
-							id_networkConfigRequest = i;
+							adv.bc_networkConfig(i);
+							b_pollRequest = true;
 						}
 
 						ImGui::EndTabItem();
@@ -332,6 +355,10 @@ int main(int, char**)
 						ImGui::PopItemWidth();
 
 						//ImGui::Text("DMX512 Outputs");
+
+						button_import_export_JSON(i);
+						button_update_controller_settings(i);
+
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("LEDs"))
@@ -380,6 +407,10 @@ int main(int, char**)
 							adv.devices[i]->Gamma[3] = (int)(adv.devices[i]->Gammaf[3] * 10);
 						};
 						ImGui::PopItemWidth();
+
+						button_import_export_JSON(i);
+						button_update_controller_settings(i);
+
 						ImGui::EndTabItem();
 					}
 					if (ImGui::BeginTabItem("Test"))
@@ -425,6 +456,8 @@ int main(int, char**)
 						}
 						ImGui::PopItemWidth();
 
+						button_update_controller_settings(i);
+
 						ImGui::EndTabItem();
 					}
 
@@ -453,17 +486,12 @@ int main(int, char**)
 							ImGui::PopID();
 						}
 
+						button_update_controller_settings(i);
+
 						ImGui::EndTabItem();
+						
 					}
 					ImGui::EndTabBar();
-
-					ImGui::Separator();
-
-					if (ImGui::Button("Update"))
-					{
-						adv.updateDevice(i);
-						// b_pollRequest = true; 
-					}
 
 					ImGui::TreePop();
 				}
@@ -490,10 +518,6 @@ int main(int, char**)
 		if (b_pollRequest) {
 			adv.poll();
 			b_pollRequest = false;
-		}
-		if (id_networkConfigRequest > -1) {
-			adv.bc_networkConfig(id_networkConfigRequest);
-			id_networkConfigRequest = -1;
 		}
     }
 

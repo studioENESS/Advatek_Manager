@@ -2,8 +2,12 @@
 
 #include <sstream>
 #include <iostream>
+#include <string>  
 #include <iomanip>
 #include <vector>
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
@@ -133,6 +137,9 @@ public:
 
 	void refreshAdaptors();
 	
+	void importJSON(int i);
+	void exportJSON(int i);
+
 	static const char* RGBW_Order[24];
 
 private:
