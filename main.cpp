@@ -45,7 +45,7 @@ int main(int, char**)
 	adv.refreshAdaptors();
 	if(adv.networkAdaptors.size() > 0) {
 		adaptor_string = adv.networkAdaptors[0];
-		b_pollRequest = true;
+		adv.poll();
 	}
 
     // Setup window
@@ -124,9 +124,14 @@ int main(int, char**)
 		
 		if (r_socket.available() > 0)
 		{
-			std::size_t bytes_transferred = r_socket.receive_from(boost::asio::buffer(buffer), receiver);
-			if (bytes_transferred > 1) {  // we have data
-				adv.process_udp_message(buffer);
+			try {
+				std::size_t bytes_transferred = r_socket.receive_from(boost::asio::buffer(buffer), receiver);
+				if (bytes_transferred > 1) {  // we have data
+					adv.process_udp_message(buffer);
+				}
+			} catch (const boost::system::system_error& ex) {
+				std::cout << "Failed to receive from socket ... " << std::endl;
+				std::cout << ex.what() << std::endl;
 			}
 		}
 
@@ -175,8 +180,8 @@ int main(int, char**)
 							r_socket.close();	
 						}
 						
-						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adv.networkAdaptors[n].c_str()), AdvPort);
-						//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), AdvPort);
+						//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adv.networkAdaptors[n].c_str()), AdvPort);
+						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), AdvPort);
 
 						try {
 							r_socket = boost::asio::ip::udp::socket(io_context, receiver);
