@@ -16,6 +16,8 @@
 #endif
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
+#include "portable-file-dialogs.h";
+
 #include "advatek_assistor.h"
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
@@ -45,18 +47,31 @@ void button_update_controller_settings(int i) {
 	}
 }
 
-void button_import_export_JSON(int i) {
+void button_import_export_JSON(int d) {
 
 	if (ImGui::Button("Import JSON"))
 	{
-		adv.importJSON(i);
+		auto path = pfd::open_file("Select a file").result();
+		if (!path.empty()) {
+			adv.importJSON(d, path.at(0));
+		}
+		
 	}
 	
 	ImGui::SameLine();
 
 	if (ImGui::Button("Export JSON"))
 	{
-		adv.exportJSON(i);
+		std::stringstream ss;
+		ss << adv.devices[d]->Nickname << ".json";
+		std::string filename(ss.str());
+		std::replace(filename.begin(), filename.end(), ' ', '_');
+
+		auto path = pfd::save_file("Select a file", filename).result();
+		if (!path.empty()) {
+			adv.exportJSON(d, path);
+		}
+
 	}
 }
 
@@ -238,6 +253,8 @@ int main(int, char**)
 					ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_None);
 					if (ImGui::BeginTabItem("Network"))
 					{
+						ImGui::Text("MAC: %s", macString(adv.devices[i]->Mac));
+
 						ImGui::Text("Static IP Address:");
 
 						ImGui::PushItemWidth(30);
@@ -485,6 +502,7 @@ int main(int, char**)
 							ImGui::Text("Bank %i: %.2f V", bank + 1, ((float)adv.devices[i]->VoltageBanks[bank] / 10.f));
 							ImGui::PopID();
 						}
+
 
 						button_update_controller_settings(i);
 

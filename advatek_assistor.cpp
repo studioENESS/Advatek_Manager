@@ -66,7 +66,7 @@ std::string macString(uint8_t * address) {
 	std::stringstream ss;
 
 	for (int i(0); i < 6; i++) {
-		ss << std::hex << std::setw(2) << static_cast<int>(address[i]);
+		ss << std::hex << std::uppercase << std::setw(2) << static_cast<int>(address[i]);
 		if (i < 5) ss << ":";
 	}
 
@@ -665,48 +665,149 @@ void advatek_manager::refreshAdaptors() {
 	}
 }
 
-void advatek_manager::importJSON(int d) {
+void advatek_manager::importJSON(int d, std::string path) {
+	auto device = advatek_manager::devices[d];
+	pt::ptree root;
+	pt::read_json(path, root);
+	
+	//std::string s_Mac = root.get<std::string>("Mac");
+	//load_macStr(s_Mac, device->Mac);
+
+	std::string s_StaticIP = root.get<std::string>("StaticIP");
+	load_ipStr(s_StaticIP, device->StaticIP);
 	
 }
 
-void advatek_manager::exportJSON(int d) {
+void advatek_manager::exportJSON(int d, std::string path) {
 	auto device = advatek_manager::devices[d];
 	pt::ptree root;
-	root.put("Protocol", device->Protocol);
+
+	root.put("CurrentProtVer", device->CurrentProtVer);
+	root.put("Mac", macString(device->Mac));
+	root.put("DHCP", device->DHCP);
+	root.put("StaticIP", ipString(device->StaticIP));
+	root.put("StaticSM", ipString(device->StaticSM));
+
+	root.put("Model", device->Model);
 	root.put("HoldLastFrame", device->HoldLastFrame);
+	root.put("SimpleConfig", device->SimpleConfig);
+	root.put("MaxPixPerOutput", device->MaxPixPerOutput);
+	root.put("NumOutputs", device->NumOutputs);
 
 	pt::ptree OutputPixels;
-	
+	pt::ptree OutputUniv;
+	pt::ptree OutputChan;
+	pt::ptree OutputNull;
+	pt::ptree OutputZig;
+	pt::ptree OutputReverse;
+	pt::ptree OutputColOrder;
+	pt::ptree OutputGrouping;
+	pt::ptree OutputBrightness;
+
 	for (int output = 0; output < device->NumOutputs; output++)
 	{
 		OutputPixels.put(std::to_string(output), std::to_string(device->OutputPixels[output]));
+		OutputUniv.put(std::to_string(output), std::to_string(device->OutputUniv[output]));
+		OutputChan.put(std::to_string(output), std::to_string(device->OutputChan[output]));
+		OutputNull.put(std::to_string(output), std::to_string(device->OutputNull[output]));
+		OutputZig.put(std::to_string(output), std::to_string(device->OutputZig[output]));
+		OutputReverse.put(std::to_string(output), std::to_string(device->OutputReverse[output]));
+		OutputColOrder.put(std::to_string(output), std::to_string(device->OutputColOrder[output]));
+		OutputGrouping.put(std::to_string(output), std::to_string(device->OutputGrouping[output]));
+		OutputBrightness.put(std::to_string(output), std::to_string(device->OutputBrightness[output]));
 	}
 
 	root.add_child("OutputPixels", OutputPixels);
+	root.add_child("OutputUniv", OutputUniv);
+	root.add_child("OutputChan", OutputChan);
+	root.add_child("OutputNull", OutputNull);
+	root.add_child("OutputZig", OutputZig);
+	root.add_child("OutputReverse", OutputReverse);
+	root.add_child("OutputColOrder", OutputColOrder);
+	root.add_child("OutputGrouping", OutputGrouping);
+	root.add_child("OutputBrightness", OutputBrightness);
+	
+	root.put("NumDMXOutputs", device->NumDMXOutputs);
+	root.put("ProtocolsOnDmxOut", device->ProtocolsOnDmxOut);
 
-	pt::write_json(std::cout, root);
-}
+	pt::ptree DmxOutOn;
+	pt::ptree DmxOutUniv;
 
-std::string advatek_manager::macStr(uint8_t * address)
-{
-	std::stringstream ss;
-
-	for (int i(0); i < 6; i++) {
-		ss << std::hex << std::setw(2) << static_cast<int>(address[i]);
-		if (i < 5) ss << ":";
+	for (int output = 0; output < device->NumDMXOutputs; output++)
+	{
+		DmxOutOn.put(std::to_string(output), std::to_string(device->DmxOutOn[output]));
+		DmxOutUniv.put(std::to_string(output), std::to_string(device->DmxOutUniv[output]));
 	}
 
-	return ss.str();
-}
+	root.add_child("DmxOutOn", DmxOutOn);
+	root.add_child("DmxOutUniv", DmxOutUniv);
 
-std::string advatek_manager::ipStr(uint8_t * address)
-{
-	std::stringstream ss;
+	root.put("NumDrivers", device->NumDrivers);
 
-	for (int i(0); i < 4; i++) {
-		ss << static_cast<int>(address[i]);
-		if (i < 3) ss << ".";
+	pt::ptree DriverType;
+	pt::ptree DriverSpeed;
+	pt::ptree DriverExpandable;
+	pt::ptree DriverNames;
+
+	for (int output = 0; output < device->NumDrivers; output++)
+	{
+		DriverType.put(std::to_string(output), std::to_string(device->DriverType[output]));
+		DriverSpeed.put(std::to_string(output), std::to_string(device->DriverSpeed[output]));
+		DriverExpandable.put(std::to_string(output), std::to_string(device->DriverExpandable[output]));
+		DriverNames.put(std::to_string(output), (device->DriverNames[output]));
 	}
 
-	return ss.str();
+	root.add_child("DriverType", DriverType);
+	root.add_child("DriverSpeed", DriverSpeed);
+	root.add_child("DriverExpandable", DriverExpandable);
+	root.add_child("DriverNames", DriverNames);
+
+	root.put("CurrentDriver", device->CurrentDriver);
+	root.put("CurrentDriverType", device->CurrentDriverType);
+	root.put("CurrentDriverSpeed", device->CurrentDriverSpeed);
+	root.put("CurrentDriverExpanded", device->CurrentDriverExpanded);
+	root.put("CurrentDriverExpanded", device->CurrentDriverExpanded);
+
+	pt::ptree Gamma;
+
+	for (int c = 0; c < 4; c++)
+	{
+		Gamma.put(std::to_string(c), std::to_string(device->Gamma[c]));
+	}
+
+	root.add_child("Gamma", Gamma);
+
+	root.put("Nickname", device->Nickname);
+	root.put("MaxTargetTemp", device->MaxTargetTemp);
+	
+	//pt::write_json(std::cout, root);
+
+	std::ofstream outfile;
+	outfile.open(path, std::ios::out | std::ios::trunc);
+	//outfile << pt::write_json(std::cout, root) << endl;
+	pt::write_json(outfile, root);
+	outfile.close(); // Closes file
+
+}
+
+void load_ipStr(std::string ipStr, uint8_t *address)
+{
+	int ip1, ip2, ip3, ip4;
+	sscanf(ipStr.c_str(), "%i.%i.%i.%i", &ip1, &ip2, &ip3, &ip4);
+	address[0] = ip1;
+	address[1] = ip2;
+	address[2] = ip3;
+	address[3] = ip4;
+}
+
+void load_macStr(std::string macStr, uint8_t *address)
+{
+	int mac1, mac2, mac3, mac4, mac5, mac6;
+	sscanf(macStr.c_str(), "%02x:%02x:%02x:%02x:%02x:%02x", &mac1, &mac2, &mac3, &mac4, &mac5, &mac6);
+	address[0] = mac1;
+	address[1] = mac2;
+	address[2] = mac3;
+	address[3] = mac4;
+	address[4] = mac5;
+	address[5] = mac6;
 }

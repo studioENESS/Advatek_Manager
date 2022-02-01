@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <string>  
 #include <iomanip>
 #include <vector>
@@ -60,22 +61,26 @@ typedef struct tAdvatekDevice {
 	uint8_t* OutputColOrder;//[NumOutputs]; // RGB order for each output
 	uint16_t* OutputGrouping;//[2 * NumOutputs]; // Pixel grouping
 	uint8_t* OutputBrightness;//[NumOutputs]; // Brightness limiting
+	
 	uint8_t NumDMXOutputs; // Number of DMX outputs
 	uint8_t ProtocolsOnDmxOut;
 	uint8_t* DmxOutOn;//[NumDMXOutputs]; // DMX outputs on or off
 	uint16_t* DmxOutUniv;//[2 * NumDMXOutputs]; // Hi and Lo bytes of DMX output universes
+	
 	uint8_t NumDrivers; // Number of pixel drivers
 	uint8_t DriverNameLength; // Length of pixel driver strings
 	uint8_t* DriverType;//[NumDrivers]; // 0 = RGB only, 1 = RGBW only, 2 = Either
 	uint8_t* DriverSpeed;//[NumDrivers]; // 0 = N/A, 1 = slow only, 2 = fast only, 3 = either, 4 = adjustable clock 0.4 - 2.9MHz(12 step)
 	uint8_t* DriverExpandable;// [NumDrivers]; // 0 = Normal mode only, 1 = capable of expanded mode
 	char** DriverNames;// [NumDrivers][LENGTH_DRIVER_STRINGS]; // Null terminated strings of driver types
+	
 	int CurrentDriver; // Current pixel protocol selection (index)
 	uint8_t CurrentDriverType; // RGB = 0, RGBW = 1
 	int CurrentDriverSpeed; // Output chip speed (0 = Slow, 1 = Fast)
 	uint8_t CurrentDriverExpanded; // Expanded/Condensed Mode
 	uint8_t Gamma[4]; // R, G & B Gamma
 	float Gammaf[4];
+	
 	char Nickname[40]; // if the product has a nickname, null terminatedDriverNames    uint16_t Temperature; // Hi byte of temp reading
 	uint16_t Temperature;
 	uint8_t MaxTargetTemp; // Max target temperature (fan control). 0xFF means no fan control.
@@ -110,6 +115,8 @@ extern boost::asio::ip::tcp::resolver resolver;
 extern boost::asio::ip::tcp::resolver::query query;
 
 void setEndUniverseChannel(int startUniverse, int startChannel, int pixelCount, int outputGrouping, int &endUniverse, int &endChannel);
+void load_ipStr(std::string ipStr, uint8_t *address);
+void load_macStr(std::string macStr, uint8_t *address);
 
 class advatek_manager
 {
@@ -137,8 +144,8 @@ public:
 
 	void refreshAdaptors();
 	
-	void importJSON(int i);
-	void exportJSON(int i);
+	void importJSON(int d, std::string path);
+	void exportJSON(int d, std::string path);
 
 	static const char* RGBW_Order[24];
 
