@@ -28,7 +28,7 @@
     make
 
 
- **For debug use GDB**
+ **For debugging on Raspberry Pi use GDB**
 
     cmake -DCMAKE_BUILD_TYPE=Debug ../
     
@@ -36,5 +36,5 @@
     
     gdb ./advatek_assistor
 `
-> To use the WiFi for internet make sure you set the Wired connection to `Only use connection for resources on it's network`
+> Adaptor selection is not working properly on the Raspberry yet. Turn WiFi off. :ok_hand:
 
