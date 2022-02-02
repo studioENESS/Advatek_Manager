@@ -28,6 +28,15 @@
 
 #define bswap_16(x) x=((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
+#define GetValueFromJson(type, atr) device->atr = root.get<type>(#atr);
+#define GetChildIntValuesFromJson(atr) \
+	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
+	 device->atr[std::stoi(node.first)] = std::stoi(node.second.data()); }
+
+#define GetChildStringValuesFromJson(atr) \
+	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
+	 device->atr[std::stoi(node.first)] = std::string(node.second.data()).c_str(); }
+
 typedef struct tAdvatekDevice {
 	uint8_t ProtVer; // Protocol version
 	uint8_t CurrentProtVer; // Using Protocol version

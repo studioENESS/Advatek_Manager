@@ -40,7 +40,7 @@ int b_refreshAdaptorsRequest = 0;
 static std::string adaptor_string = "Select Adaptor";
 
 void button_update_controller_settings(int i) {
-	if (ImGui::Button("Update"))
+	if (ImGui::Button("Update Settings"))
 	{
 		adv.updateDevice(i);
 		b_pollRequest = true;
@@ -253,8 +253,6 @@ int main(int, char**)
 					ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_None);
 					if (ImGui::BeginTabItem("Network"))
 					{
-						ImGui::Text("MAC: %s", macString(adv.devices[i]->Mac));
-
 						ImGui::Text("Static IP Address:");
 
 						ImGui::PushItemWidth(30);
@@ -294,6 +292,8 @@ int main(int, char**)
 						if (ImGui::RadioButton("Static", &tempDHCP, 0)) {
 							adv.devices[i]->DHCP = 0;
 						}
+
+						button_import_export_JSON(i);
 
 						if (ImGui::Button("Update Network"))
 						{
@@ -481,6 +481,7 @@ int main(int, char**)
 
 					if (ImGui::BeginTabItem("Misc"))
 					{
+						ImGui::Text("MAC: %s", macString(adv.devices[i]->Mac));
 						ImGui::PushItemWidth(200);
 						char sName[40];
 						memcpy(sName, adv.devices[i]->Nickname, 40);
@@ -504,6 +505,7 @@ int main(int, char**)
 						}
 
 
+						button_import_export_JSON(i);
 						button_update_controller_settings(i);
 
 						ImGui::EndTabItem();

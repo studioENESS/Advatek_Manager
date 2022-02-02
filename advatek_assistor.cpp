@@ -667,15 +667,65 @@ void advatek_manager::refreshAdaptors() {
 
 void advatek_manager::importJSON(int d, std::string path) {
 	auto device = advatek_manager::devices[d];
+	std::string s_hold;
 	pt::ptree root;
+
 	pt::read_json(path, root);
 	
-	//std::string s_Mac = root.get<std::string>("Mac");
-	//load_macStr(s_Mac, device->Mac);
+	//root.get<std::string>("CurrentProtVer");
+	//root.get<std::string>("Mac");
+	GetValueFromJson(uint8_t, DHCP);
 
-	std::string s_StaticIP = root.get<std::string>("StaticIP");
-	load_ipStr(s_StaticIP, device->StaticIP);
+	s_hold = root.get<std::string>("StaticIP");
+	load_ipStr(s_hold, device->StaticIP);
+	s_hold = root.get<std::string>("StaticSM");
+	load_ipStr(s_hold, device->StaticSM);
+
+	//device->Model = root.get<std::string>("Model");
+	GetValueFromJson(uint8_t,  HoldLastFrame);
+	GetValueFromJson(uint8_t,  SimpleConfig);
+	GetValueFromJson(uint16_t, MaxPixPerOutput);
+	GetValueFromJson(uint8_t,  NumOutputs);
+
+	//for (pt::ptree::value_type &node : root.get_child("OutputPixels"))
+	//{
+	//	device->OutputPixels[std::stoi(node.first)] = std::stoi(node.second.data());
+	//}
+
+	GetChildIntValuesFromJson(OutputPixels);
+	GetChildIntValuesFromJson(OutputUniv);
+	GetChildIntValuesFromJson(OutputChan);
+	GetChildIntValuesFromJson(OutputNull);
+	GetChildIntValuesFromJson(OutputZig);
+	GetChildIntValuesFromJson(OutputReverse);
+	GetChildIntValuesFromJson(OutputColOrder);
+	GetChildIntValuesFromJson(OutputGrouping);
+	GetChildIntValuesFromJson(OutputBrightness);
+
+	GetValueFromJson(uint8_t, ProtocolsOnDmxOut);
+
+	GetChildIntValuesFromJson(DmxOutOn);
+	GetChildIntValuesFromJson(DmxOutUniv);
+
+	//GetValueFromJson(uint8_t, NumDrivers);
+
+	GetChildIntValuesFromJson(DriverType);
+	GetChildIntValuesFromJson(DriverSpeed);
+	GetChildIntValuesFromJson(DriverExpandable);
+	//GetChildStringValuesFromJson(DriverNames);
+
+	GetValueFromJson(int, CurrentDriver);
+	GetValueFromJson(uint8_t, CurrentDriverType);
+	GetValueFromJson(int, CurrentDriverSpeed);
+	GetValueFromJson(uint8_t, CurrentDriverExpanded);
+
+	GetChildIntValuesFromJson(Gamma);
 	
+	s_hold = root.get<std::string>("Nickname");
+	strncpy(device->Nickname, s_hold.c_str(), 40);
+
+	GetValueFromJson(uint8_t, MaxTargetTemp);
+
 }
 
 void advatek_manager::exportJSON(int d, std::string path) {
@@ -727,7 +777,7 @@ void advatek_manager::exportJSON(int d, std::string path) {
 	root.add_child("OutputGrouping", OutputGrouping);
 	root.add_child("OutputBrightness", OutputBrightness);
 	
-	root.put("NumDMXOutputs", device->NumDMXOutputs);
+	//root.put("NumDMXOutputs", device->NumDMXOutputs);
 	root.put("ProtocolsOnDmxOut", device->ProtocolsOnDmxOut);
 
 	pt::ptree DmxOutOn;
@@ -765,7 +815,6 @@ void advatek_manager::exportJSON(int d, std::string path) {
 	root.put("CurrentDriver", device->CurrentDriver);
 	root.put("CurrentDriverType", device->CurrentDriverType);
 	root.put("CurrentDriverSpeed", device->CurrentDriverSpeed);
-	root.put("CurrentDriverExpanded", device->CurrentDriverExpanded);
 	root.put("CurrentDriverExpanded", device->CurrentDriverExpanded);
 
 	pt::ptree Gamma;
