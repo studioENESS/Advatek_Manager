@@ -27,6 +27,18 @@
 #pragma comment(lib, "legacy_stdio_definitions")
 #endif
 
+bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0)
+{
+	return ImGui::SliderScalar(label, ImGuiDataType_U8, v, &v_min, &v_max, format, flags);
+}
+
+
+
+bool SliderInt16(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0)
+{
+	return ImGui::SliderScalar(label, ImGuiDataType_U16, v, &v_min, &v_max, format, flags);
+}
+
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -36,6 +48,7 @@ advatek_manager adv;
 
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
+
 
 static std::string adaptor_string = "Select Adaptor";
 
@@ -114,6 +127,10 @@ int main(int, char**)
 
 	int window_w = 800;
 	int window_h = 600;
+	double lastTime = 0;
+	float testCycleSpeed = 0.5;
+	int b_testPixelsReady = true;
+
     // Create window with graphics context
     GLFWwindow* window = glfwCreateWindow(window_w, window_h, "Advatek Assistor", NULL, NULL);
     if (window == NULL)
@@ -170,6 +187,7 @@ int main(int, char**)
 				std::cout << ex.what() << std::endl;
 			}
 		}
+		
 
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -183,6 +201,8 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+		double currTime = ImGui::GetTime();
+
         // Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             // Create a window and append into it.
@@ -194,6 +214,7 @@ int main(int, char**)
 			window_flags |= ImGuiWindowFlags_NoMove;
 			window_flags |= ImGuiWindowFlags_NoResize;
 			window_flags |= ImGuiWindowFlags_NoCollapse;
+
 			ImGui::Begin("Advatek Assistor", NULL, window_flags);                    
 
 			if (ImGui::Button("Refresh Adaptors"))
@@ -388,7 +409,6 @@ int main(int, char**)
 							adv.devices[i]->CurrentDriverExpanded = (uint8_t)tempExpanded;
 						}
 
-
 						ImGui::Text("Set All  "); ImGui::SameLine();
 						int tempAllColOrder = adv.devices[i]->OutputColOrder[0];
 						if (ImGui::Combo("Order ##all", &tempAllColOrder, advatek_manager::RGBW_Order, 24)) {
@@ -432,11 +452,13 @@ int main(int, char**)
 					}
 					if (ImGui::BeginTabItem("Test"))
 					{
-						ImGui::Text("Prior to running test mode all other setings should be saved to controller (Press Update).");
+						ImGui::Text("Prior to running test mode all other setings should be saved to controller. (Press 'Update Settings')");
 
 						ImGui::PushItemWidth(200);
 
 						if (ImGui::Combo("Set Test", &adv.devices[i]->TestMode, TestModes, 9)) {
+							adv.devices[i]->TestPixelNum = 0;
+							b_testPixelsReady = true;
 							adv.setTest(i);
 						}
 
@@ -455,22 +477,69 @@ int main(int, char**)
 								adv.setTest(i);
 							}
 
-							if (ImGui::Checkbox("Cycle Colour Per Output", &adv.devices[i]->TestModeCycle)) {
+							if (adv.devices[i]->testModeCycleOuputs || adv.devices[i]->testModeCyclePixels) {
+								
+								if (currTime - lastTime > testCycleSpeed) {
+									if (adv.devices[i]->TestMode == 8) {
+										// Set Pixel
+										adv.devices[i]->TestPixelNum = (adv.devices[i]->TestPixelNum) % ((int)(adv.devices[i]->OutputPixels[(int)adv.devices[i]->TestOutputNum-1]))+1;
+
+										if (adv.devices[i]->TestPixelNum == 1) {
+											b_testPixelsReady = true;
+										} else {
+											b_testPixelsReady = false;
+										}
+									}
+									if (adv.devices[i]->testModeCycleOuputs && b_testPixelsReady) {
+										adv.devices[i]->TestOutputNum = (adv.devices[i]->TestOutputNum) % ((int)(adv.devices[i]->NumOutputs*0.5)) + 1;
+									}
+									lastTime = currTime;
+									adv.setTest(i);
+								}
+								/*
 								for (uint8_t output = 0; output < adv.devices[i]->NumOutputs*0.5; output++) {
 									ImGui::PushID(output);
-									ImGui::Text("Output %02i", output + 1); ImGui::SameLine();
+									ImGui::Text("Output %02i", output + 1);
 									
 									ImGui::PopID();
+								}*/
+							}
+
+							bool testModeCycleOuputs = adv.devices[i]->testModeCycleOuputs;
+							if (ImGui::Checkbox("Cycle Outputs", &testModeCycleOuputs)) {
+								adv.devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
+							}
+
+							ImGui::SameLine();
+
+							if (adv.devices[i]->TestMode == 8) {
+								bool testModeCyclePixels = adv.devices[i]->testModeCyclePixels;
+								if (ImGui::Checkbox("Cycle Pixels", &testModeCyclePixels)) {
+									adv.devices[i]->testModeCyclePixels = (bool)testModeCyclePixels;
 								}
+							}
+
+							//ImGui::PushItemWidth(80);
+							ImGui::SliderFloat("Speed", &testCycleSpeed, 5.0, 0.01, "%.01f");
+							//ImGui::PopItemWidth();
+						}
+
+						//ImGui::PopItemWidth();
+
+						//ImGui::PushItemWidth(100);
+						//ImGui::Text("Output (All 0)"); ImGui::SameLine();
+						if (SliderInt8("Output (All 0)",(int*)&adv.devices[i]->TestOutputNum, 0, (adv.devices[i]->NumOutputs*0.5))) {
+							adv.setTest(i);
+						}
+						
+						if (adv.devices[i]->TestMode == 8) {
+							//ImGui::Text("Pixels (All 0)"); ImGui::SameLine();
+							uint16_t TestPixelNum = adv.devices[i]->TestPixelNum;
+							if (SliderInt16("Pixels (All 0)", (int*)&TestPixelNum, 0, (adv.devices[i]->OutputPixels[(int)adv.devices[i]->TestOutputNum-1]))) {
+								adv.setTest(i);
 							}
 						}
 
-						ImGui::PopItemWidth();
-						ImGui::PushItemWidth(150);
-						ImGui::Text("All Outputs (0)"); ImGui::SameLine();
-						if (ImGui::SliderInt("Output Channel", (int*)&adv.devices[i]->TestOutputNum, 0, (int)(adv.devices[i]->NumOutputs*0.5))) {
-							adv.setTest(i);
-						}
 						ImGui::PopItemWidth();
 
 						button_update_controller_settings(i);

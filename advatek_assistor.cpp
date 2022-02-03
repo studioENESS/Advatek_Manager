@@ -281,10 +281,6 @@ void advatek_manager::setTest(int d) {
 	dataTape.push_back((uint8_t)(device->TestPixelNum >> 8));
 	dataTape.push_back((uint8_t)device->TestPixelNum);
 
-	//buf[23] = 0;// device->TestOutputNum;
-	//buf[24] = 0;//device->TestPixelNum;
-	//buf[25] = 0;//device->TestPixelNum >> 8;
-
 	unicast_udp_message(ipString(device->CurrentIP), dataTape);
 }
 

@@ -100,7 +100,8 @@ typedef struct tAdvatekDevice {
 	uint8_t TestOutputNum;
 	uint16_t TestPixelNum;
 	int* TestCycleCols; //[NumOutputs]
-	bool TestModeCycle = false;
+	bool testModeCycleOuputs = false;
+	bool testModeCyclePixels = false;
 } sAdvatekDevice;
 
 std::string macString(uint8_t * address);
