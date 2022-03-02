@@ -195,6 +195,11 @@ void advatek_manager::broadcast_udp_message(std::vector<uint8_t> message)
 void advatek_manager::updateDevice(int d) {
 
 	auto device = advatek_manager::devices[d];
+
+	if ((bool)device->SimpleConfig) {
+		advatek_manager::process_simple_config(d);
+	}
+
 	std::vector<uint8_t> dataTape;
 
 	dataTape.resize(12);
@@ -660,6 +665,29 @@ void advatek_manager::auto_sequence_channels(int d) {
 		setEndUniverseChannel(startOutputUniv, startOutputChan, startOutputPixels, device->OutputGrouping[output], startEndUniverse, startEndChannel);
 
 	}
+	return;
+}
+
+void advatek_manager::process_simple_config(int d) {
+	auto device = advatek_manager::devices[d];
+
+	device->OutputNull[0] = 0;
+	device->OutputZig[0] = 0;
+	device->OutputGrouping[0] = 1;
+	device->OutputBrightness[0] = 100;
+	device->OutputReverse[0] = 0;
+
+	for (int output = 1; output < device->NumOutputs*0.5; output++) {
+		device->OutputNull[output] = device->OutputNull[0];
+		device->OutputZig[output] = device->OutputZig[0];
+		device->OutputGrouping[output] = device->OutputGrouping[0];
+		device->OutputBrightness[output] = device->OutputBrightness[0];
+		device->OutputReverse[output] = device->OutputReverse[0];
+
+		device->OutputPixels[output]   = device->OutputPixels[0];
+		device->OutputGrouping[output] = device->OutputGrouping[0];
+	}
+	advatek_manager::auto_sequence_channels(d);
 	return;
 }
 

@@ -152,6 +152,7 @@ public:
 	void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message);
 	void broadcast_udp_message(std::vector<uint8_t> message);
 	void auto_sequence_channels(int d);
+	void process_simple_config(int d);
 
 	void refreshAdaptors();
 	
