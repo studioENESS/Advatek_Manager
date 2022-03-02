@@ -331,10 +331,6 @@ int main(int, char**)
 							adv.devices[i]->SimpleConfig = tempSimpleConfig;
 						}
 
-						bool * tempReversed = new bool[adv.devices[i]->NumOutputs];
-						int  * tempEndUniverse = new int[adv.devices[i]->NumOutputs];
-						int  * tempEndChannel = new int[adv.devices[i]->NumOutputs];
-
 						ImGui::PushItemWidth(50);
 
 						if ((bool)adv.devices[i]->SimpleConfig) {
@@ -343,6 +339,17 @@ int main(int, char**)
 							ImGui::InputScalar("Pixels Per Output", ImGuiDataType_U16, &adv.devices[i]->OutputPixels[0], 0, 0, 0); 
 						}
 						else {
+							static bool autoChannels = false;
+							ImGui::Checkbox("Automatic Sequence Channels", &autoChannels);
+
+							if (autoChannels) {
+								adv.auto_sequence_channels(i);
+							}
+
+							bool * tempReversed = new bool[adv.devices[i]->NumOutputs];
+							uint16_t * tempEndUniverse = new uint16_t[adv.devices[i]->NumOutputs];
+							uint16_t * tempEndChannel  = new uint16_t[adv.devices[i]->NumOutputs];
+
 							if (ImGui::BeginTable("advancedTable", 11))
 							{
 								ImGui::TableSetupColumn(" ");
@@ -362,7 +369,7 @@ int main(int, char**)
 								{
 									ImGui::TableNextRow();
 
-									setEndUniverseChannel((int)adv.devices[i]->OutputUniv[output], (int)adv.devices[i]->OutputChan[output], (int)adv.devices[i]->OutputPixels[output], (int)adv.devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
+									setEndUniverseChannel(adv.devices[i]->OutputUniv[output], adv.devices[i]->OutputChan[output], adv.devices[i]->OutputPixels[output], adv.devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
 									ImGui::PushID(output);
 
 									ImGui::TableNextColumn();

@@ -124,7 +124,7 @@ extern boost::asio::ip::udp::socket r_socket;
 extern boost::asio::ip::tcp::resolver resolver;
 extern boost::asio::ip::tcp::resolver::query query;
 
-void setEndUniverseChannel(int startUniverse, int startChannel, int pixelCount, int outputGrouping, int &endUniverse, int &endChannel);
+void setEndUniverseChannel(uint16_t startUniverse, uint16_t startChannel, uint16_t pixelCount, uint16_t outputGrouping, uint16_t &endUniverse, uint16_t &endChannel);
 void load_ipStr(std::string ipStr, uint8_t *address);
 void load_macStr(std::string macStr, uint8_t *address);
 
@@ -151,6 +151,7 @@ public:
 	void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message);
 	void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message);
 	void broadcast_udp_message(std::vector<uint8_t> message);
+	void auto_sequence_channels(int d);
 
 	void refreshAdaptors();
 	

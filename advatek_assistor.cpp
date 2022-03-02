@@ -314,10 +314,10 @@ void advatek_manager::clearDevices() {
 	advatek_manager::devices.clear();
 }
 
-void setEndUniverseChannel(int startUniverse, int startChannel, int pixelCount, int outputGrouping, int &endUniverse, int &endChannel) {
+void setEndUniverseChannel(uint16_t startUniverse, uint16_t startChannel, uint16_t pixelCount, uint16_t outputGrouping, uint16_t &endUniverse, uint16_t &endChannel) {
 	pixelCount *= outputGrouping;
-	int pixelChannels = (3 * pixelCount); // R-G-B data
-	int pixelUniverses = ((float)(startChannel + pixelChannels) / 510.f);
+	uint16_t pixelChannels = (3 * pixelCount); // R-G-B data
+	uint16_t pixelUniverses = ((float)(startChannel + pixelChannels) / 510.f);
 
 	endUniverse = startUniverse + pixelUniverses;
 	endChannel = (startChannel + pixelChannels - 1) % 510;
@@ -631,6 +631,36 @@ void advatek_manager::process_udp_message(uint8_t * data) {
 	default:
 		return;
 	}
+}
+
+void advatek_manager::auto_sequence_channels(int d) {
+	auto device = advatek_manager::devices[d];
+
+	uint16_t startOutputUniv   = device->OutputUniv[0];
+	uint16_t startOutputChan   = device->OutputChan[0];
+	uint16_t startOutputPixels = device->OutputPixels[0];
+
+	uint16_t startEndUniverse = 0;
+	uint16_t startEndChannel  = 0;
+
+	setEndUniverseChannel(startOutputUniv, startOutputChan, startOutputPixels, device->OutputGrouping[0], startEndUniverse, startEndChannel);
+
+	for (int output = 1; output < device->NumOutputs*0.5; output++) {
+		if (startEndChannel + 1 > 510) {
+			startEndUniverse = startEndUniverse + 1;
+		}
+
+		device->OutputUniv[output] = startEndUniverse;
+		device->OutputChan[output] = (startEndChannel + 1) % 510;
+
+		// Update loop
+		startOutputUniv   = device->OutputUniv[output];
+		startOutputChan   = device->OutputChan[output];
+		startOutputPixels = device->OutputPixels[output];
+		setEndUniverseChannel(startOutputUniv, startOutputChan, startOutputPixels, device->OutputGrouping[output], startEndUniverse, startEndChannel);
+
+	}
+	return;
 }
 
 void advatek_manager::refreshAdaptors() {
