@@ -326,7 +326,69 @@ int main(int, char**)
 					}
 					if (ImGui::BeginTabItem("Control"))
 					{
-						ImGui::Text("Ethernet Control: "); ImGui::SameLine();
+						static bool tempSimpleConfig = (bool)adv.devices[i]->SimpleConfig;
+						if (ImGui::Checkbox("Simple Config", &tempSimpleConfig)) {
+							adv.devices[i]->SimpleConfig = tempSimpleConfig;
+						}
+
+						bool * tempReversed = new bool[adv.devices[i]->NumOutputs];
+						int  * tempEndUniverse = new int[adv.devices[i]->NumOutputs];
+						int  * tempEndChannel = new int[adv.devices[i]->NumOutputs];
+
+						ImGui::PushItemWidth(50);
+
+						if ((bool)adv.devices[i]->SimpleConfig) {
+							ImGui::InputScalar("Start Universe", ImGuiDataType_U16, &adv.devices[i]->OutputUniv[0], 0, 0, 0);
+							ImGui::InputScalar("Start Channel ", ImGuiDataType_U16, &adv.devices[i]->OutputChan[0], 0, 0, 0);
+							ImGui::InputScalar("Pixels Per Output", ImGuiDataType_U16, &adv.devices[i]->OutputPixels[0], 0, 0, 0); 
+						}
+						else {
+							if (ImGui::BeginTable("advancedTable", 11))
+							{
+								ImGui::TableSetupColumn(" ");
+								ImGui::TableSetupColumn("Start\nUniverse");
+								ImGui::TableSetupColumn("Start\nChannel");
+								ImGui::TableSetupColumn("End\nUniverse");
+								ImGui::TableSetupColumn("End\nChannel");
+								ImGui::TableSetupColumn("Num\nPixels");
+								ImGui::TableSetupColumn("Null\nPixels");
+								ImGui::TableSetupColumn("Zig\nZag");
+								ImGui::TableSetupColumn("Group");
+								ImGui::TableSetupColumn("Intensity\nLimit");
+								ImGui::TableSetupColumn("Reversed");
+								ImGui::TableHeadersRow();
+
+								for (int output = 0; output < adv.devices[i]->NumOutputs*0.5; output++)
+								{
+									ImGui::TableNextRow();
+
+									setEndUniverseChannel((int)adv.devices[i]->OutputUniv[output], (int)adv.devices[i]->OutputChan[output], (int)adv.devices[i]->OutputPixels[output], (int)adv.devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
+									ImGui::PushID(output);
+
+									ImGui::TableNextColumn();
+									ImGui::Text("Output %i", output + 1); ImGui::TableNextColumn();
+									ImGui::InputScalar("##StartUniv", ImGuiDataType_U16, &adv.devices[i]->OutputUniv[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##StartChan", ImGuiDataType_U16, &adv.devices[i]->OutputChan[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##EndUniv", ImGuiDataType_U16, &tempEndUniverse[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##EndChan", ImGuiDataType_U16, &tempEndChannel[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##NumPix", ImGuiDataType_U16, &adv.devices[i]->OutputPixels[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##NullPix", ImGuiDataType_U8, &adv.devices[i]->OutputNull[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##ZigZag", ImGuiDataType_U16, &adv.devices[i]->OutputZig[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##Group", ImGuiDataType_U16, &adv.devices[i]->OutputGrouping[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("%##BrightLim", ImGuiDataType_U8, &adv.devices[i]->OutputBrightness[output], 0, 0, 0); ImGui::TableNextColumn();
+									tempReversed[output] = (bool)adv.devices[i]->OutputReverse[output];
+									if (ImGui::Checkbox("##Reversed", &tempReversed[output])) {
+										adv.devices[i]->OutputReverse[output] = (uint8_t)tempReversed[output];
+									}
+									ImGui::PopID();
+
+								}
+								ImGui::EndTable();
+							}
+						} // End Else/If Simple Config
+						
+						ImGui::PopItemWidth();
+
 						int tempProtocol = (int)adv.devices[i]->Protocol;
 						if (ImGui::RadioButton("ArtNet", &tempProtocol, 1)) {
 							adv.devices[i]->Protocol = 1;
@@ -339,58 +401,6 @@ int main(int, char**)
 						if (ImGui::Checkbox("Hold LastFrame", &tempHoldLastFrame)) {
 							adv.devices[i]->HoldLastFrame = tempHoldLastFrame;
 						}
-
-						bool * tempReversed = new bool[adv.devices[i]->NumOutputs];
-						int  * tempEndUniverse = new int[adv.devices[i]->NumOutputs];
-						int  * tempEndChannel = new int[adv.devices[i]->NumOutputs];
-
-						ImGui::PushItemWidth(50);
-
-						if (ImGui::BeginTable("table1", 11))
-						{
-							ImGui::TableSetupColumn(" ");
-							ImGui::TableSetupColumn("Start\nUniverse");
-							ImGui::TableSetupColumn("Start\nChannel");
-							ImGui::TableSetupColumn("End\nUniverse");
-							ImGui::TableSetupColumn("End\nChannel");
-							ImGui::TableSetupColumn("Num\nPixels");
-							ImGui::TableSetupColumn("Null\nPixels");
-							ImGui::TableSetupColumn("Zig\nZag");
-							ImGui::TableSetupColumn("Group");
-							ImGui::TableSetupColumn("Intensity\nLimit");
-							ImGui::TableSetupColumn("Reversed");
-							ImGui::TableHeadersRow();
-
-							for (int output = 0; output < adv.devices[i]->NumOutputs*0.5; output++)
-							{
-								ImGui::TableNextRow();
-
-								setEndUniverseChannel((int)adv.devices[i]->OutputUniv[output], (int)adv.devices[i]->OutputChan[output], (int)adv.devices[i]->OutputPixels[output], (int)adv.devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
-								ImGui::PushID(output);
-								
-								ImGui::TableNextColumn();
-								ImGui::Text("Output %i", output + 1); ImGui::TableNextColumn();
-								ImGui::InputScalar("##StartUniv", ImGuiDataType_U16, &adv.devices[i]->OutputUniv[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##StartChan", ImGuiDataType_U16, &adv.devices[i]->OutputChan[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##EndUniv", ImGuiDataType_U16, &tempEndUniverse[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##EndChan", ImGuiDataType_U16, &tempEndChannel[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##NumPix", ImGuiDataType_U16, &adv.devices[i]->OutputPixels[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##NullPix", ImGuiDataType_U8, &adv.devices[i]->OutputNull[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##ZigZag", ImGuiDataType_U16, &adv.devices[i]->OutputZig[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##Group", ImGuiDataType_U16, &adv.devices[i]->OutputGrouping[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("%##BrightLim", ImGuiDataType_U8, &adv.devices[i]->OutputBrightness[output], 0, 0, 0); ImGui::TableNextColumn();
-								tempReversed[output] = (bool)adv.devices[i]->OutputReverse[output];
-								if (ImGui::Checkbox("##Reversed", &tempReversed[output])) {
-									adv.devices[i]->OutputReverse[output] = (uint8_t)tempReversed[output];
-								}
-								ImGui::PopID();
-								
-							}
-							ImGui::EndTable();
-						}
-
-
-						ImGui::PopItemWidth();
 
 						//ImGui::Text("DMX512 Outputs");
 
