@@ -2,9 +2,19 @@
 
 ![preview](img/preview2.png)
 
+## About
+
+This is an Advatek Assistant clone that can run under Linux and adds the following features:
+
+  - Works on Raspberry Pi
+  - Saving and Loading of Advatek config settings to and from the controller in JSON format
+  - Cycling of output channels in test mode
+  - Cycling of output pixels in test mode
+
+
 ## Dependencies
 
-  - [ImGui](https://github.com/ocornut/imgui) [Interavctive Manual](https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html)  
+  - [ImGui](https://github.com/ocornut/imgui) ([Interavctive Manual](https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html))  
   - [Boost](https://github.com/boostorg/boost)  
   - [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)  
 
@@ -36,5 +46,5 @@
     
     gdb ./advatek_assistor
 `
-> Adaptor selection is not working properly on the Raspberry yet. Turn WiFi off. :ok_hand:
+> Adaptor selection does not always work properly on the Raspberry Pi. Turn WiFi off. :ok_hand:
 
