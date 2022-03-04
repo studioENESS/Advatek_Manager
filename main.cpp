@@ -32,8 +32,6 @@ bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* for
 	return ImGui::SliderScalar(label, ImGuiDataType_U8, v, &v_min, &v_max, format, flags);
 }
 
-
-
 bool SliderInt16(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0)
 {
 	return ImGui::SliderScalar(label, ImGuiDataType_U16, v, &v_min, &v_max, format, flags);
@@ -48,7 +46,6 @@ advatek_manager adv;
 
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
-
 
 static std::string adaptor_string = "No Adaptors Found";
 
@@ -90,7 +87,6 @@ void button_import_export_JSON(int d) {
 
 int main(int, char**)
 {
-
 	adv.refreshAdaptors();
 	if(adv.networkAdaptors.size() > 0) {
 		adaptor_string = adv.networkAdaptors[0];
@@ -127,13 +123,20 @@ int main(int, char**)
 
 	int window_w = 800;
 	int window_h = 600;
+
+	int centerx = (GetSystemMetrics(SM_CXSCREEN) / 2) - (window_w / 2);
+	int centery = (GetSystemMetrics(SM_CYSCREEN) / 2) - (window_h / 2);
+
 	double lastTime = 0;
 	float testCycleSpeed = 0.5;
 	int b_testPixelsReady = true;
 
-    // Create window with graphics context
+	// Create window with graphics context
     GLFWwindow* window = glfwCreateWindow(window_w, window_h, "Advatek Assistor", NULL, NULL);
-    if (window == NULL)
+
+	glfwSetWindowPos(window, centerx, centery);
+
+	if (window == NULL)
         return 1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
