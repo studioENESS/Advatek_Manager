@@ -50,7 +50,7 @@ int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
 
 
-static std::string adaptor_string = "Select Adaptor";
+static std::string adaptor_string = "No Adaptors Found";
 
 void button_update_controller_settings(int i) {
 	if (ImGui::Button("Update Settings"))
