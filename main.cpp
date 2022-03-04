@@ -456,9 +456,8 @@ int main(int, char**)
 							adv.devices[i]->CurrentDriverExpanded = (uint8_t)tempExpanded;
 						}
 
-						ImGui::Text("Set All  "); ImGui::SameLine();
 						int tempAllColOrder = adv.devices[i]->OutputColOrder[0];
-						if (ImGui::Combo("Order ##all", &tempAllColOrder, advatek_manager::RGBW_Order, 24)) {
+						if (ImGui::Combo("RGB Order ##all", &tempAllColOrder, advatek_manager::RGBW_Order, 24)) {
 							for (uint8_t output = 0; output < adv.devices[i]->NumOutputs*0.5; output++) {
 								adv.devices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
 							}

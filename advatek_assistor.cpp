@@ -604,6 +604,47 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 }
 
 void advatek_manager::process_opTestAnnounce(uint8_t * data) {
+	
+	uint8_t ProtVer;
+	memcpy(&ProtVer, data, sizeof(uint8_t));
+	data += 1;
+
+	uint8_t Mac[6];
+	memcpy( Mac, data, 6);
+	data += 6;
+
+	uint8_t CurrentIP[4];
+	memcpy( CurrentIP, data, 4);
+	data += 4;
+
+	int deviceID = -1;
+
+	for (int d(0); d < advatek_manager::devices.size(); d++) {
+		bool exist = true;
+		for (int i(0); i < 6; i++) {
+			if (advatek_manager::devices[d]->Mac[i] != Mac[i]) exist = false;
+		}
+		if (exist) deviceID = d;
+	}
+	
+	if (deviceID >= 0) {
+		auto device = advatek_manager::devices[deviceID];
+
+		memcpy(&device->TestMode, data, sizeof(uint8_t));
+		data += 1;
+
+		memcpy(device->TestCols, data, sizeof(uint8_t) * 4);
+		data += 4;
+
+		memcpy(&device->TestOutputNum, data, sizeof(uint8_t));
+		data += 1;
+
+		memcpy(&device->TestPixelNum, data, sizeof(uint16_t));
+		data += 2;
+		bswap_16(device->TestPixelNum);
+
+	}
+
 	return;
 }
 
