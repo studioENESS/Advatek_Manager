@@ -266,7 +266,7 @@ int main(int, char**)
 				std::stringstream Title;
 				Title << adv.devices[i]->Model << "	" << adv.devices[i]->Firmware << "	" << ipString(adv.devices[i]->CurrentIP) << "		" << "Temp: " << (float)adv.devices[i]->Temperature*0.1 << "		" << adv.devices[i]->Nickname;
 				Title << "###" << macString(adv.devices[i]->Mac);
-				bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns | ImGuiTreeNodeFlags_OpenOnArrow);
+				bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns);
 
 				if (node_open)
 				{
@@ -324,8 +324,21 @@ int main(int, char**)
 
 						ImGui::EndTabItem();
 					}
-					if (ImGui::BeginTabItem("Control"))
+					if (ImGui::BeginTabItem("Ethernet Control"))
 					{
+						int tempProtocol = (int)adv.devices[i]->Protocol;
+						if (ImGui::RadioButton("ArtNet", &tempProtocol, 1)) {
+							adv.devices[i]->Protocol = 1;
+						} ImGui::SameLine();
+						if (ImGui::RadioButton("sACN (E1.31)", &tempProtocol, 0)) {
+							adv.devices[i]->Protocol = 0;
+						}
+						ImGui::SameLine();
+						static bool tempHoldLastFrame = (bool)adv.devices[i]->HoldLastFrame;
+						if (ImGui::Checkbox("Hold LastFrame", &tempHoldLastFrame)) {
+							adv.devices[i]->HoldLastFrame = tempHoldLastFrame;
+						}
+
 						static bool tempSimpleConfig = (bool)adv.devices[i]->SimpleConfig;
 						if (ImGui::Checkbox("Simple Config", &tempSimpleConfig)) {
 							adv.devices[i]->SimpleConfig = tempSimpleConfig;
@@ -340,6 +353,7 @@ int main(int, char**)
 						}
 						else {
 							static bool autoChannels = false;
+							ImGui::SameLine();
 							ImGui::Checkbox("Automatic Sequence Channels", &autoChannels);
 
 							if (autoChannels) {
@@ -396,26 +410,42 @@ int main(int, char**)
 						
 						ImGui::PopItemWidth();
 
-						int tempProtocol = (int)adv.devices[i]->Protocol;
-						if (ImGui::RadioButton("ArtNet", &tempProtocol, 1)) {
-							adv.devices[i]->Protocol = 1;
-						} ImGui::SameLine();
-						if (ImGui::RadioButton("sACN (E1.31)", &tempProtocol, 0)) {
-							adv.devices[i]->Protocol = 0;
-						}
-						ImGui::SameLine();
-						static bool tempHoldLastFrame = (bool)adv.devices[i]->HoldLastFrame;
-						if (ImGui::Checkbox("Hold LastFrame", &tempHoldLastFrame)) {
-							adv.devices[i]->HoldLastFrame = tempHoldLastFrame;
+						button_import_export_JSON(i);
+						button_update_controller_settings(i);
+
+						ImGui::EndTabItem();
+					}
+					
+					if (ImGui::BeginTabItem("DMX512 Outputs"))
+					{
+						bool * tempDMXOffOn = new bool[adv.devices[i]->NumDMXOutputs];
+
+						ImGui::PushItemWidth(50);
+
+						for (int DMXoutput = 0; DMXoutput < adv.devices[i]->NumDMXOutputs; DMXoutput++) {
+							ImGui::PushID(DMXoutput);
+							tempDMXOffOn[DMXoutput] = (bool)adv.devices[i]->DmxOutOn[DMXoutput];
+
+							ImGui::Text("Output %i", DMXoutput + 1);
+							ImGui::SameLine();
+
+							if (ImGui::Checkbox("Enabled", &tempDMXOffOn[DMXoutput])) {
+								adv.devices[i]->DmxOutOn[DMXoutput] = (uint8_t)tempDMXOffOn[DMXoutput];
+							}
+
+							ImGui::SameLine();
+							ImGui::InputScalar("Universe", ImGuiDataType_U16, &adv.devices[i]->DmxOutUniv[DMXoutput], 0, 0, 0);
+							ImGui::PopID();
 						}
 
-						//ImGui::Text("DMX512 Outputs");
+						ImGui::PopItemWidth();
 
 						button_import_export_JSON(i);
 						button_update_controller_settings(i);
 
 						ImGui::EndTabItem();
 					}
+
 					if (ImGui::BeginTabItem("LEDs"))
 					{
 						ImGui::PushItemWidth(120);
@@ -527,7 +557,7 @@ int main(int, char**)
 								adv.devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
 							}
 
-							ImGui::SameLine();
+							//ImGui::SameLine();
 
 							if (adv.devices[i]->TestMode == 8) {
 								bool testModeCyclePixels = adv.devices[i]->testModeCyclePixels;
