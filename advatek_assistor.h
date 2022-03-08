@@ -104,6 +104,15 @@ typedef struct tAdvatekDevice {
 	bool testModeCyclePixels = false;
 } sAdvatekDevice;
 
+typedef struct tImportOptions {
+	bool network = false;
+	bool ethernet_control = false;
+	bool dmx_outputs = false;
+	bool led_settings = false;
+	bool nickname = false;
+	bool fan_on_temp = false;
+} sImportOptions;
+
 std::string macString(uint8_t * address);
 std::string ipString(uint8_t * address);
 
@@ -156,7 +165,7 @@ public:
 
 	void refreshAdaptors();
 	
-	void importJSON(int d, std::string path);
+	void importJSON(int d, std::string path, sImportOptions &importOptions);
 	void exportJSON(int d, std::string path);
 
 	static const char* RGBW_Order[24];

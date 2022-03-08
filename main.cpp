@@ -43,6 +43,7 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 advatek_manager adv;
+sImportOptions importOptions = sImportOptions();
 
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
@@ -60,12 +61,39 @@ void button_update_controller_settings(int i) {
 void button_import_export_JSON(int d) {
 
 	if (ImGui::Button("Import JSON"))
+		ImGui::OpenPopup("Import");
+
+	// Always center this window when appearing
+	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+	if (ImGui::BeginPopupModal("Import", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		auto path = pfd::open_file("Select a file").result();
-		if (!path.empty()) {
-			adv.importJSON(d, path.at(0));
-		}
+		ImGui::Text("What needs importing?");
+		ImGui::Separator();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+
+		ImGui::Checkbox("Network", &importOptions.network);
+		ImGui::Checkbox("Ethernet Control (Mapping)", &importOptions.ethernet_control);
+		ImGui::Checkbox("DMX512 Outputs", &importOptions.dmx_outputs);
+		ImGui::Checkbox("LED Settings", &importOptions.led_settings);
+		ImGui::Checkbox("Nickname", &importOptions.nickname);
+		ImGui::Checkbox("Fan On Temp", &importOptions.fan_on_temp);
 		
+		ImGui::PopStyleVar();
+
+		if (ImGui::Button("Import", ImVec2(120, 0))) { 
+			ImGui::CloseCurrentPopup(); 
+			auto path = pfd::open_file("Select a file").result();
+			if (!path.empty()) {
+				adv.importJSON(d, path.at(0), importOptions);
+			}
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
 	}
 	
 	ImGui::SameLine();
