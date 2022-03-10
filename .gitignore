@@ -23,7 +23,9 @@ Release
 ipch
 *sdf
 
-/build
+.vscode/
+
+build/
 
 #Executables
 advatek_assistor
