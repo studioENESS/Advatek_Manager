@@ -249,8 +249,8 @@ int main(int, char**)
 			window_flags |= ImGuiWindowFlags_NoMove;
 			window_flags |= ImGuiWindowFlags_NoResize;
 			window_flags |= ImGuiWindowFlags_NoCollapse;
-
-			ImGui::Begin("Advatek Assistor", NULL, window_flags);                    
+			const std::string sTitle = "Advatek Assistor v" + std::string(Version);
+			ImGui::Begin(sTitle.c_str(), NULL, window_flags);                    
 
 			if (ImGui::Button("Refresh Adaptors"))
 			{
