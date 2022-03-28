@@ -175,10 +175,10 @@ void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_
 		//s_socket.bind(senderEndpoint);
 
 		// disable loopback
-		s_socket.set_option(boost::asio::ip::multicast::enable_loopback(false));
+		//s_socket.set_option(boost::asio::ip::multicast::enable_loopback(false));
 
 		// set oif - the socket will use this interface as outgoing interface
-		s_socket.set_option(boost::asio::ip::multicast::outbound_interface(boost::asio::ip::address::from_string(networkAdaptors[currentAdaptor].c_str()).to_v4()));
+		//s_socket.set_option(boost::asio::ip::multicast::outbound_interface(boost::asio::ip::address::from_string(networkAdaptors[currentAdaptor].c_str()).to_v4()));
 
 		// set mcast group - join group -
 		//s_socket.set_option(boost::asio::ip::multicast::join_group(boost::asio::ip::address::from_string(AdvAdr).to_v4(),
