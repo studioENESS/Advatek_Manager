@@ -15,7 +15,7 @@
 #include <boost/program_options.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 
-#define Version "1.0.0"
+#define Version "v1.0.0"
 
 #define AdvAdr "255.255.255.255" // Advatek zero network broadcast address
 #define AdvPort 49150 // Advatek UDP Port
