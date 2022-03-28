@@ -16,10 +16,9 @@
 #endif
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
-#include "portable-file-dialogs.h"
+#include "portable-file-dialogs.h";
 
 #include "advatek_assistor.h"
-
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
@@ -114,6 +113,8 @@ void button_import_export_JSON(int d) {
 	}
 }
 
+#pragma comment(linker, "/SUBSYSTEM:Windows /ENTRY:mainCRTStartup")
+
 int main(int, char**)
 {
 	adv.refreshAdaptors();
@@ -150,14 +151,11 @@ int main(int, char**)
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-	const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
 	int window_w = 800;
 	int window_h = 600;
 
-	
-	int centerx = (mode->width / 2) - (window_w / 2);
-	int centery = (mode->height / 2) - (window_h / 2);
+	int centerx = (GetSystemMetrics(SM_CXSCREEN) / 2) - (window_w / 2);
+	int centery = (GetSystemMetrics(SM_CYSCREEN) / 2) - (window_h / 2);
 
 	double lastTime = 0;
 	float testCycleSpeed = 0.5;
@@ -249,8 +247,8 @@ int main(int, char**)
 			window_flags |= ImGuiWindowFlags_NoMove;
 			window_flags |= ImGuiWindowFlags_NoResize;
 			window_flags |= ImGuiWindowFlags_NoCollapse;
-			const std::string sTitle = "Advatek Assistor v" + std::string(Version);
-			ImGui::Begin(sTitle.c_str(), NULL, window_flags);                    
+
+			ImGui::Begin("Advatek Assistor", NULL, window_flags);                    
 
 			if (ImGui::Button("Refresh Adaptors"))
 			{
@@ -631,7 +629,7 @@ int main(int, char**)
 
 					if (ImGui::BeginTabItem("Misc"))
 					{
-						ImGui::Text("MAC: %s", macString(adv.devices[i]->Mac).c_str());
+						ImGui::Text("MAC: %s", macString(adv.devices[i]->Mac));
 						ImGui::PushItemWidth(200);
 						char sName[40];
 						memcpy(sName, adv.devices[i]->Nickname, 40);
