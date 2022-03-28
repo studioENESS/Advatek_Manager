@@ -147,7 +147,7 @@ public:
 	std::string ipStr(uint8_t * address);
 
 	std::vector <std::string> networkAdaptors;
-	int currentAdaptor = 0;
+	int currentAdaptor = -1;
 	
 	std::vector<sAdvatekDevice*> devices;
 
@@ -166,6 +166,7 @@ public:
 	void process_simple_config(int d);
 
 	void refreshAdaptors();
+	void setCurrentAdaptor(int adaptorIndex);
 	
 	void importJSON(int d, std::string path, sImportOptions &importOptions);
 	void exportJSON(int d, std::string path);

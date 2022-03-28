@@ -116,6 +116,7 @@ However, under Linux, if you bind a socket to a specific protocol, port and addr
 for that protocol/port/address triplet, and will not receive broadcast packets. If you want to receive broadcast packets 
 under Linux, then you have to bind a socket to the any address option.
 */
+
 boost::asio::io_context io_context;
 boost::asio::ip::udp::endpoint receiver(boost::asio::ip::address_v4::any(), AdvPort);
 
@@ -129,8 +130,8 @@ void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_
 {
 
 	/*
-	boost::asio::io_service io_service;
-	boost::asio::ip::udp::socket socket(io_service);
+	boost::asio::io_context io_context;
+	boost::asio::ip::udp::socket socket(io_context);
 	boost::asio::ip::udp::endpoint local_endpoint;
 	boost::asio::ip::udp::endpoint remote_endpoint;
 	
@@ -166,7 +167,24 @@ void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_
 		//s_socket.set_option(boost::asio::socket_base::reuse_address(true));
 
 		boost::asio::ip::udp::endpoint senderEndpoint(boost::asio::ip::address::from_string(ip_address), port);
+		//boost::asio::ip::udp::endpoint senderEndpoint(boost::asio::ip::address::from_string(ip_address).to_v4(), port);
 
+		//---------------------------
+
+		// bind
+		//s_socket.bind(senderEndpoint);
+
+		// disable loopback
+		s_socket.set_option(boost::asio::ip::multicast::enable_loopback(false));
+
+		// set oif - the socket will use this interface as outgoing interface
+		s_socket.set_option(boost::asio::ip::multicast::outbound_interface(boost::asio::ip::address::from_string(networkAdaptors[currentAdaptor].c_str()).to_v4()));
+
+		// set mcast group - join group -
+		//s_socket.set_option(boost::asio::ip::multicast::join_group(boost::asio::ip::address::from_string(AdvAdr).to_v4(),
+		//	boost::asio::ip::address::from_string(networkAdaptors[currentAdaptor].c_str()).to_v4()));
+
+		//---------------------------
 		s_socket.send_to(boost::asio::buffer(message), senderEndpoint);
 		
 		std::cout << "Message send from " << advatek_manager::networkAdaptors[currentAdaptor].c_str() << " to " <<  ip_address.c_str() << std::endl;
@@ -756,7 +774,25 @@ void advatek_manager::refreshAdaptors() {
 		}
 	}
 	if (advatek_manager::networkAdaptors.size() > 0) {
-		currentAdaptor = 0;
+		advatek_manager::currentAdaptor = 0;
+	} else {
+		advatek_manager::currentAdaptor = -1;
+	}
+}
+
+void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
+	if (r_socket.is_open()) {
+		r_socket.close();
+	}
+
+	receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(networkAdaptors[adaptorIndex].c_str()), AdvPort);
+	//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), AdvPort);
+
+	try {
+		r_socket = boost::asio::ip::udp::socket(io_context, receiver);
+	}
+	catch (boost::exception& e) {
+		std::cout << "Failed to setup receiver socket" << std::endl;
 	}
 }
 

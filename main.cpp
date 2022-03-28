@@ -267,20 +267,8 @@ int main(int, char**)
 					if (ImGui::Selectable(adv.networkAdaptors[n].c_str(), is_selected))
 					{
 						adaptor_string = adv.networkAdaptors[n];
-						//std::cout << "Selected adaptor: " << adv.networkAdaptors[n] << std::endl;
-						if(r_socket.is_open()) {
-							r_socket.close();	
-						}
 						
-						//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(adv.networkAdaptors[n].c_str()), AdvPort);
-						receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), AdvPort);
-
-						try {
-							r_socket = boost::asio::ip::udp::socket(io_context, receiver);
-						}
-						catch (boost::exception& e) {
-							std::cout << "Failed to setup receiver socket" << std::endl;
-						}
+						adv.setCurrentAdaptor(n);
 
 						b_pollRequest = true;
 					}
