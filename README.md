@@ -27,7 +27,7 @@ This is an Advatek Assistant clone that can run under Linux and adds the followi
     git submodule update --init
 
     ./bootstrap.sh or ./bootstrap.bat
-    ./b2 or b2
+    ./b2
     
     sudo apt-get install libglfw3-dev
     
@@ -35,7 +35,7 @@ This is an Advatek Assistant clone that can run under Linux and adds the followi
     
     cmake ../ 
     
-    make
+    make -j6
 
 
  **For debugging on Raspberry Pi use GDB**
