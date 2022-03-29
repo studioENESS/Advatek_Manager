@@ -131,7 +131,7 @@ bool deviceExist(uint8_t * Mac);
 extern boost::asio::io_context io_context;
 extern boost::asio::ip::udp::endpoint receiver;
 extern boost::asio::ip::udp::socket s_socket;
-extern boost::asio::ip::udp::socket r_socket;
+extern boost::asio::ip::udp::socket sock;
 extern boost::asio::ip::tcp::resolver resolver;
 extern boost::asio::ip::tcp::resolver::query query;
 
@@ -160,7 +160,7 @@ public:
 	void process_opPollReply(uint8_t * data);
 	void process_opTestAnnounce(uint8_t * data);
 	void process_udp_message(uint8_t * data);
-	void listen_for_devices();
+	void listen();
 	void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message);
 	void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message);
 	void broadcast_udp_message(std::vector<uint8_t> message);

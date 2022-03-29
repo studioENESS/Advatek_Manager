@@ -107,24 +107,32 @@ bool advatek_manager::deviceExist(uint8_t * Mac) {
 	return false;
 }
 
-/*
-Windows and Linux have differing mindsets when it comes to accepting broadcast packets.
-If you bind a socket to a specific protocol, port and address under Windows, you will receive
-packets specifically for that protocol/port/address plus any broadcast packets on that port and subnet for that address. 
-
-However, under Linux, if you bind a socket to a specific protocol, port and address you will only receive packets specifically 
-for that protocol/port/address triplet, and will not receive broadcast packets. If you want to receive broadcast packets 
-under Linux, then you have to bind a socket to the any address option.
-*/
-
 boost::asio::io_context io_context;
-boost::asio::ip::udp::endpoint receiver(boost::asio::ip::address_v4::any(), AdvPort);
+boost::asio::ip::udp::endpoint adaptorEndpoint(boost::asio::ip::address_v4::any(), AdvPort);
 
 boost::asio::ip::udp::socket s_socket(io_context);
-boost::asio::ip::udp::socket r_socket(io_context, receiver);
+boost::asio::ip::udp::socket sock(io_context, adaptorEndpoint);
 
 boost::asio::ip::tcp::resolver resolver(io_context);
 boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "");
+
+void advatek_manager::listen() {
+	uint8_t buffer[100000];
+
+	if (sock.available() > 0)
+	{
+		try {
+			std::size_t bytes_transferred = sock.receive_from(boost::asio::buffer(buffer), adaptorEndpoint);
+			if (bytes_transferred > 1) {  // we have data
+				process_udp_message(buffer);
+			}
+		}
+		catch (const boost::system::system_error& ex) {
+			std::cout << "Failed to receive from socket ... " << std::endl;
+			std::cout << ex.what() << std::endl;
+		}
+	}
+}
 
 void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message)
 {
@@ -722,24 +730,6 @@ void advatek_manager::process_udp_message(uint8_t * data) {
 	}
 }
 
-void advatek_manager::listen_for_devices() {
-	uint8_t buffer[100000];
-
-	if (r_socket.available() > 0)
-	{
-		try {
-			std::size_t bytes_transferred = r_socket.receive_from(boost::asio::buffer(buffer), receiver);
-			if (bytes_transferred > 1) {  // we have data
-				process_udp_message(buffer);
-			}
-		}
-		catch (const boost::system::system_error& ex) {
-			std::cout << "Failed to receive from socket ... " << std::endl;
-			std::cout << ex.what() << std::endl;
-		}
-	}
-}
-
 void advatek_manager::auto_sequence_channels(int d) {
 	auto device = advatek_manager::devices[d];
 
@@ -824,18 +814,18 @@ void advatek_manager::refreshAdaptors() {
 }
 
 void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
-	if (r_socket.is_open()) {
-		r_socket.close();
+	if (sock.is_open()) {
+		sock.close();
 	}
 
-	receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(networkAdaptors[adaptorIndex].c_str()), AdvPort);
-	//receiver = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), AdvPort);
+	adaptorEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(networkAdaptors[adaptorIndex].c_str()), AdvPort);
+	//adaptorEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), AdvPort);
 
 	try {
-		r_socket = boost::asio::ip::udp::socket(io_context, receiver);
+		sock = boost::asio::ip::udp::socket(io_context, adaptorEndpoint);
 	}
 	catch (boost::exception& e) {
-		std::cout << "Failed to setup receiver socket" << std::endl;
+		std::cout << "Failed to setup adaptorEndpoint socket" << std::endl;
 	}
 }
 
