@@ -210,6 +210,31 @@ void advatek_manager::broadcast_udp_message(std::vector<uint8_t> message)
 	send_udp_message(AdvAdr, AdvPort, true, message);
 }
 
+void advatek_manager::identifyDevice(int d, uint8_t duration) {
+	auto device = advatek_manager::devices[d];
+
+	std::vector<uint8_t> dataTape;
+
+	dataTape.resize(12);
+	dataTape[0] = 'A';
+	dataTape[1] = 'd';
+	dataTape[2] = 'v';
+	dataTape[3] = 'a';
+	dataTape[4] = 't';
+	dataTape[5] = 'e';
+	dataTape[6] = 'c';
+	dataTape[7] = 'h';
+	dataTape[8] = 0x00;   // Null Terminator
+	dataTape[9] = 0x00;   // OpCode
+	dataTape[10] = 0x05;  // OpCode
+	dataTape[11] = 0x08;  // ProtVer
+
+	dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
+	dataTape.push_back(duration);
+
+	unicast_udp_message(ipString(device->CurrentIP), dataTape);
+}
+
 void advatek_manager::updateDevice(int d) {
 
 	auto device = advatek_manager::devices[d];
@@ -694,6 +719,24 @@ void advatek_manager::process_udp_message(uint8_t * data) {
 		return;
 	default:
 		return;
+	}
+}
+
+void advatek_manager::listen_for_devices() {
+	uint8_t buffer[100000];
+
+	if (r_socket.available() > 0)
+	{
+		try {
+			std::size_t bytes_transferred = r_socket.receive_from(boost::asio::buffer(buffer), receiver);
+			if (bytes_transferred > 1) {  // we have data
+				process_udp_message(buffer);
+			}
+		}
+		catch (const boost::system::system_error& ex) {
+			std::cout << "Failed to receive from socket ... " << std::endl;
+			std::cout << ex.what() << std::endl;
+		}
 	}
 }
 

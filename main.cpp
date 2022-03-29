@@ -181,8 +181,8 @@ int main(int, char**)
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
+    //ImGui::StyleColorsDark();
+    ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -208,21 +208,7 @@ int main(int, char**)
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
-		uint8_t buffer[100000];
-		
-		if (r_socket.available() > 0)
-		{
-			try {
-				std::size_t bytes_transferred = r_socket.receive_from(boost::asio::buffer(buffer), receiver);
-				if (bytes_transferred > 1) {  // we have data
-					adv.process_udp_message(buffer);
-				}
-			} catch (const boost::system::system_error& ex) {
-				std::cout << "Failed to receive from socket ... " << std::endl;
-				std::cout << ex.what() << std::endl;
-			}
-		}
-		
+		adv.listen_for_devices();
 
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -337,8 +323,6 @@ int main(int, char**)
 							adv.devices[i]->DHCP = 0;
 						}
 
-						button_import_export_JSON(i);
-
 						if (ImGui::Button("Update Network"))
 						{
 							adv.bc_networkConfig(i);
@@ -433,7 +417,6 @@ int main(int, char**)
 						
 						ImGui::PopItemWidth();
 
-						button_import_export_JSON(i);
 						button_update_controller_settings(i);
 
 						ImGui::EndTabItem();
@@ -463,7 +446,6 @@ int main(int, char**)
 
 						ImGui::PopItemWidth();
 
-						button_import_export_JSON(i);
 						button_update_controller_settings(i);
 
 						ImGui::EndTabItem();
@@ -514,7 +496,6 @@ int main(int, char**)
 						};
 						ImGui::PopItemWidth();
 
-						button_import_export_JSON(i);
 						button_update_controller_settings(i);
 
 						ImGui::EndTabItem();
@@ -642,14 +623,22 @@ int main(int, char**)
 							ImGui::PopID();
 						}
 
-
-						button_import_export_JSON(i);
 						button_update_controller_settings(i);
 
 						ImGui::EndTabItem();
 						
 					}
 					ImGui::EndTabBar();
+
+					ImGui::Separator();
+					
+					if (ImGui::Button("ID"))
+					{
+						adv.identifyDevice(i, 20);
+					}
+					
+					ImGui::SameLine();
+					button_import_export_JSON(i);
 
 					ImGui::TreePop();
 				}

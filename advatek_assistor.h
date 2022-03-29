@@ -152,6 +152,7 @@ public:
 	std::vector<sAdvatekDevice*> devices;
 
 	void updateDevice(int d);
+	void identifyDevice(int d, uint8_t duration);
 	void setTest(int d);
 	void clearDevices();
 	void bc_networkConfig(int d);
@@ -159,6 +160,7 @@ public:
 	void process_opPollReply(uint8_t * data);
 	void process_opTestAnnounce(uint8_t * data);
 	void process_udp_message(uint8_t * data);
+	void listen_for_devices();
 	void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message);
 	void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message);
 	void broadcast_udp_message(std::vector<uint8_t> message);
