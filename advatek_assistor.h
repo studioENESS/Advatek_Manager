@@ -129,8 +129,9 @@ void insertSwapped16(std::vector<uint8_t> &dest, uint16_t* pData, int32_t size);
 bool deviceExist(uint8_t * Mac);
 
 extern boost::asio::io_context io_context;
-extern boost::asio::ip::udp::endpoint receiver;
+extern boost::asio::ip::udp::endpoint adaptorEndpoint;
 extern boost::asio::ip::udp::socket sock;
+
 extern boost::asio::ip::tcp::resolver resolver;
 extern boost::asio::ip::tcp::resolver::query query;
 

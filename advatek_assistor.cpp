@@ -136,24 +136,11 @@ void advatek_manager::listen() {
 void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message)
 {
 	try {
-		if (!sock.is_open()) sock.open(boost::asio::ip::udp::v4());
-
-		sock.set_option(boost::asio::ip::udp::socket::reuse_address(true));
 		sock.set_option(boost::asio::socket_base::broadcast(b_broadcast));
-		//sock.set_option(boost::asio::ip::multicast::enable_loopback(false));
-		//sock.set_option(boost::asio::socket_base::do_not_route(true));
-		//sock.set_option(boost::asio::ip::multicast::outbound_interface(boost::asio::ip::address::from_string(advatek_manager::networkAdaptors[currentAdaptor].c_str())));
-
-		boost::asio::ip::udp::endpoint senderEndpoint(boost::asio::ip::address::from_string(ip_address), port);
-
-		// bind
-		//sock.bind(senderEndpoint);
-
-		// set mcast group - join group -
-		//sock.set_option(boost::asio::ip::multicast::join_group(boost::asio::ip::address::from_string(AdvAdr).c_str(),
-		//	boost::asio::ip::address::from_string(networkAdaptors[currentAdaptor].c_str())));
-
-		sock.send_to(boost::asio::buffer(message), senderEndpoint);
+		
+		boost::asio::ip::udp::endpoint sendpoint(boost::asio::ip::address::from_string(ip_address.c_str()), port);
+		
+		sock.send_to(boost::asio::buffer(message), sendpoint);
 		
 		std::cout << "Message send from " << advatek_manager::networkAdaptors[currentAdaptor].c_str() << " to " <<  ip_address.c_str() << std::endl;
 
@@ -161,7 +148,6 @@ void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_
 		std::cout << "Failed to send message from " << advatek_manager::networkAdaptors[currentAdaptor].c_str() << " to " <<  ip_address.c_str() << std::endl;
 		std::cout << ex.what() << std::endl;
 	}
-
 }
 
 void advatek_manager::unicast_udp_message(std::string ip_address, std::vector<uint8_t> message)
@@ -770,18 +756,24 @@ void advatek_manager::refreshAdaptors() {
 }
 
 void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
+	boost::system::error_code err;
+
 	if (sock.is_open()) {
 		sock.close();
 	}
 
 	adaptorEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(networkAdaptors[adaptorIndex].c_str()), AdvPort);
-	//adaptorEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), AdvPort);
+	
+	sock = boost::asio::ip::udp::socket(io_context, adaptorEndpoint.protocol());
 
-	try {
-		sock = boost::asio::ip::udp::socket(io_context, adaptorEndpoint);
-	}
-	catch (boost::exception& e) {
-		std::cout << "Failed to setup adaptorEndpoint socket" << std::endl;
+	sock.set_option(boost::asio::ip::udp::socket::reuse_address(true));
+	
+	sock.bind(adaptorEndpoint, err);
+
+	if (err.value() != 0) {
+		std::cout << "Failed to bind the socket."
+			<< "Error code = " << err.value() << ". Message: "
+			<< err.message();
 	}
 }
 
