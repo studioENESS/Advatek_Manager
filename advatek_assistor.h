@@ -130,7 +130,6 @@ bool deviceExist(uint8_t * Mac);
 
 extern boost::asio::io_context io_context;
 extern boost::asio::ip::udp::endpoint receiver;
-extern boost::asio::ip::udp::socket s_socket;
 extern boost::asio::ip::udp::socket sock;
 extern boost::asio::ip::tcp::resolver resolver;
 extern boost::asio::ip::tcp::resolver::query query;

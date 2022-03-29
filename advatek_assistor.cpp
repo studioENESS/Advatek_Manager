@@ -110,7 +110,6 @@ bool advatek_manager::deviceExist(uint8_t * Mac) {
 boost::asio::io_context io_context;
 boost::asio::ip::udp::endpoint adaptorEndpoint(boost::asio::ip::address_v4::any(), AdvPort);
 
-boost::asio::ip::udp::socket s_socket(io_context);
 boost::asio::ip::udp::socket sock(io_context, adaptorEndpoint);
 
 boost::asio::ip::tcp::resolver resolver(io_context);
@@ -136,74 +135,31 @@ void advatek_manager::listen() {
 
 void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message)
 {
-
-	/*
-	boost::asio::io_context io_context;
-	boost::asio::ip::udp::socket socket(io_context);
-	boost::asio::ip::udp::endpoint local_endpoint;
-	boost::asio::ip::udp::endpoint remote_endpoint;
-	
-	socket.open(boost::asio::ip::udp::v4());
-	socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
-	socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
-	//local_endpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::any(), port);
-	if(b_broadcast) {
-		remote_endpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::broadcast(), port);
-	} else {
-		remote_endpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip_address), port);
-	}
-
 	try {
-		//socket.bind(local_endpoint);
-		socket.send_to(boost::asio::buffer(message), remote_endpoint);
-	} catch (boost::system::system_error e) {
-		std::cout << e.what() << std::endl;
-	}
-	*/
+		if (!sock.is_open()) sock.open(boost::asio::ip::udp::v4());
 
-
-	//boost::asio::ip::udp::endpoint senderEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port);
-	try {
-		
-		s_socket.open(boost::asio::ip::udp::v4());
-		s_socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
-		s_socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
-
-		// Set which interface to use 
-		//s_socket.set_option(boost::asio::ip::multicast::outbound_interface(boost::asio::ip::address::from_string(advatek_manager::networkAdaptors[currentAdaptor].c_str()).to_v4()));
-		//s_socket.set_option(boost::asio::socket_base::do_not_route(true));
-		//s_socket.set_option(boost::asio::socket_base::reuse_address(true));
+		sock.set_option(boost::asio::ip::udp::socket::reuse_address(true));
+		sock.set_option(boost::asio::socket_base::broadcast(b_broadcast));
+		//sock.set_option(boost::asio::ip::multicast::enable_loopback(false));
+		//sock.set_option(boost::asio::socket_base::do_not_route(true));
+		//sock.set_option(boost::asio::ip::multicast::outbound_interface(boost::asio::ip::address::from_string(advatek_manager::networkAdaptors[currentAdaptor].c_str())));
 
 		boost::asio::ip::udp::endpoint senderEndpoint(boost::asio::ip::address::from_string(ip_address), port);
-		//boost::asio::ip::udp::endpoint senderEndpoint(boost::asio::ip::address::from_string(ip_address).to_v4(), port);
-
-		//---------------------------
 
 		// bind
-		//s_socket.bind(senderEndpoint);
-
-		// disable loopback
-		//s_socket.set_option(boost::asio::ip::multicast::enable_loopback(false));
-
-		// set oif - the socket will use this interface as outgoing interface
-		//s_socket.set_option(boost::asio::ip::multicast::outbound_interface(boost::asio::ip::address::from_string(networkAdaptors[currentAdaptor].c_str()).to_v4()));
+		//sock.bind(senderEndpoint);
 
 		// set mcast group - join group -
-		//s_socket.set_option(boost::asio::ip::multicast::join_group(boost::asio::ip::address::from_string(AdvAdr).to_v4(),
-		//	boost::asio::ip::address::from_string(networkAdaptors[currentAdaptor].c_str()).to_v4()));
+		//sock.set_option(boost::asio::ip::multicast::join_group(boost::asio::ip::address::from_string(AdvAdr).c_str(),
+		//	boost::asio::ip::address::from_string(networkAdaptors[currentAdaptor].c_str())));
 
-		//---------------------------
-		s_socket.send_to(boost::asio::buffer(message), senderEndpoint);
+		sock.send_to(boost::asio::buffer(message), senderEndpoint);
 		
 		std::cout << "Message send from " << advatek_manager::networkAdaptors[currentAdaptor].c_str() << " to " <<  ip_address.c_str() << std::endl;
 
 	} catch (const boost::system::system_error& ex) {
 		std::cout << "Failed to send message from " << advatek_manager::networkAdaptors[currentAdaptor].c_str() << " to " <<  ip_address.c_str() << std::endl;
 		std::cout << ex.what() << std::endl;
-	}
-
-	if(s_socket.is_open()){
-		s_socket.close();
 	}
 
 }
