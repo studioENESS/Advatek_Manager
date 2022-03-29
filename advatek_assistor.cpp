@@ -136,6 +136,10 @@ void advatek_manager::listen() {
 void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message)
 {
 	try {
+		boost::asio::ip::address_v4 local_interface = boost::asio::ip::address_v4::from_string(networkAdaptors[currentAdaptor].c_str());
+		boost::asio::ip::multicast::outbound_interface option(local_interface);
+		sock.set_option(option);
+
 		sock.set_option(boost::asio::socket_base::broadcast(b_broadcast));
 		
 		boost::asio::ip::udp::endpoint sendpoint(boost::asio::ip::address::from_string(ip_address.c_str()), port);
