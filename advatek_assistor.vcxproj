@@ -164,6 +164,7 @@
     <ClCompile Include="External\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="External\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="udpclient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="advatek_assistor.h" />
@@ -173,6 +174,8 @@
     <ClInclude Include="External\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="LockedQueue.h" />
+    <ClInclude Include="udpclient.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="External\imgui\misc\debuggers\imgui.natvis" />

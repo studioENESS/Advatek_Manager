@@ -37,6 +37,9 @@
     <ClCompile Include="advatek_assistor.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="udpclient.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\imgui\imconfig.h">
@@ -58,6 +61,12 @@
       <Filter>sources</Filter>
     </ClInclude>
     <ClInclude Include="advatek_assistor.h">
+      <Filter>sources</Filter>
+    </ClInclude>
+    <ClInclude Include="udpclient.h">
+      <Filter>sources</Filter>
+    </ClInclude>
+    <ClInclude Include="LockedQueue.h">
       <Filter>sources</Filter>
     </ClInclude>
   </ItemGroup>

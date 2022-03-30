@@ -112,8 +112,10 @@ void button_import_export_JSON(int d) {
 
 	}
 }
-
+#ifndef DEBUG
 #pragma comment(linker, "/SUBSYSTEM:Windows /ENTRY:mainCRTStartup")
+#endif
+
 
 int main(int, char**)
 {

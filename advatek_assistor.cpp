@@ -1,4 +1,5 @@
 #include "advatek_assistor.h"
+#include "udpclient.h"
 
 namespace pt = boost::property_tree;
 
@@ -107,51 +108,24 @@ bool advatek_manager::deviceExist(uint8_t * Mac) {
 	return false;
 }
 
-boost::asio::io_context io_context;
-boost::asio::ip::udp::endpoint adaptorEndpoint(boost::asio::ip::address_v4::any(), AdvPort);
-
-boost::asio::ip::udp::socket sock(io_context, adaptorEndpoint);
-
-boost::asio::ip::tcp::resolver resolver(io_context);
-boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "");
 
 void advatek_manager::listen() {
 	uint8_t buffer[100000];
 
-	if (sock.available() > 0)
+	if (m_pUdpClient && m_pUdpClient->HasMessages())
 	{
-		try {
-			std::size_t bytes_transferred = sock.receive_from(boost::asio::buffer(buffer), adaptorEndpoint);
-			if (bytes_transferred > 1) {  // we have data
-				process_udp_message(buffer);
-			}
-		}
-		catch (const boost::system::system_error& ex) {
-			std::cout << "Failed to receive from socket ... " << std::endl;
-			std::cout << ex.what() << std::endl;
-		}
+		auto buf = m_pUdpClient->PopMessage();
+		process_udp_message(buf.data());
 	}
 }
 
 void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message)
 {
-	try {
-		boost::asio::ip::address_v4 local_interface = boost::asio::ip::address_v4::from_string(networkAdaptors[currentAdaptor].c_str());
-		boost::asio::ip::multicast::outbound_interface option(local_interface);
-		sock.set_option(option);
-
-		sock.set_option(boost::asio::socket_base::broadcast(b_broadcast));
-		
-		boost::asio::ip::udp::endpoint sendpoint(boost::asio::ip::address::from_string(ip_address.c_str()), port);
-		
-		sock.send_to(boost::asio::buffer(message), sendpoint);
-		
-		std::cout << "Message send from " << advatek_manager::networkAdaptors[currentAdaptor].c_str() << " to " <<  ip_address.c_str() << std::endl;
-
-	} catch (const boost::system::system_error& ex) {
-		std::cout << "Failed to send message from " << advatek_manager::networkAdaptors[currentAdaptor].c_str() << " to " <<  ip_address.c_str() << std::endl;
-		std::cout << ex.what() << std::endl;
+	if (m_pUdpClient)
+	{
+		m_pUdpClient->Send(message, ip_address, b_broadcast);
 	}
+	
 }
 
 void advatek_manager::unicast_udp_message(std::string ip_address, std::vector<uint8_t> message)
@@ -736,6 +710,13 @@ void advatek_manager::refreshAdaptors() {
 	boost::asio::ip::tcp::resolver::iterator it;
 	try
 	{
+		boost::asio::io_context io_context;
+		boost::asio::ip::udp::endpoint adaptorEndpoint(boost::asio::ip::address_v4::any(), AdvPort);
+
+		boost::asio::ip::udp::socket sock(io_context, adaptorEndpoint);
+
+		boost::asio::ip::tcp::resolver resolver(io_context);
+		boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "");
 		it = resolver.resolve(query);
 	}
 	catch (boost::exception& e)
@@ -754,31 +735,20 @@ void advatek_manager::refreshAdaptors() {
 	}
 	if (advatek_manager::networkAdaptors.size() > 0) {
 		advatek_manager::currentAdaptor = 0;
+		m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
 	} else {
 		advatek_manager::currentAdaptor = -1;
 	}
+
 }
 
 void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
 	boost::system::error_code err;
 
-	if (sock.is_open()) {
-		sock.close();
-	}
+	if (m_pUdpClient)
+		delete m_pUdpClient;
 
-	adaptorEndpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(networkAdaptors[adaptorIndex].c_str()), AdvPort);
-	
-	sock = boost::asio::ip::udp::socket(io_context, adaptorEndpoint.protocol());
-
-	sock.set_option(boost::asio::ip::udp::socket::reuse_address(true));
-	
-	sock.bind(adaptorEndpoint, err);
-
-	if (err.value() != 0) {
-		std::cout << "Failed to bind the socket."
-			<< "Error code = " << err.value() << ". Message: "
-			<< err.message();
-	}
+	m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
 }
 
 void advatek_manager::importJSON(int d, std::string path, sImportOptions &importOptions) {

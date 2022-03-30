@@ -15,6 +15,7 @@
 #include <boost/program_options.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 
+class IClient;
 #define Version "v1.0.0"
 
 #define AdvAdr "255.255.255.255" // Advatek zero network broadcast address
@@ -127,13 +128,13 @@ extern const char* TestModes[9];
 void insertSwapped16(std::vector<uint8_t> &dest, uint16_t* pData, int32_t size);
 
 bool deviceExist(uint8_t * Mac);
-
-extern boost::asio::io_context io_context;
-extern boost::asio::ip::udp::endpoint adaptorEndpoint;
-extern boost::asio::ip::udp::socket sock;
-
-extern boost::asio::ip::tcp::resolver resolver;
-extern boost::asio::ip::tcp::resolver::query query;
+//
+//extern boost::asio::io_context io_context;
+//extern boost::asio::ip::udp::endpoint adaptorEndpoint;
+//extern boost::asio::ip::udp::socket sock;
+//
+//extern boost::asio::ip::tcp::resolver resolver;
+//extern boost::asio::ip::tcp::resolver::query query;
 
 void setEndUniverseChannel(uint16_t startUniverse, uint16_t startChannel, uint16_t pixelCount, uint16_t outputGrouping, uint16_t &endUniverse, uint16_t &endChannel);
 void load_ipStr(std::string ipStr, uint8_t *address);
@@ -175,6 +176,7 @@ public:
 
 	static const char* RGBW_Order[24];
 
+	IClient* m_pUdpClient;
 private:
 
 };
