@@ -705,7 +705,7 @@ void advatek_manager::process_simple_config(int d) {
 
 void advatek_manager::refreshAdaptors() {
 
-	advatek_manager::networkAdaptors.clear();
+	networkAdaptors.clear();
 
 	boost::asio::ip::tcp::resolver::iterator it;
 	try
@@ -730,12 +730,12 @@ void advatek_manager::refreshAdaptors() {
 		boost::asio::ip::address addr = (it++)->endpoint().address();
 		std::cout << "adaptor found: " << addr.to_string() << std::endl;
 		if (addr.is_v4()) {
-			advatek_manager::networkAdaptors.push_back(addr.to_string());
+			networkAdaptors.push_back(addr.to_string());
 		}
 	}
-	if (advatek_manager::networkAdaptors.size() > 0) {
-		advatek_manager::currentAdaptor = 0;
-		m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
+	if (networkAdaptors.size() > 0) {
+		currentAdaptor = 0;
+		m_pUdpClient = new UdpClient(networkAdaptors[currentAdaptor].c_str(), AdvPort);
 	} else {
 		advatek_manager::currentAdaptor = -1;
 	}
