@@ -85,6 +85,15 @@ std::string ipString(uint8_t * address) {
 	return ss.str();
 }
 
+std::vector<std::string> splitter(std::string in_pattern, std::string& content) {
+	std::vector<std::string> split_content;
+
+	std::regex pattern(in_pattern);
+	std::copy(std::sregex_token_iterator(content.begin(), content.end(), pattern, -1),
+		std::sregex_token_iterator(), std::back_inserter(split_content));
+	return split_content;
+}
+
 void insertSwapped16(std::vector<uint8_t> &dest, uint16_t* pData, int32_t size)
 {
 	for (int i = 0; i < size; i++)
@@ -751,75 +760,105 @@ void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
 	m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
 }
 
-void advatek_manager::importJSON(int d, std::string path, sImportOptions &importOptions) {
+std::string advatek_manager::importJSON(int d, std::string path, sImportOptions &importOptions) {
 	auto device = advatek_manager::devices[d];
 	std::string s_hold;
 	pt::ptree root;
 
 	pt::read_json(path, root);
 	
+	std::stringstream report;
+
+	if (root.get<std::string>("Model").compare(std::string((char *)device->Model)) == 0) {
+		report << "Done!\n";
+	} else {
+		report << "Beware: Loaded data from ";
+		report << root.get<std::string>("Model");
+		report << " to ";
+		report << device->Model;
+		report << "\n";
+	}
+
 	//root.get<std::string>("CurrentProtVer");
 	//root.get<std::string>("Mac");
+
 	if (importOptions.network) {
 
-		GetValueFromJson(uint8_t, DHCP);
+		SetValueFromJson(uint8_t, DHCP);
 
 		s_hold = root.get<std::string>("StaticIP");
 		load_ipStr(s_hold, device->StaticIP);
 		s_hold = root.get<std::string>("StaticSM");
 		load_ipStr(s_hold, device->StaticSM);
+
+		report << "- Import Network Settings Succesfull.\n";
 	}
 
-	//device->Model = root.get<std::string>("Model");
-
 	if (importOptions.ethernet_control) {
-		GetValueFromJson(uint8_t, HoldLastFrame);
-		GetValueFromJson(uint8_t, SimpleConfig);
-		GetValueFromJson(uint16_t, MaxPixPerOutput);
-		GetValueFromJson(uint8_t, NumOutputs);
+		bool go = EqualValueJson(uint8_t, NumOutputs);
+		if ( go ) {
+			SetValueFromJson(uint8_t, HoldLastFrame);
+			SetValueFromJson(uint8_t, SimpleConfig);
+			SetValueFromJson(uint16_t, MaxPixPerOutput);
+			SetValueFromJson(uint8_t, NumOutputs);
 
-		GetChildIntValuesFromJson(OutputPixels);
-		GetChildIntValuesFromJson(OutputUniv);
-		GetChildIntValuesFromJson(OutputChan);
-		GetChildIntValuesFromJson(OutputNull);
-		GetChildIntValuesFromJson(OutputZig);
-		GetChildIntValuesFromJson(OutputReverse);
-		GetChildIntValuesFromJson(OutputColOrder);
-		GetChildIntValuesFromJson(OutputGrouping);
-		GetChildIntValuesFromJson(OutputBrightness);
+			SetChildIntValuesFromJson(OutputPixels);
+			SetChildIntValuesFromJson(OutputUniv);
+			SetChildIntValuesFromJson(OutputChan);
+			SetChildIntValuesFromJson(OutputNull);
+			SetChildIntValuesFromJson(OutputZig);
+			SetChildIntValuesFromJson(OutputReverse);
+			SetChildIntValuesFromJson(OutputColOrder);
+			SetChildIntValuesFromJson(OutputGrouping);
+			SetChildIntValuesFromJson(OutputBrightness);
+			report << "- Import Ethernet Control Succesfull.\n";
+		} else {
+			report << "- Import Ethernet Control Failed. (Output count does not match)\n";
+		}
 	}
 
 	if (importOptions.dmx_outputs) {
-		GetValueFromJson(uint8_t, ProtocolsOnDmxOut);
-		GetChildIntValuesFromJson(DmxOutOn);
-		GetChildIntValuesFromJson(DmxOutUniv);
+		bool go = EqualValueJson(uint8_t, NumDMXOutputs);
+		if (go) {
+			SetValueFromJson(uint8_t, ProtocolsOnDmxOut);
+			SetChildIntValuesFromJson(DmxOutOn);
+			SetChildIntValuesFromJson(DmxOutUniv);
+			report << "- Import DMX Control Succesfull.\n";
+		} else {
+			report << "- Import DMX Control Failed. (Output count does not match)\n";
+		}
 	}
 
-	//GetValueFromJson(uint8_t, NumDrivers);
+	//SetValueFromJson(uint8_t, NumDrivers);
 
 	if (importOptions.led_settings) {
-		GetChildIntValuesFromJson(DriverType);
-		GetChildIntValuesFromJson(DriverSpeed);
-		GetChildIntValuesFromJson(DriverExpandable);
-		//GetChildStringValuesFromJson(DriverNames);
+		SetChildIntValuesFromJson(DriverType);
+		SetChildIntValuesFromJson(DriverSpeed);
+		SetChildIntValuesFromJson(DriverExpandable);
+		//SetChildStringValuesFromJson(DriverNames);
 
-		GetValueFromJson(int, CurrentDriver);
-		GetValueFromJson(uint8_t, CurrentDriverType);
-		GetValueFromJson(int, CurrentDriverSpeed);
-		GetValueFromJson(uint8_t, CurrentDriverExpanded);
+		SetValueFromJson(int, CurrentDriver);
+		SetValueFromJson(uint8_t, CurrentDriverType);
+		SetValueFromJson(int, CurrentDriverSpeed);
+		SetValueFromJson(uint8_t, CurrentDriverExpanded);
 
-		GetChildIntValuesFromJson(Gamma);
+		SetChildIntValuesFromJson(Gamma);
+
+		report << "- Import LED Settings Succesfull.\n";
 	}
 	
 	if (importOptions.nickname) {
 		s_hold = root.get<std::string>("Nickname");
 		strncpy(device->Nickname, s_hold.c_str(), 40);
+		report << "- Import Nickname Succesfull.\n";
 	}
 
 	if (importOptions.fan_on_temp) {
-		GetValueFromJson(uint8_t, MaxTargetTemp);
+		SetValueFromJson(uint8_t, MaxTargetTemp);
+		report << "- Import Fan On Temp Succesfull.\n";
 	}
-
+	
+	return report.str();
 }
 
 void advatek_manager::exportJSON(int d, std::string path) {

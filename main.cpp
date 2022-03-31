@@ -49,6 +49,49 @@ int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
 
 static std::string adaptor_string = "No Adaptors Found";
+static std::string result = "";
+
+void showResult(std::string& result) {
+	if (result.empty() == false)
+		ImGui::OpenPopup("Result");
+
+	//Always center this window when appearing
+	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	//ImGui::SetNextWindowSize(ImVec2(400, 300));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, -1.f), ImVec2(INFINITY, -1.f));
+
+	if (ImGui::BeginPopupModal("Result", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		// First line is header
+		std::vector<std::string> lines = splitter("\n", result);
+
+		ImGui::Text(lines[0].c_str());
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+
+		for (std::vector<std::string>::size_type i = 1; i != lines.size(); i++) {
+			ImGui::TextWrapped(lines[i].c_str());
+		}
+
+		ImGui::PopStyleVar();
+		ImGui::Spacing();
+
+		auto txtCol = IM_COL32(80, 80, 80, 255);
+		ImGui::PushStyleColor(ImGuiCol_Text, txtCol);
+		ImGui::TextWrapped("Please click the Update Network or Update Settings to save these changes to the controller.");
+		ImGui::PopStyleColor();
+
+		ImGui::Spacing();
+		if (ImGui::Button("OK", ImVec2(120, 0))) {
+			result = std::string("");
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
 
 void button_update_controller_settings(int i) {
 	if (ImGui::Button("Update Settings"))
@@ -59,7 +102,6 @@ void button_update_controller_settings(int i) {
 }
 
 void button_import_export_JSON(int d) {
-
 	if (ImGui::Button("Import JSON"))
 		ImGui::OpenPopup("Import");
 
@@ -71,6 +113,7 @@ void button_import_export_JSON(int d) {
 	{
 		ImGui::Text("What needs importing?");
 		ImGui::Separator();
+		ImGui::Spacing();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
@@ -82,12 +125,13 @@ void button_import_export_JSON(int d) {
 		ImGui::Checkbox("Fan On Temp", &importOptions.fan_on_temp);
 		
 		ImGui::PopStyleVar();
+		ImGui::Spacing();
 
 		if (ImGui::Button("Import", ImVec2(120, 0))) { 
 			ImGui::CloseCurrentPopup(); 
-			auto path = pfd::open_file("Select a file").result();
+			auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
 			if (!path.empty()) {
-				adv.importJSON(d, path.at(0), importOptions);
+				result = adv.importJSON(d, path.at(0), importOptions);
 			}
 		}
 		ImGui::SetItemDefaultFocus();
@@ -112,10 +156,11 @@ void button_import_export_JSON(int d) {
 
 	}
 }
+
+
 #ifndef DEBUG
 #pragma comment(linker, "/SUBSYSTEM:Windows /ENTRY:mainCRTStartup")
 #endif
-
 
 int main(int, char**)
 {
@@ -273,6 +318,8 @@ int main(int, char**)
 
 			ImGui::Text("%li Device(s) Connected", adv.devices.size());
 
+			showResult(result);
+
 			for (uint8_t i = 0; i < adv.devices.size(); i++) {
 				std::stringstream Title;
 				Title << adv.devices[i]->Model << "	" << adv.devices[i]->Firmware << "	" << ipString(adv.devices[i]->CurrentIP) << "		" << "Temp: " << (float)adv.devices[i]->Temperature*0.1 << "		" << adv.devices[i]->Nickname;
@@ -343,12 +390,12 @@ int main(int, char**)
 							adv.devices[i]->Protocol = 0;
 						}
 						ImGui::SameLine();
-						static bool tempHoldLastFrame = (bool)adv.devices[i]->HoldLastFrame;
+						bool tempHoldLastFrame = (bool)adv.devices[i]->HoldLastFrame;
 						if (ImGui::Checkbox("Hold LastFrame", &tempHoldLastFrame)) {
 							adv.devices[i]->HoldLastFrame = tempHoldLastFrame;
 						}
 
-						static bool tempSimpleConfig = (bool)adv.devices[i]->SimpleConfig;
+						bool tempSimpleConfig = (bool)adv.devices[i]->SimpleConfig;
 						if (ImGui::Checkbox("Simple Config", &tempSimpleConfig)) {
 							adv.devices[i]->SimpleConfig = tempSimpleConfig;
 						}
@@ -361,7 +408,7 @@ int main(int, char**)
 							ImGui::InputScalar("Pixels Per Output", ImGuiDataType_U16, &adv.devices[i]->OutputPixels[0], 0, 0, 0); 
 						}
 						else {
-							static bool autoChannels = false;
+							bool autoChannels = false;
 							ImGui::SameLine();
 							ImGui::Checkbox("Automatic Sequence Channels", &autoChannels);
 
@@ -641,7 +688,7 @@ int main(int, char**)
 					
 					ImGui::SameLine();
 					button_import_export_JSON(i);
-
+					ImGui::Separator();
 					ImGui::TreePop();
 				}
 			}

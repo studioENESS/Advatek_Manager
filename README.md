@@ -14,7 +14,7 @@ This is an Advatek Assistant clone that can run under Linux and adds the followi
 
 ## Dependencies
 
-  - [ImGui](https://github.com/ocornut/imgui) ([Interavctive Manual](https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html))  
+  - [ImGui](https://github.com/ocornut/imgui) ([Interactive Manual](https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html))  
   - [Boost](https://github.com/boostorg/boost)  
   - [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)  
 

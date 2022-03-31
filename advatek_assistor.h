@@ -6,6 +6,7 @@
 #include <string>  
 #include <iomanip>
 #include <vector>
+#include <regex>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -31,12 +32,13 @@ class IClient;
 
 #define bswap_16(x) x=((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
-#define GetValueFromJson(type, atr) device->atr = root.get<type>(#atr);
-#define GetChildIntValuesFromJson(atr) \
+#define EqualValueJson(type, atr) (device->atr == root.get<type>(#atr));
+#define SetValueFromJson(type, atr) device->atr = root.get<type>(#atr);
+#define SetChildIntValuesFromJson(atr) \
 	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
 	 device->atr[std::stoi(node.first)] = std::stoi(node.second.data()); }
 
-#define GetChildStringValuesFromJson(atr) \
+#define SetChildStringValuesFromJson(atr) \
 	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
 	 device->atr[std::stoi(node.first)] = std::string(node.second.data()).c_str(); }
 
@@ -119,6 +121,8 @@ typedef struct tImportOptions {
 std::string macString(uint8_t * address);
 std::string ipString(uint8_t * address);
 
+std::vector<std::string> splitter(std::string in_pattern, std::string& content);
+
 //extern const char* RGBW_Order[24];
 extern const char* DriverTypes[3];
 extern const char* DriverSpeeds[5];
@@ -171,7 +175,7 @@ public:
 	void refreshAdaptors();
 	void setCurrentAdaptor(int adaptorIndex);
 	
-	void importJSON(int d, std::string path, sImportOptions &importOptions);
+	std::string importJSON(int d, std::string path, sImportOptions &importOptions);
 	void exportJSON(int d, std::string path);
 
 	static const char* RGBW_Order[24];
