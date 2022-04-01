@@ -1,5 +1,9 @@
 #include "advatek_assistor.h"
 #include "udpclient.h"
+#ifndef _WIN32
+#include <netdb.h>
+#include <ifaddrs.h>
+#endif
 
 namespace pt = boost::property_tree;
 
@@ -7,7 +11,7 @@ const char* DriverTypes[3] = {
 		"RGB only",
 		"RGBW only",
 		"Either RGB or RGBW"
-};	
+};
 
 const char* DriverSpeedsMhz[12] = {
 	"0.4 MHz", // Data Only Slow
@@ -134,7 +138,7 @@ void advatek_manager::send_udp_message(std::string ip_address, int port, bool b_
 	{
 		m_pUdpClient->Send(message, ip_address, b_broadcast);
 	}
-	
+
 }
 
 void advatek_manager::unicast_udp_message(std::string ip_address, std::vector<uint8_t> message)
@@ -584,7 +588,7 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 }
 
 void advatek_manager::process_opTestAnnounce(uint8_t * data) {
-	
+
 	uint8_t ProtVer;
 	memcpy(&ProtVer, data, sizeof(uint8_t));
 	data += 1;
@@ -606,7 +610,7 @@ void advatek_manager::process_opTestAnnounce(uint8_t * data) {
 		}
 		if (exist) deviceID = d;
 	}
-	
+
 	if (deviceID >= 0) {
 		auto device = advatek_manager::devices[deviceID];
 
@@ -715,17 +719,52 @@ void advatek_manager::process_simple_config(int d) {
 void advatek_manager::refreshAdaptors() {
 
 	networkAdaptors.clear();
+	#ifndef _WIN32
+	struct ifaddrs *ifaddr, *ifa;
+    int family, s;
+    char host[NI_MAXHOST];
+
+    if (getifaddrs(&ifaddr) == -1)
+    {
+        perror("getifaddrs");
+        exit(EXIT_FAILURE);
+    }
+
+
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+    {
+        if (ifa->ifa_addr == NULL)
+            continue;
+
+        s=getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in),host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+        if((strcmp(ifa->ifa_name,"lo")!=0)&&(ifa->ifa_addr->sa_family==AF_INET))
+        {
+            if (s != 0)
+            {
+                printf("getnameinfo() failed: %s\n", gai_strerror(s));
+                exit(EXIT_FAILURE);
+            }
+            printf("\tInterface : <%s>\n",ifa->ifa_name );
+            printf("\t  Address : <%s>\n", host);
+            networkAdaptors.push_back(std::string(host));
+        }
+    }
+
+    freeifaddrs(ifaddr);
+	    #else
 
 	boost::asio::ip::tcp::resolver::iterator it;
 	try
 	{
 		boost::asio::io_context io_context;
-		boost::asio::ip::udp::endpoint adaptorEndpoint(boost::asio::ip::address_v4::any(), AdvPort);
+		boost::asio::ip::tcp::endpoint adaptorEndpoint(boost::asio::ip::address_v4::any(), AdvPort);
 
-		boost::asio::ip::udp::socket sock(io_context, adaptorEndpoint);
+		boost::asio::ip::tcp::socket sock(io_context, adaptorEndpoint);
 
 		boost::asio::ip::tcp::resolver resolver(io_context);
-		boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "");
+
+		boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "",boost::asio::ip::resolver_query_base::flags());
 		it = resolver.resolve(query);
 	}
 	catch (boost::exception& e)
@@ -736,12 +775,15 @@ void advatek_manager::refreshAdaptors() {
 
 	while (it != boost::asio::ip::tcp::resolver::iterator())
 	{
+        std::cout <<" bob" <<std::endl;
 		boost::asio::ip::address addr = (it++)->endpoint().address();
 		std::cout << "adaptor found: " << addr.to_string() << std::endl;
 		if (addr.is_v4()) {
 			networkAdaptors.push_back(addr.to_string());
 		}
 	}
+	#endif
+
 	if (networkAdaptors.size() > 0) {
 		currentAdaptor = 0;
 		m_pUdpClient = new UdpClient(networkAdaptors[currentAdaptor].c_str(), AdvPort);
@@ -846,7 +888,7 @@ std::string advatek_manager::importJSON(int d, std::string path, sImportOptions 
 
 		report << "- Import LED Settings Succesfull.\n";
 	}
-	
+
 	if (importOptions.nickname) {
 		s_hold = root.get<std::string>("Nickname");
 		strncpy(device->Nickname, s_hold.c_str(), 40);
@@ -909,7 +951,7 @@ void advatek_manager::exportJSON(int d, std::string path) {
 	root.add_child("OutputColOrder", OutputColOrder);
 	root.add_child("OutputGrouping", OutputGrouping);
 	root.add_child("OutputBrightness", OutputBrightness);
-	
+
 	//root.put("NumDMXOutputs", device->NumDMXOutputs);
 	root.put("ProtocolsOnDmxOut", device->ProtocolsOnDmxOut);
 
@@ -961,7 +1003,7 @@ void advatek_manager::exportJSON(int d, std::string path) {
 
 	root.put("Nickname", device->Nickname);
 	root.put("MaxTargetTemp", device->MaxTargetTemp);
-	
+
 	//pt::write_json(std::cout, root);
 
 	std::ofstream outfile;

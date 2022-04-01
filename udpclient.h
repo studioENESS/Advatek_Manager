@@ -9,14 +9,14 @@
 
 static const int NetworkBufferSize = 4096;
 using boost::asio::ip::udp;
-class IClient abstract
+class IClient 
 {
 public:
 	virtual ~IClient() {};
-	virtual bool bind() abstract = 0;
-	virtual bool HasMessages() abstract = 0;
-	virtual void Send(const std::vector<uint8_t>& message, std::string& s_adr, bool b_broadcast) abstract = 0;
-	virtual std::vector<uint8_t> PopMessage() abstract = 0;
+	virtual bool bind() = 0;
+	virtual bool HasMessages() = 0;
+	virtual void Send(const std::vector<uint8_t>& message, std::string& s_adr, bool b_broadcast) = 0;
+	virtual std::vector<uint8_t> PopMessage() = 0;
 };
 
 
@@ -41,7 +41,7 @@ private:
 	unsigned short m_serverport;
 	boost::asio::io_service io_service;
 	boost::asio::io_context io_context;
-	udp::socket socket;
+	udp::socket socket, recvsocket;
 	udp::endpoint server_endpoint;
 	udp::endpoint remote_endpoint;
 	std::array<char, NetworkBufferSize> recv_buffer;
