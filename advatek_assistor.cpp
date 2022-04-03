@@ -769,23 +769,27 @@ void advatek_manager::refreshAdaptors() {
 	}
 	catch (boost::exception& e)
 	{
-		std::cout << "Query didn't resolve Any adaptors - " << boost::diagnostic_information(e) << std::endl;
+		std::cout << "Query didn't resolve Any adapters - " << boost::diagnostic_information(e) << std::endl;
 		return;
 	}
 
 	while (it != boost::asio::ip::tcp::resolver::iterator())
 	{
-        std::cout <<" bob" <<std::endl;
 		boost::asio::ip::address addr = (it++)->endpoint().address();
-		std::cout << "adaptor found: " << addr.to_string() << std::endl;
+		std::cout << "adapter found: " << addr.to_string() << std::endl;
 		if (addr.is_v4()) {
 			networkAdaptors.push_back(addr.to_string());
 		}
 	}
 	#endif
 
-	if (networkAdaptors.size() > 0) {
+	if (!networkAdaptors.empty()) {
 		currentAdaptor = 0;
+		if (m_pUdpClient)
+		{
+			delete m_pUdpClient;
+			m_pUdpClient = nullptr;
+		}
 		m_pUdpClient = new UdpClient(networkAdaptors[currentAdaptor].c_str(), AdvPort);
 	} else {
 		advatek_manager::currentAdaptor = -1;

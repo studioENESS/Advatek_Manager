@@ -73,25 +73,10 @@ void UdpClient::run_service()
 
 void UdpClient::start_receive()
 {
-
     try
     {
-        size_t availBytes = socket.available();
-        if (availBytes > 0)
-        {
-            uint8_t buffer[100000];
-            std::size_t bytes_transferred = socket.receive_from(boost::asio::buffer(buffer,10000), remote_endpoint);
-            if (bytes_transferred > 1)
-            {
-                std::vector<uint8_t> message;
-                for (int i = 0; i < bytes_transferred; i++)
-                {
-                    message.push_back(buffer[i]);
-                }
-                incomingMessages.push(message);
-            }
-        }
-         availBytes = recvsocket.available();
+        
+		size_t availBytes = recvsocket.available();
         if (availBytes > 0)
         {
             uint8_t buffer[100000];
