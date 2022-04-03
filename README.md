@@ -48,9 +48,8 @@ This is an Advatek Assistant clone that can run under Linux and adds the followi
 `
 ## Run
 
-After downloading a release on the Linux make it executable:
+Run the executable.
+
+On Linux make it executable:
 
     Properties > Permissions > Execute > Anyone
-
-> Adaptor selection does not work properly on the Raspberry Pi. Workaround is to Turn WiFi off or alternativly set it's prioraty with `sudo ifmetric wlan0 400` both will need to be reset to have internet conection back `sudo ifmetric wlan0 40`  :ok_hand:
-

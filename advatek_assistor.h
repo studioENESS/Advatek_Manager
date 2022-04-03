@@ -17,7 +17,6 @@
 #include <boost/exception/diagnostic_information.hpp>
 
 class IClient;
-#define Version "v1.0.0"
 
 #define AdvAdr "255.255.255.255" // Advatek zero network broadcast address
 #define AdvPort 49150 // Advatek UDP Port
