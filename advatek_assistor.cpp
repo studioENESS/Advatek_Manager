@@ -378,7 +378,8 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 	memcpy(&rec_data->ModelLength, data, sizeof(uint8_t));
 	data += 1;
 
-	rec_data->Model = new uint8_t[rec_data->ModelLength];
+	rec_data->Model = new uint8_t[rec_data->ModelLength+1];
+	memset(rec_data->Model, 0x00, sizeof(uint8_t) * (rec_data->ModelLength+1));
 	memcpy(rec_data->Model, data, sizeof(uint8_t)*rec_data->ModelLength);
 	data += rec_data->ModelLength;
 
@@ -391,8 +392,9 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 	memcpy(&rec_data->LenFirmware, data, sizeof(uint8_t));
 	data += 1;
 
-	rec_data->Firmware = new uint8_t[rec_data->LenFirmware];
-	memcpy(rec_data->Firmware, data, sizeof(uint8_t)*rec_data->LenFirmware);
+	rec_data->Firmware = new uint8_t[rec_data->LenFirmware + 1];
+	memset(rec_data->Firmware, 0x00, sizeof(uint8_t) * (rec_data->LenFirmware + 1));
+	memcpy(rec_data->Firmware, data, sizeof(uint8_t) * rec_data->LenFirmware);
 	data += rec_data->LenFirmware;
 
 	memcpy(&rec_data->Brand, data, sizeof(uint8_t));
