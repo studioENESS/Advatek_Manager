@@ -6,7 +6,7 @@
 
 This is an Advatek Assistant clone that can run under Linux and adds the following features:
 
-  - Works on Raspberry Pi
+  - Works and tested on Debian variants (Raspberry Pi / Ubuntu)
   - Saving and Loading of Advatek config settings to and from the controller in JSON format
   - Cycling of output channels in test mode
   - Cycling of output pixels in test mode
@@ -14,9 +14,19 @@ This is an Advatek Assistant clone that can run under Linux and adds the followi
 
 ## Dependencies
 
+  - [GLFW](https://github.com/glfw/glfw)
   - [ImGui](https://github.com/ocornut/imgui) ([Interactive Manual](https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html))  
   - [Boost](https://github.com/boostorg/boost)  
   - [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)  
+
+
+## Download and Run
+
+  1. Download and install the latest [release package](https://github.com/studioENESS/advatek_assistor/releases)
+  2. run the executable:
+
+    advatek_assistor
+
 
 ## Build
     
@@ -45,11 +55,3 @@ This is an Advatek Assistant clone that can run under Linux and adds the followi
     make
     
     gdb ./advatek_assistor
-`
-## Run
-
-Run the executable.
-
-On Linux make it executable:
-
-    Properties > Permissions > Execute > Anyone
