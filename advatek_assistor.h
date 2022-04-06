@@ -153,12 +153,13 @@ public:
 	std::vector <std::string> networkAdaptors;
 	int currentAdaptor = -1;
 	
-	std::vector<sAdvatekDevice*> devices;
+	std::vector<sAdvatekDevice*> connectedDevices;
+	std::vector<sAdvatekDevice*> virtualDevices;
 
 	void updateDevice(int d);
 	void identifyDevice(int d, uint8_t duration);
 	void setTest(int d);
-	void clearDevices();
+	void clearConnectedDevices();
 	void bc_networkConfig(int d);
 	void poll();
 	void process_opPollReply(uint8_t * data);

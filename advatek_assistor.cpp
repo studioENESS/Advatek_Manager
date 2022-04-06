@@ -110,10 +110,10 @@ void insertSwapped16(std::vector<uint8_t> &dest, uint16_t* pData, int32_t size)
 
 bool advatek_manager::deviceExist(uint8_t * Mac) {
 
-	for (int d(0); d < advatek_manager::devices.size(); d++) {
+	for (int d(0); d < advatek_manager::connectedDevices.size(); d++) {
 		bool exist = true;
 		for (int i(0); i < 6; i++) {
-			if (advatek_manager::devices[d]->Mac[i] != Mac[i]) exist = false;
+			if (advatek_manager::connectedDevices[d]->Mac[i] != Mac[i]) exist = false;
 		}
 		if (exist) return true;
 	}
@@ -152,7 +152,7 @@ void advatek_manager::broadcast_udp_message(std::vector<uint8_t> message)
 }
 
 void advatek_manager::identifyDevice(int d, uint8_t duration) {
-	auto device = advatek_manager::devices[d];
+	auto device = advatek_manager::connectedDevices[d];
 
 	std::vector<uint8_t> dataTape;
 
@@ -178,7 +178,7 @@ void advatek_manager::identifyDevice(int d, uint8_t duration) {
 
 void advatek_manager::updateDevice(int d) {
 
-	auto device = advatek_manager::devices[d];
+	auto device = advatek_manager::connectedDevices[d];
 
 	if ((bool)device->SimpleConfig) {
 		advatek_manager::process_simple_config(d);
@@ -242,7 +242,7 @@ void advatek_manager::updateDevice(int d) {
 
 void advatek_manager::setTest(int d) {
 
-	auto device = advatek_manager::devices[d];
+	auto device = advatek_manager::connectedDevices[d];
 
 	std::vector<uint8_t> dataTape;
 	dataTape.resize(12);
@@ -273,8 +273,8 @@ void advatek_manager::setTest(int d) {
 	unicast_udp_message(ipString(device->CurrentIP), dataTape);
 }
 
-void advatek_manager::clearDevices() {
-	for (auto device : advatek_manager::devices)
+void advatek_manager::clearConnectedDevices() {
+	for (auto device : advatek_manager::connectedDevices)
 	{
 		if (device)
 		{
@@ -300,7 +300,7 @@ void advatek_manager::clearDevices() {
 		}
 	}
 
-	advatek_manager::devices.clear();
+	advatek_manager::connectedDevices.clear();
 }
 
 void setEndUniverseChannel(uint16_t startUniverse, uint16_t startChannel, uint16_t pixelCount, uint16_t outputGrouping, uint16_t &endUniverse, uint16_t &endChannel) {
@@ -313,7 +313,7 @@ void setEndUniverseChannel(uint16_t startUniverse, uint16_t startChannel, uint16
 }
 
 void advatek_manager::bc_networkConfig(int d) {
-	auto device = advatek_manager::devices[d];
+	auto device = advatek_manager::connectedDevices[d];
 	std::vector<uint8_t> dataTape;
 	dataTape.resize(12);
 	dataTape[0] = 'A';
@@ -341,7 +341,7 @@ void advatek_manager::bc_networkConfig(int d) {
 
 void advatek_manager::poll() {
 
-	advatek_manager::clearDevices();
+	advatek_manager::clearConnectedDevices();
 
 	std::vector<uint8_t> dataTape;
 	dataTape.resize(12);
@@ -585,7 +585,7 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 	data += 2;
 	bswap_16(rec_data->TestPixelNum);
 
-	if (!deviceExist(rec_data->Mac)) advatek_manager::devices.emplace_back(rec_data);
+	if (!deviceExist(rec_data->Mac)) advatek_manager::connectedDevices.emplace_back(rec_data);
 
 }
 
@@ -605,16 +605,16 @@ void advatek_manager::process_opTestAnnounce(uint8_t * data) {
 
 	int deviceID = -1;
 
-	for (int d(0); d < advatek_manager::devices.size(); d++) {
+	for (int d(0); d < advatek_manager::connectedDevices.size(); d++) {
 		bool exist = true;
 		for (int i(0); i < 6; i++) {
-			if (advatek_manager::devices[d]->Mac[i] != Mac[i]) exist = false;
+			if (advatek_manager::connectedDevices[d]->Mac[i] != Mac[i]) exist = false;
 		}
 		if (exist) deviceID = d;
 	}
 
 	if (deviceID >= 0) {
-		auto device = advatek_manager::devices[deviceID];
+		auto device = advatek_manager::connectedDevices[deviceID];
 
 		memcpy(&device->TestMode, data, sizeof(uint8_t));
 		data += 1;
@@ -666,7 +666,7 @@ void advatek_manager::process_udp_message(uint8_t * data) {
 }
 
 void advatek_manager::auto_sequence_channels(int d) {
-	auto device = advatek_manager::devices[d];
+	auto device = advatek_manager::connectedDevices[d];
 
 	uint16_t startOutputUniv   = device->OutputUniv[0];
 	uint16_t startOutputChan   = device->OutputChan[0];
@@ -696,7 +696,7 @@ void advatek_manager::auto_sequence_channels(int d) {
 }
 
 void advatek_manager::process_simple_config(int d) {
-	auto device = advatek_manager::devices[d];
+	auto device = advatek_manager::connectedDevices[d];
 
 	device->OutputNull[0] = 0;
 	device->OutputZig[0] = 0;
@@ -809,7 +809,7 @@ void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
 }
 
 std::string advatek_manager::importJSON(int d, std::string path, sImportOptions &importOptions) {
-	auto device = advatek_manager::devices[d];
+	auto device = advatek_manager::connectedDevices[d];
 	std::string s_hold;
 	pt::ptree root;
 
@@ -910,7 +910,7 @@ std::string advatek_manager::importJSON(int d, std::string path, sImportOptions 
 }
 
 void advatek_manager::exportJSON(int d, std::string path) {
-	auto device = advatek_manager::devices[d];
+	auto device = advatek_manager::connectedDevices[d];
 	pt::ptree root;
 
 	root.put("CurrentProtVer", device->CurrentProtVer);

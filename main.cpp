@@ -20,7 +20,7 @@
 
 #include "advatek_assistor.h"
 
-#define Version "v1.1.0"
+#define Version "1.1.0"
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
@@ -52,6 +52,8 @@ int b_refreshAdaptorsRequest = 0;
 
 static std::string adaptor_string = "No Adaptors Found";
 static std::string result = "";
+
+bool logOpen = true;
 
 void showResult(std::string& result) {
 	if (result.empty() == false)
@@ -147,7 +149,7 @@ void button_import_export_JSON(int d) {
 	if (ImGui::Button("Export JSON"))
 	{
 		std::stringstream ss;
-		ss << adv.devices[d]->Nickname << ".json";
+		ss << adv.connectedDevices[d]->Nickname << ".json";
 		std::string filename(ss.str());
 		std::replace(filename.begin(), filename.end(), ' ', '_');
 
@@ -159,6 +161,133 @@ void button_import_export_JSON(int d) {
 	}
 }
 
+// Usage:
+//  static AppLog my_log;
+//  my_log.AddLog("Hello %d world\n", 123);
+//  my_log.Draw("title");
+struct AppLog {
+	ImGuiTextBuffer     Buf;
+	ImGuiTextFilter     Filter;
+	ImVector<int>       LineOffsets; // Index to lines offset. We maintain this with AddLog() calls.
+	bool                AutoScroll;  // Keep scrolling if already at the bottom.
+
+	AppLog() {
+		AutoScroll = true;
+		Clear();
+	}
+
+	void Clear() {
+		Buf.clear();
+		LineOffsets.clear();
+		LineOffsets.push_back(0);
+	}
+
+	void AddLog(const char* fmt, ...) IM_FMTARGS(2) {
+		int old_size = Buf.size();
+		va_list args;
+		va_start(args, fmt);
+		Buf.appendfv(fmt, args);
+		va_end(args);
+		for (int new_size = Buf.size(); old_size < new_size; old_size++)
+			if (Buf[old_size] == '\n')
+				LineOffsets.push_back(old_size + 1);
+	}
+
+	void Draw(const char* title, bool* p_open = NULL) {
+		if (!ImGui::Begin(title, p_open))
+		{
+			ImGui::End();
+			return;
+		}
+
+		// Options menu
+		if (ImGui::BeginPopup("Options"))
+		{
+			ImGui::Checkbox("Auto-scroll", &AutoScroll);
+			ImGui::EndPopup();
+		}
+
+		// Main window
+		if (ImGui::Button("Options"))
+			ImGui::OpenPopup("Options");
+		ImGui::SameLine();
+		bool clear = ImGui::Button("Clear");
+		ImGui::SameLine();
+		bool copy = ImGui::Button("Copy");
+		ImGui::SameLine();
+		Filter.Draw("Filter", -100.0f);
+
+		ImGui::Separator();
+		ImGui::BeginChild("scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+		if (clear)
+			Clear();
+		if (copy)
+			ImGui::LogToClipboard();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+
+		auto txtCol = IM_COL32(120, 120, 120, 255);
+		ImGui::PushStyleColor(ImGuiCol_Text, txtCol);
+
+		const char* buf = Buf.begin();
+		const char* buf_end = Buf.end();
+		if (Filter.IsActive())
+		{
+			// In this example we don't use the clipper when Filter is enabled.
+			// This is because we don't have a random access on the result on our filter.
+			// A real application processing logs with ten of thousands of entries may want to store the result of
+			// search/filter.. especially if the filtering function is not trivial (e.g. reg-exp).
+			for (int line_no = 0; line_no < LineOffsets.Size; line_no++)
+			{
+				const char* line_start = buf + LineOffsets[line_no];
+				const char* line_end = (line_no + 1 < LineOffsets.Size) ? (buf + LineOffsets[line_no + 1] - 1) : buf_end;
+				if (Filter.PassFilter(line_start, line_end))
+					ImGui::TextUnformatted(line_start, line_end);
+			}
+		}
+		else
+		{
+			// The simplest and easy way to display the entire buffer:
+			//   ImGui::TextUnformatted(buf_begin, buf_end);
+			// And it'll just work. TextUnformatted() has specialization for large blob of text and will fast-forward
+			// to skip non-visible lines. Here we instead demonstrate using the clipper to only process lines that are
+			// within the visible area.
+			// If you have tens of thousands of items and their processing cost is non-negligible, coarse clipping them
+			// on your side is recommended. Using ImGuiListClipper requires
+			// - A) random access into your data
+			// - B) items all being the  same height,
+			// both of which we can handle since we an array pointing to the beginning of each line of text.
+			// When using the filter (in the block of code above) we don't have random access into the data to display
+			// anymore, which is why we don't use the clipper. Storing or skimming through the search result would make
+			// it possible (and would be recommended if you want to search through tens of thousands of entries).
+			ImGuiListClipper clipper;
+			clipper.Begin(LineOffsets.Size);
+			while (clipper.Step())
+			{
+				for (int line_no = clipper.DisplayStart; line_no < clipper.DisplayEnd; line_no++)
+				{
+					const char* line_start = buf + LineOffsets[line_no];
+					const char* line_end = (line_no + 1 < LineOffsets.Size) ? (buf + LineOffsets[line_no + 1] - 1) : buf_end;
+					ImGui::TextUnformatted(line_start, line_end);
+				}
+			}
+			clipper.End();
+		}
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleVar();
+		
+
+		if (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+			ImGui::SetScrollHereY(1.0f);
+
+		ImGui::EndChild();
+		ImGui::End();
+	}
+};
+
+static AppLog applog;
 
 #ifndef DEBUG
 #pragma comment(linker, "/SUBSYSTEM:Windows /ENTRY:mainCRTStartup")
@@ -166,10 +295,12 @@ void button_import_export_JSON(int d) {
 
 int main(int, char**)
 {
+	applog.AddLog("[INFO] Advatek Assistor v%s\n", Version);
 	adv.refreshAdaptors();
 	if(adv.networkAdaptors.size() > 0) {
 		adaptor_string = adv.networkAdaptors[0];
 		adv.poll();
+		applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...").c_str());
 	}
 
     // Setup window
@@ -318,14 +449,14 @@ int main(int, char**)
 				b_pollRequest = true;
 			} ImGui::SameLine();
 
-			ImGui::Text("%li Device(s) Connected", adv.devices.size());
+			ImGui::Text("%li Device(s) Connected", adv.connectedDevices.size());
 
 			showResult(result);
 
-			for (uint8_t i = 0; i < adv.devices.size(); i++) {
+			for (uint8_t i = 0; i < adv.connectedDevices.size(); i++) {
 				std::stringstream Title;
-				Title << adv.devices[i]->Model << "	" << adv.devices[i]->Firmware << "	" << ipString(adv.devices[i]->CurrentIP) << "		" << "Temp: " << (float)adv.devices[i]->Temperature*0.1 << "		" << adv.devices[i]->Nickname;
-				Title << "###" << macString(adv.devices[i]->Mac);
+				Title << adv.connectedDevices[i]->Model << "	" << adv.connectedDevices[i]->Firmware << "	" << ipString(adv.connectedDevices[i]->CurrentIP) << "		" << "Temp: " << (float)adv.connectedDevices[i]->Temperature*0.1 << "		" << adv.connectedDevices[i]->Nickname;
+				Title << "###" << macString(adv.connectedDevices[i]->Mac);
 				bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns);
 
 				if (node_open)
@@ -338,40 +469,40 @@ int main(int, char**)
 
 						ImGui::PushItemWidth(30);
 
-						ImGui::InputScalar(".##CurrentIP0", ImGuiDataType_U8, &adv.devices[i]->StaticIP[0], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentIP0", ImGuiDataType_U8, &adv.connectedDevices[i]->StaticIP[0], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar(".##CurrentIP1", ImGuiDataType_U8, &adv.devices[i]->StaticIP[1], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentIP1", ImGuiDataType_U8, &adv.connectedDevices[i]->StaticIP[1], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar(".##CurrentIP2", ImGuiDataType_U8, &adv.devices[i]->StaticIP[2], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentIP2", ImGuiDataType_U8, &adv.connectedDevices[i]->StaticIP[2], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar("##CurrentIP3", ImGuiDataType_U8, &adv.devices[i]->StaticIP[3], 0, 0, 0);
+						ImGui::InputScalar("##CurrentIP3", ImGuiDataType_U8, &adv.connectedDevices[i]->StaticIP[3], 0, 0, 0);
 
 
 						ImGui::Text("Static Subnet Mask:");
 
-						ImGui::InputScalar(".##CurrentSM0", ImGuiDataType_U8, &adv.devices[i]->StaticSM[0], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentSM0", ImGuiDataType_U8, &adv.connectedDevices[i]->StaticSM[0], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar(".##CurrentSM1", ImGuiDataType_U8, &adv.devices[i]->StaticSM[1], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentSM1", ImGuiDataType_U8, &adv.connectedDevices[i]->StaticSM[1], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar(".##CurrentSM2", ImGuiDataType_U8, &adv.devices[i]->StaticSM[2], 0, 0, 0);
+						ImGui::InputScalar(".##CurrentSM2", ImGuiDataType_U8, &adv.connectedDevices[i]->StaticSM[2], 0, 0, 0);
 
 						ImGui::SameLine();
-						ImGui::InputScalar("##CurrentSM3", ImGuiDataType_U8, &adv.devices[i]->StaticSM[3], 0, 0, 0);
+						ImGui::InputScalar("##CurrentSM3", ImGuiDataType_U8, &adv.connectedDevices[i]->StaticSM[3], 0, 0, 0);
 
 						ImGui::PopItemWidth();
 
 						ImGui::Text("IP Type: "); ImGui::SameLine();
-						int tempDHCP = (int)adv.devices[i]->DHCP;
+						int tempDHCP = (int)adv.connectedDevices[i]->DHCP;
 						if (ImGui::RadioButton("DHCP", &tempDHCP, 1)) {
-							adv.devices[i]->DHCP = 1;
+							adv.connectedDevices[i]->DHCP = 1;
 						} ImGui::SameLine();
 						if (ImGui::RadioButton("Static", &tempDHCP, 0)) {
-							adv.devices[i]->DHCP = 0;
+							adv.connectedDevices[i]->DHCP = 0;
 						}
 
 						if (ImGui::Button("Update Network"))
@@ -384,30 +515,30 @@ int main(int, char**)
 					}
 					if (ImGui::BeginTabItem("Ethernet Control"))
 					{
-						int tempProtocol = (int)adv.devices[i]->Protocol;
+						int tempProtocol = (int)adv.connectedDevices[i]->Protocol;
 						if (ImGui::RadioButton("ArtNet", &tempProtocol, 1)) {
-							adv.devices[i]->Protocol = 1;
+							adv.connectedDevices[i]->Protocol = 1;
 						} ImGui::SameLine();
 						if (ImGui::RadioButton("sACN (E1.31)", &tempProtocol, 0)) {
-							adv.devices[i]->Protocol = 0;
+							adv.connectedDevices[i]->Protocol = 0;
 						}
 						ImGui::SameLine();
-						bool tempHoldLastFrame = (bool)adv.devices[i]->HoldLastFrame;
+						bool tempHoldLastFrame = (bool)adv.connectedDevices[i]->HoldLastFrame;
 						if (ImGui::Checkbox("Hold LastFrame", &tempHoldLastFrame)) {
-							adv.devices[i]->HoldLastFrame = tempHoldLastFrame;
+							adv.connectedDevices[i]->HoldLastFrame = tempHoldLastFrame;
 						}
 
-						bool tempSimpleConfig = (bool)adv.devices[i]->SimpleConfig;
+						bool tempSimpleConfig = (bool)adv.connectedDevices[i]->SimpleConfig;
 						if (ImGui::Checkbox("Simple Config", &tempSimpleConfig)) {
-							adv.devices[i]->SimpleConfig = tempSimpleConfig;
+							adv.connectedDevices[i]->SimpleConfig = tempSimpleConfig;
 						}
 
 						ImGui::PushItemWidth(50);
 
-						if ((bool)adv.devices[i]->SimpleConfig) {
-							ImGui::InputScalar("Start Universe", ImGuiDataType_U16, &adv.devices[i]->OutputUniv[0], 0, 0, 0);
-							ImGui::InputScalar("Start Channel ", ImGuiDataType_U16, &adv.devices[i]->OutputChan[0], 0, 0, 0);
-							ImGui::InputScalar("Pixels Per Output", ImGuiDataType_U16, &adv.devices[i]->OutputPixels[0], 0, 0, 0); 
+						if ((bool)adv.connectedDevices[i]->SimpleConfig) {
+							ImGui::InputScalar("Start Universe", ImGuiDataType_U16, &adv.connectedDevices[i]->OutputUniv[0], 0, 0, 0);
+							ImGui::InputScalar("Start Channel ", ImGuiDataType_U16, &adv.connectedDevices[i]->OutputChan[0], 0, 0, 0);
+							ImGui::InputScalar("Pixels Per Output", ImGuiDataType_U16, &adv.connectedDevices[i]->OutputPixels[0], 0, 0, 0); 
 						}
 						else {
 							bool autoChannels = false;
@@ -418,9 +549,9 @@ int main(int, char**)
 								adv.auto_sequence_channels(i);
 							}
 
-							bool * tempReversed = new bool[adv.devices[i]->NumOutputs];
-							uint16_t * tempEndUniverse = new uint16_t[adv.devices[i]->NumOutputs];
-							uint16_t * tempEndChannel  = new uint16_t[adv.devices[i]->NumOutputs];
+							bool * tempReversed = new bool[adv.connectedDevices[i]->NumOutputs];
+							uint16_t * tempEndUniverse = new uint16_t[adv.connectedDevices[i]->NumOutputs];
+							uint16_t * tempEndChannel  = new uint16_t[adv.connectedDevices[i]->NumOutputs];
 
 							if (ImGui::BeginTable("advancedTable", 11))
 							{
@@ -437,27 +568,27 @@ int main(int, char**)
 								ImGui::TableSetupColumn("Reversed");
 								ImGui::TableHeadersRow();
 
-								for (int output = 0; output < adv.devices[i]->NumOutputs*0.5; output++)
+								for (int output = 0; output < adv.connectedDevices[i]->NumOutputs*0.5; output++)
 								{
 									ImGui::TableNextRow();
 
-									setEndUniverseChannel(adv.devices[i]->OutputUniv[output], adv.devices[i]->OutputChan[output], adv.devices[i]->OutputPixels[output], adv.devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
+									setEndUniverseChannel(adv.connectedDevices[i]->OutputUniv[output], adv.connectedDevices[i]->OutputChan[output], adv.connectedDevices[i]->OutputPixels[output], adv.connectedDevices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
 									ImGui::PushID(output);
 
 									ImGui::TableNextColumn();
 									ImGui::Text("Output %i", output + 1); ImGui::TableNextColumn();
-									ImGui::InputScalar("##StartUniv", ImGuiDataType_U16, &adv.devices[i]->OutputUniv[output], 0, 0, 0); ImGui::TableNextColumn();
-									ImGui::InputScalar("##StartChan", ImGuiDataType_U16, &adv.devices[i]->OutputChan[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##StartUniv", ImGuiDataType_U16, &adv.connectedDevices[i]->OutputUniv[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##StartChan", ImGuiDataType_U16, &adv.connectedDevices[i]->OutputChan[output], 0, 0, 0); ImGui::TableNextColumn();
 									ImGui::InputScalar("##EndUniv", ImGuiDataType_U16, &tempEndUniverse[output], 0, 0, 0); ImGui::TableNextColumn();
 									ImGui::InputScalar("##EndChan", ImGuiDataType_U16, &tempEndChannel[output], 0, 0, 0); ImGui::TableNextColumn();
-									ImGui::InputScalar("##NumPix", ImGuiDataType_U16, &adv.devices[i]->OutputPixels[output], 0, 0, 0); ImGui::TableNextColumn();
-									ImGui::InputScalar("##NullPix", ImGuiDataType_U8, &adv.devices[i]->OutputNull[output], 0, 0, 0); ImGui::TableNextColumn();
-									ImGui::InputScalar("##ZigZag", ImGuiDataType_U16, &adv.devices[i]->OutputZig[output], 0, 0, 0); ImGui::TableNextColumn();
-									ImGui::InputScalar("##Group", ImGuiDataType_U16, &adv.devices[i]->OutputGrouping[output], 0, 0, 0); ImGui::TableNextColumn();
-									ImGui::InputScalar("%##BrightLim", ImGuiDataType_U8, &adv.devices[i]->OutputBrightness[output], 0, 0, 0); ImGui::TableNextColumn();
-									tempReversed[output] = (bool)adv.devices[i]->OutputReverse[output];
+									ImGui::InputScalar("##NumPix", ImGuiDataType_U16, &adv.connectedDevices[i]->OutputPixels[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##NullPix", ImGuiDataType_U8, &adv.connectedDevices[i]->OutputNull[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##ZigZag", ImGuiDataType_U16, &adv.connectedDevices[i]->OutputZig[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("##Group", ImGuiDataType_U16, &adv.connectedDevices[i]->OutputGrouping[output], 0, 0, 0); ImGui::TableNextColumn();
+									ImGui::InputScalar("%##BrightLim", ImGuiDataType_U8, &adv.connectedDevices[i]->OutputBrightness[output], 0, 0, 0); ImGui::TableNextColumn();
+									tempReversed[output] = (bool)adv.connectedDevices[i]->OutputReverse[output];
 									if (ImGui::Checkbox("##Reversed", &tempReversed[output])) {
-										adv.devices[i]->OutputReverse[output] = (uint8_t)tempReversed[output];
+										adv.connectedDevices[i]->OutputReverse[output] = (uint8_t)tempReversed[output];
 									}
 									ImGui::PopID();
 
@@ -475,23 +606,23 @@ int main(int, char**)
 					
 					if (ImGui::BeginTabItem("DMX512 Outputs"))
 					{
-						bool * tempDMXOffOn = new bool[adv.devices[i]->NumDMXOutputs];
+						bool * tempDMXOffOn = new bool[adv.connectedDevices[i]->NumDMXOutputs];
 
 						ImGui::PushItemWidth(50);
 
-						for (int DMXoutput = 0; DMXoutput < adv.devices[i]->NumDMXOutputs; DMXoutput++) {
+						for (int DMXoutput = 0; DMXoutput < adv.connectedDevices[i]->NumDMXOutputs; DMXoutput++) {
 							ImGui::PushID(DMXoutput);
-							tempDMXOffOn[DMXoutput] = (bool)adv.devices[i]->DmxOutOn[DMXoutput];
+							tempDMXOffOn[DMXoutput] = (bool)adv.connectedDevices[i]->DmxOutOn[DMXoutput];
 
 							ImGui::Text("Output %i", DMXoutput + 1);
 							ImGui::SameLine();
 
 							if (ImGui::Checkbox("Enabled", &tempDMXOffOn[DMXoutput])) {
-								adv.devices[i]->DmxOutOn[DMXoutput] = (uint8_t)tempDMXOffOn[DMXoutput];
+								adv.connectedDevices[i]->DmxOutOn[DMXoutput] = (uint8_t)tempDMXOffOn[DMXoutput];
 							}
 
 							ImGui::SameLine();
-							ImGui::InputScalar("Universe", ImGuiDataType_U16, &adv.devices[i]->DmxOutUniv[DMXoutput], 0, 0, 0);
+							ImGui::InputScalar("Universe", ImGuiDataType_U16, &adv.connectedDevices[i]->DmxOutUniv[DMXoutput], 0, 0, 0);
 							ImGui::PopID();
 						}
 
@@ -505,27 +636,27 @@ int main(int, char**)
 					if (ImGui::BeginTabItem("LEDs"))
 					{
 						ImGui::PushItemWidth(120);
-						ImGui::Combo("Pixel IC", &adv.devices[i]->CurrentDriver, adv.devices[i]->DriverNames, adv.devices[i]->NumDrivers);
-						ImGui::Combo("Clock Speed", &adv.devices[i]->CurrentDriverSpeed, DriverSpeedsMhz, 12);
-						bool tempExpanded = (bool)adv.devices[i]->CurrentDriverExpanded;
+						ImGui::Combo("Pixel IC", &adv.connectedDevices[i]->CurrentDriver, adv.connectedDevices[i]->DriverNames, adv.connectedDevices[i]->NumDrivers);
+						ImGui::Combo("Clock Speed", &adv.connectedDevices[i]->CurrentDriverSpeed, DriverSpeedsMhz, 12);
+						bool tempExpanded = (bool)adv.connectedDevices[i]->CurrentDriverExpanded;
 						if (ImGui::Checkbox("Expanded Mode", &tempExpanded)) {
-							adv.devices[i]->CurrentDriverExpanded = (uint8_t)tempExpanded;
+							adv.connectedDevices[i]->CurrentDriverExpanded = (uint8_t)tempExpanded;
 						}
 
-						int tempAllColOrder = adv.devices[i]->OutputColOrder[0];
+						int tempAllColOrder = adv.connectedDevices[i]->OutputColOrder[0];
 						if (ImGui::Combo("RGB Order ##all", &tempAllColOrder, advatek_manager::RGBW_Order, 24)) {
-							for (uint8_t output = 0; output < adv.devices[i]->NumOutputs*0.5; output++) {
-								adv.devices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
+							for (uint8_t output = 0; output < adv.connectedDevices[i]->NumOutputs*0.5; output++) {
+								adv.connectedDevices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
 							}
 						}
 
-						//int * tempOutputColOrder = new int[adv.devices[i]->NumOutputs];
-						//for (uint8_t output = 0; output < adv.devices[i]->NumOutputs*0.5; output++) {
+						//int * tempOutputColOrder = new int[adv.connectedDevices[i]->NumOutputs];
+						//for (uint8_t output = 0; output < adv.connectedDevices[i]->NumOutputs*0.5; output++) {
 						//	ImGui::PushID(output);
 						//	ImGui::Text("Output %02i", output + 1); ImGui::SameLine();
-						//	tempOutputColOrder[output] = adv.devices[i]->OutputColOrder[output];
+						//	tempOutputColOrder[output] = adv.connectedDevices[i]->OutputColOrder[output];
 						//	if (ImGui::Combo("Order", &tempOutputColOrder[output], adv.RGBW_Order, 24)) {
-						//		adv.devices[i]->OutputColOrder[output] = (uint8_t)tempOutputColOrder[output];
+						//		adv.connectedDevices[i]->OutputColOrder[output] = (uint8_t)tempOutputColOrder[output];
 						//	}
 						//	ImGui::PopID();
 						//}
@@ -533,17 +664,17 @@ int main(int, char**)
 						ImGui::Separator();
 						ImGui::Text("Gamma Correction only applied to chips that are higher then 8bit:");
 
-						if (ImGui::SliderFloat("Red", &adv.devices[i]->Gammaf[0], 1.0, 3.0, "%.01f")) {
-							adv.devices[i]->Gamma[0] = (int)(adv.devices[i]->Gammaf[0] * 10);
+						if (ImGui::SliderFloat("Red", &adv.connectedDevices[i]->Gammaf[0], 1.0, 3.0, "%.01f")) {
+							adv.connectedDevices[i]->Gamma[0] = (int)(adv.connectedDevices[i]->Gammaf[0] * 10);
 						};
-						if (ImGui::SliderFloat("Green", &adv.devices[i]->Gammaf[1], 1.0, 3.0, "%.01f")) {
-							adv.devices[i]->Gamma[1] = (int)(adv.devices[i]->Gammaf[1] * 10);
+						if (ImGui::SliderFloat("Green", &adv.connectedDevices[i]->Gammaf[1], 1.0, 3.0, "%.01f")) {
+							adv.connectedDevices[i]->Gamma[1] = (int)(adv.connectedDevices[i]->Gammaf[1] * 10);
 						};
-						if (ImGui::SliderFloat("Blue", &adv.devices[i]->Gammaf[2], 1.0, 3.0, "%.01f")) {
-							adv.devices[i]->Gamma[2] = (int)(adv.devices[i]->Gammaf[2] * 10);
+						if (ImGui::SliderFloat("Blue", &adv.connectedDevices[i]->Gammaf[2], 1.0, 3.0, "%.01f")) {
+							adv.connectedDevices[i]->Gamma[2] = (int)(adv.connectedDevices[i]->Gammaf[2] * 10);
 						};
-						if (ImGui::SliderFloat("White", &adv.devices[i]->Gammaf[3], 1.0, 3.0, "%.01f")) {
-							adv.devices[i]->Gamma[3] = (int)(adv.devices[i]->Gammaf[3] * 10);
+						if (ImGui::SliderFloat("White", &adv.connectedDevices[i]->Gammaf[3], 1.0, 3.0, "%.01f")) {
+							adv.connectedDevices[i]->Gamma[3] = (int)(adv.connectedDevices[i]->Gammaf[3] * 10);
 						};
 						ImGui::PopItemWidth();
 
@@ -557,48 +688,48 @@ int main(int, char**)
 
 						ImGui::PushItemWidth(200);
 
-						if (ImGui::Combo("Set Test", &adv.devices[i]->TestMode, TestModes, 9)) {
-							adv.devices[i]->TestPixelNum = 0;
+						if (ImGui::Combo("Set Test", &adv.connectedDevices[i]->TestMode, TestModes, 9)) {
+							adv.connectedDevices[i]->TestPixelNum = 0;
 							b_testPixelsReady = true;
 							adv.setTest(i);
 						}
 
-						if ((adv.devices[i]->TestMode == 6) || (adv.devices[i]->TestMode == 8)) {
+						if ((adv.connectedDevices[i]->TestMode == 6) || (adv.connectedDevices[i]->TestMode == 8)) {
 							float tempTestCols[4];
-							tempTestCols[0] = ((float)adv.devices[i]->TestCols[0] / 255);
-							tempTestCols[1] = ((float)adv.devices[i]->TestCols[1] / 255);
-							tempTestCols[2] = ((float)adv.devices[i]->TestCols[2] / 255);
-							tempTestCols[3] = ((float)adv.devices[i]->TestCols[3] / 255);
+							tempTestCols[0] = ((float)adv.connectedDevices[i]->TestCols[0] / 255);
+							tempTestCols[1] = ((float)adv.connectedDevices[i]->TestCols[1] / 255);
+							tempTestCols[2] = ((float)adv.connectedDevices[i]->TestCols[2] / 255);
+							tempTestCols[3] = ((float)adv.connectedDevices[i]->TestCols[3] / 255);
 
 							if (ImGui::ColorEdit4("Test Colour", tempTestCols)) {
-								adv.devices[i]->TestCols[0] = (int)(tempTestCols[0] * 255);
-								adv.devices[i]->TestCols[1] = (int)(tempTestCols[1] * 255);
-								adv.devices[i]->TestCols[2] = (int)(tempTestCols[2] * 255);
-								adv.devices[i]->TestCols[3] = (int)(tempTestCols[3] * 255);
+								adv.connectedDevices[i]->TestCols[0] = (int)(tempTestCols[0] * 255);
+								adv.connectedDevices[i]->TestCols[1] = (int)(tempTestCols[1] * 255);
+								adv.connectedDevices[i]->TestCols[2] = (int)(tempTestCols[2] * 255);
+								adv.connectedDevices[i]->TestCols[3] = (int)(tempTestCols[3] * 255);
 								adv.setTest(i);
 							}
 
-							if (adv.devices[i]->testModeCycleOuputs || adv.devices[i]->testModeCyclePixels) {
+							if (adv.connectedDevices[i]->testModeCycleOuputs || adv.connectedDevices[i]->testModeCyclePixels) {
 								
 								if (currTime - lastTime > testCycleSpeed) {
-									if (adv.devices[i]->TestMode == 8) {
+									if (adv.connectedDevices[i]->TestMode == 8) {
 										// Set Pixel
-										adv.devices[i]->TestPixelNum = (adv.devices[i]->TestPixelNum) % ((int)(adv.devices[i]->OutputPixels[(int)adv.devices[i]->TestOutputNum-1]))+1;
+										adv.connectedDevices[i]->TestPixelNum = (adv.connectedDevices[i]->TestPixelNum) % ((int)(adv.connectedDevices[i]->OutputPixels[(int)adv.connectedDevices[i]->TestOutputNum-1]))+1;
 
-										if (adv.devices[i]->TestPixelNum == 1) {
+										if (adv.connectedDevices[i]->TestPixelNum == 1) {
 											b_testPixelsReady = true;
 										} else {
 											b_testPixelsReady = false;
 										}
 									}
-									if (adv.devices[i]->testModeCycleOuputs && b_testPixelsReady) {
-										adv.devices[i]->TestOutputNum = (adv.devices[i]->TestOutputNum) % ((int)(adv.devices[i]->NumOutputs*0.5)) + 1;
+									if (adv.connectedDevices[i]->testModeCycleOuputs && b_testPixelsReady) {
+										adv.connectedDevices[i]->TestOutputNum = (adv.connectedDevices[i]->TestOutputNum) % ((int)(adv.connectedDevices[i]->NumOutputs*0.5)) + 1;
 									}
 									lastTime = currTime;
 									adv.setTest(i);
 								}
 								/*
-								for (uint8_t output = 0; output < adv.devices[i]->NumOutputs*0.5; output++) {
+								for (uint8_t output = 0; output < adv.connectedDevices[i]->NumOutputs*0.5; output++) {
 									ImGui::PushID(output);
 									ImGui::Text("Output %02i", output + 1);
 									
@@ -606,17 +737,17 @@ int main(int, char**)
 								}*/
 							}
 
-							bool testModeCycleOuputs = adv.devices[i]->testModeCycleOuputs;
+							bool testModeCycleOuputs = adv.connectedDevices[i]->testModeCycleOuputs;
 							if (ImGui::Checkbox("Cycle Outputs", &testModeCycleOuputs)) {
-								adv.devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
+								adv.connectedDevices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
 							}
 
 							//ImGui::SameLine();
 
-							if (adv.devices[i]->TestMode == 8) {
-								bool testModeCyclePixels = adv.devices[i]->testModeCyclePixels;
+							if (adv.connectedDevices[i]->TestMode == 8) {
+								bool testModeCyclePixels = adv.connectedDevices[i]->testModeCyclePixels;
 								if (ImGui::Checkbox("Cycle Pixels", &testModeCyclePixels)) {
-									adv.devices[i]->testModeCyclePixels = (bool)testModeCyclePixels;
+									adv.connectedDevices[i]->testModeCyclePixels = (bool)testModeCyclePixels;
 								}
 							}
 
@@ -629,14 +760,14 @@ int main(int, char**)
 
 						//ImGui::PushItemWidth(100);
 						//ImGui::Text("Output (All 0)"); ImGui::SameLine();
-						if (SliderInt8("Output (All 0)",(int*)&adv.devices[i]->TestOutputNum, 0, (adv.devices[i]->NumOutputs*0.5))) {
+						if (SliderInt8("Output (All 0)",(int*)&adv.connectedDevices[i]->TestOutputNum, 0, (adv.connectedDevices[i]->NumOutputs*0.5))) {
 							adv.setTest(i);
 						}
 						
-						if (adv.devices[i]->TestMode == 8) {
+						if (adv.connectedDevices[i]->TestMode == 8) {
 							//ImGui::Text("Pixels (All 0)"); ImGui::SameLine();
-							uint16_t TestPixelNum = adv.devices[i]->TestPixelNum;
-							if (SliderInt16("Pixels (All 0)", (int*)&TestPixelNum, 0, (adv.devices[i]->OutputPixels[(int)adv.devices[i]->TestOutputNum-1]))) {
+							uint16_t TestPixelNum = adv.connectedDevices[i]->TestPixelNum;
+							if (SliderInt16("Pixels (All 0)", (int*)&TestPixelNum, 0, (adv.connectedDevices[i]->OutputPixels[(int)adv.connectedDevices[i]->TestOutputNum-1]))) {
 								adv.setTest(i);
 							}
 						}
@@ -651,26 +782,26 @@ int main(int, char**)
 
 					if (ImGui::BeginTabItem("Misc"))
 					{
-						ImGui::Text("MAC: %s", macString(adv.devices[i]->Mac).c_str());
+						ImGui::Text("MAC: %s", macString(adv.connectedDevices[i]->Mac).c_str());
 						ImGui::PushItemWidth(200);
 						char sName[40];
-						memcpy(sName, adv.devices[i]->Nickname, 40);
+						memcpy(sName, adv.connectedDevices[i]->Nickname, 40);
 						if (ImGui::InputText("Nickname", sName, 40)) {
-							memset(adv.devices[i]->Nickname, 0, 40);
-							strcpy(adv.devices[i]->Nickname, sName);
+							memset(adv.connectedDevices[i]->Nickname, 0, 40);
+							strcpy(adv.connectedDevices[i]->Nickname, sName);
 						}
 						ImGui::PopItemWidth();
 
 						ImGui::PushItemWidth(30);
 
-						ImGui::InputScalar("Fan Control On Temp", ImGuiDataType_U8, &adv.devices[i]->MaxTargetTemp, 0, 0, 0);
+						ImGui::InputScalar("Fan Control On Temp", ImGuiDataType_U8, &adv.connectedDevices[i]->MaxTargetTemp, 0, 0, 0);
 						ImGui::PopItemWidth();
 
-						int * tempVoltage = new int[adv.devices[i]->NumBanks];
+						int * tempVoltage = new int[adv.connectedDevices[i]->NumBanks];
 
-						for (uint8_t bank = 0; bank < adv.devices[i]->NumBanks; bank++) {
+						for (uint8_t bank = 0; bank < adv.connectedDevices[i]->NumBanks; bank++) {
 							ImGui::PushID(bank);
-							ImGui::Text("Bank %i: %.2f V", bank + 1, ((float)adv.devices[i]->VoltageBanks[bank] / 10.f));
+							ImGui::Text("Bank %i: %.2f V", bank + 1, ((float)adv.connectedDevices[i]->VoltageBanks[bank] / 10.f));
 							ImGui::PopID();
 						}
 
@@ -690,17 +821,14 @@ int main(int, char**)
 					
 					ImGui::SameLine();
 					button_import_export_JSON(i);
-					ImGui::Separator();
 					ImGui::TreePop();
 				}
 			}
 
-			auto txtCol = IM_COL32(80, 80, 80, 255);
-			ImGui::PushStyleColor(ImGuiCol_Text, txtCol );
-			ImGui::Text(" ");
-			ImGui::Text(Version);
-			ImGui::PopStyleColor();
-            
+			ImGui::Separator();
+
+			applog.Draw("Advatek Assistor", &logOpen);
+
 			ImGui::End();
         }
 
