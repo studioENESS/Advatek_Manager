@@ -56,6 +56,7 @@ sImportOptions importOptions = sImportOptions();
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
 int b_newVirtualDeviceRequest = 0;
+int b_vDevicePath = false;
 
 static std::string adaptor_string = "No Adaptors Found";
 static std::string vDeviceString = "New ...";
@@ -854,11 +855,24 @@ int main(int, char**)
 							{
 								vDeviceString = jsonData[0];
 								vDeviceData = jsonData[1];
+								b_vDevicePath = false;
 								b_newVirtualDeviceRequest = true;
 							}
 						}
 						ImGui::EndCombo();
 						ImGui::PopItemWidth();
+					}
+
+					ImGui::SameLine();
+
+					if (ImGui::Button("Import JSON")) {
+						auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
+						if (!path.empty()) {
+							applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
+							vDeviceData = path.at(0);
+							b_vDevicePath = true;
+							b_newVirtualDeviceRequest = true;
+						}
 					}
 
 					ImGui::SameLine();
@@ -901,7 +915,7 @@ int main(int, char**)
 			b_pollRequest = false;
 		}
 		if (b_newVirtualDeviceRequest) {
-			adv.addVirtualDevice(vDeviceData);
+			adv.addVirtualDevice(vDeviceData, b_vDevicePath);
 			b_newVirtualDeviceRequest = false;
 		}
     }

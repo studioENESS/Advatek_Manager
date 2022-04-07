@@ -176,11 +176,12 @@ void advatek_manager::identifyDevice(int d, uint8_t duration) {
 	unicast_udp_message(ipString(device->CurrentIP), dataTape);
 }
 
-void advatek_manager::addVirtualDevice(std::string jsonPath) {
+void advatek_manager::addVirtualDevice(std::string json, bool isPath) {
 	sAdvatekDevice * device = new sAdvatekDevice();
 	sImportOptions importOptions = sImportOptions();
 	importOptions.init = true;
-	importJSON(device, jsonPath, importOptions);
+	importOptions.isPath = isPath;
+	importJSON(device, json, importOptions);
 	advatek_manager::virtualDevices.emplace_back(device);
 }
 
@@ -816,20 +817,17 @@ void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
 	m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
 }
 
-std::string advatek_manager::importJSON(sAdvatekDevice *device, std::string path, sImportOptions &importOptions) {
+std::string advatek_manager::importJSON(sAdvatekDevice *device, std::string json, sImportOptions &importOptions) {
 	std::string s_hold;
 	pt::ptree root;
 
-	if (importOptions.init) {
+	if (importOptions.isPath) {
+		pt::read_json(json, root);
+	} else { // data
 		std::stringstream ss;
-		ss << path;
-
+		ss << json;
 		pt::read_json(ss, root);
 	}
-	else {
-		pt::read_json(path, root);
-	}
-	
 	
 	std::stringstream report;
 	

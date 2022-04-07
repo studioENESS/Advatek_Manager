@@ -116,6 +116,7 @@ typedef struct tAdvatekDevice {
 
 typedef struct tImportOptions {
 	bool init = false;
+	bool isPath = true;
 	bool network = true;
 	bool ethernet_control = true;
 	bool dmx_outputs = true;
@@ -157,7 +158,7 @@ public:
 	std::vector<sAdvatekDevice*> connectedDevices;
 	std::vector<sAdvatekDevice*> virtualDevices;
 
-	void addVirtualDevice(std::string jsonPath);
+	void addVirtualDevice(std::string json, bool isPath);
 	void updateDevice(int d);
 	void identifyDevice(int d, uint8_t duration);
 	void setTest(int d);
