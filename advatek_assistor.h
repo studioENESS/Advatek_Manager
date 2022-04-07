@@ -179,7 +179,7 @@ public:
 	void setCurrentAdaptor(int adaptorIndex);
 	
 	std::string importJSON(sAdvatekDevice *device, std::string path, sImportOptions &importOptions);
-	void exportJSON(int d, std::string path);
+	void exportJSON(sAdvatekDevice *device, std::string path);
 
 	static const char* RGBW_Order[24];
 

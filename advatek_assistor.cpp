@@ -970,8 +970,7 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, std::string json
 	return report.str();
 }
 
-void advatek_manager::exportJSON(int d, std::string path) {
-	auto device = advatek_manager::connectedDevices[d];
+void advatek_manager::exportJSON(sAdvatekDevice *device, std::string path) {
 	pt::ptree root;
 
 	root.put("ProtVer", device->ProtVer);

@@ -240,7 +240,7 @@ void button_update_controller_settings(int i) {
 	}
 }
 
-void button_import_export_JSON(int d) {
+void button_import_export_JSON(sAdvatekDevice *device) {
 	if (ImGui::Button("Import JSON"))
 		ImGui::OpenPopup("Import");
 
@@ -271,7 +271,8 @@ void button_import_export_JSON(int d) {
 			auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
 			if (!path.empty()) {
 				applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
-				result = adv.importJSON(adv.connectedDevices[d], path.at(0), importOptions);
+				//result = adv.importJSON(adv.connectedDevices[d], path.at(0), importOptions);
+				result = adv.importJSON(device, path.at(0), importOptions);
 			}
 		}
 		ImGui::SetItemDefaultFocus();
@@ -285,13 +286,13 @@ void button_import_export_JSON(int d) {
 	if (ImGui::Button("Export JSON"))
 	{
 		std::stringstream ss;
-		ss << adv.connectedDevices[d]->Nickname << ".json";
+		ss << device->Nickname << ".json";
 		std::string filename(ss.str());
 		std::replace(filename.begin(), filename.end(), ' ', '_');
 
 		auto path = pfd::save_file("Select a file", filename).result();
 		if (!path.empty()) {
-			adv.exportJSON(d, path);
+			adv.exportJSON(device, path);
 		}
 
 	}
@@ -666,7 +667,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices) {
 			}
 
 			ImGui::SameLine();
-			button_import_export_JSON(i);
+			button_import_export_JSON(devices[i]);
 			ImGui::TreePop();
 		}
 	}
