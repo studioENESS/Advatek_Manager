@@ -840,7 +840,9 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, std::string json
 		memcpy(device->Model, root.get<std::string>("Model").c_str(), sizeof(uint8_t) * device->ModelLength);
 		s_hold = root.get<std::string>("Mac");
 		load_macStr(s_hold, device->Mac);
-	} else if (root.get<std::string>("Model").compare(std::string((char *)device->Model)) == 0) {
+	}
+	
+	if (root.get<std::string>("Model").compare(std::string((char *)device->Model)) == 0) {
 		report << "Done!\n";
 	} else {
 		report << "Beware: Loaded data from ";
@@ -912,8 +914,6 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, std::string json
 		}
 	}
 
-	//SetValueFromJson(uint8_t, NumDrivers);
-
 	if (importOptions.led_settings || importOptions.init) {
 		if (importOptions.init) {
 			SetValueFromJson(uint8_t, NumDrivers);
@@ -936,9 +936,8 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, std::string json
 			std::string sTempValue = node.second.data();
 			int index = std::stoi(node.first);
 			const char* sCStr = sTempValue.c_str();
-			memset(device->DriverNames[index], 0, sizeof(char) * (sTempValue.length()+1));
-			memcpy(device->DriverNames[index], sCStr, sizeof(char) * sTempValue.length());
-			//device->DriverNames[index] = "";
+			memset(device->DriverNames[index], 0, sizeof(char) * (device->DriverNameLength+1));
+			memcpy(device->DriverNames[index], sCStr, sizeof(char) * device->DriverNameLength);
 		}
 
 		//SetChildStringValuesFromJson(DriverNames);
