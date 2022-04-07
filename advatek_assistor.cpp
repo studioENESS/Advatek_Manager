@@ -176,6 +176,14 @@ void advatek_manager::identifyDevice(int d, uint8_t duration) {
 	unicast_udp_message(ipString(device->CurrentIP), dataTape);
 }
 
+void advatek_manager::addVirtualDevice(std::string jsonPath) {
+	sAdvatekDevice * device = new sAdvatekDevice();
+	sImportOptions importOptions = sImportOptions();
+	importOptions.init = true;
+	importJSON(device, jsonPath, importOptions);
+	advatek_manager::virtualDevices.emplace_back(device);
+}
+
 void advatek_manager::updateDevice(int d) {
 
 	auto device = advatek_manager::connectedDevices[d];
@@ -808,16 +816,33 @@ void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
 	m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
 }
 
-std::string advatek_manager::importJSON(int d, std::string path, sImportOptions &importOptions) {
-	auto device = advatek_manager::connectedDevices[d];
+std::string advatek_manager::importJSON(sAdvatekDevice *device, std::string path, sImportOptions &importOptions) {
 	std::string s_hold;
 	pt::ptree root;
 
-	pt::read_json(path, root);
+	if (importOptions.init) {
+		std::stringstream ss;
+		ss << path;
+
+		pt::read_json(ss, root);
+	}
+	else {
+		pt::read_json(path, root);
+	}
+	
 	
 	std::stringstream report;
-
-	if (root.get<std::string>("Model").compare(std::string((char *)device->Model)) == 0) {
+	
+	if (importOptions.init) {
+		SetValueFromJson(uint8_t, ProtVer);
+		SetValueFromJson(uint8_t, CurrentProtVer);
+		SetValueFromJson(uint8_t, ModelLength);
+		device->Model = new uint8_t[device->ModelLength + 1];
+		memset(device->Model, 0x00, sizeof(uint8_t) * (device->ModelLength + 1));
+		memcpy(device->Model, root.get<std::string>("Model").c_str(), sizeof(uint8_t) * device->ModelLength);
+		s_hold = root.get<std::string>("Mac");
+		load_macStr(s_hold, device->Mac);
+	} else if (root.get<std::string>("Model").compare(std::string((char *)device->Model)) == 0) {
 		report << "Done!\n";
 	} else {
 		report << "Beware: Loaded data from ";
@@ -827,10 +852,7 @@ std::string advatek_manager::importJSON(int d, std::string path, sImportOptions 
 		report << "\n";
 	}
 
-	//root.get<std::string>("CurrentProtVer");
-	//root.get<std::string>("Mac");
-
-	if (importOptions.network) {
+	if (importOptions.network || importOptions.init) {
 
 		SetValueFromJson(uint8_t, DHCP);
 
@@ -842,14 +864,24 @@ std::string advatek_manager::importJSON(int d, std::string path, sImportOptions 
 		report << "- Import Network Settings Succesfull.\n";
 	}
 
-	if (importOptions.ethernet_control) {
+	if (importOptions.ethernet_control || importOptions.init) {
 		bool go = EqualValueJson(uint8_t, NumOutputs);
-		if ( go ) {
+		if ( go || importOptions.init) {
 			SetValueFromJson(uint8_t, HoldLastFrame);
 			SetValueFromJson(uint8_t, SimpleConfig);
 			SetValueFromJson(uint16_t, MaxPixPerOutput);
 			SetValueFromJson(uint8_t, NumOutputs);
-
+			if (importOptions.init) {
+				device->OutputPixels = new uint16_t[device->NumOutputs];
+				device->OutputUniv = new uint16_t[device->NumOutputs];
+				device->OutputChan = new uint16_t[device->NumOutputs];
+				device->OutputNull = new uint8_t[device->NumOutputs];
+				device->OutputZig = new uint16_t[device->NumOutputs];
+				device->OutputReverse = new uint8_t[device->NumOutputs];
+				device->OutputColOrder = new uint8_t[device->NumOutputs];
+				device->OutputGrouping = new uint16_t[device->NumOutputs];
+				device->OutputBrightness = new uint8_t[device->NumOutputs];
+			}
 			SetChildIntValuesFromJson(OutputPixels);
 			SetChildIntValuesFromJson(OutputUniv);
 			SetChildIntValuesFromJson(OutputChan);
@@ -865,9 +897,14 @@ std::string advatek_manager::importJSON(int d, std::string path, sImportOptions 
 		}
 	}
 
-	if (importOptions.dmx_outputs) {
+	if (importOptions.dmx_outputs || importOptions.init) {
 		bool go = EqualValueJson(uint8_t, NumDMXOutputs);
-		if (go) {
+		if (go || importOptions.init) {
+			if (importOptions.init) {
+				SetValueFromJson(uint8_t, NumDMXOutputs);
+				device->DmxOutOn = new uint8_t[device->NumDMXOutputs];
+				device->DmxOutUniv = new uint16_t[device->NumDMXOutputs];
+			}
 			SetValueFromJson(uint8_t, ProtocolsOnDmxOut);
 			SetChildIntValuesFromJson(DmxOutOn);
 			SetChildIntValuesFromJson(DmxOutUniv);
@@ -879,10 +916,33 @@ std::string advatek_manager::importJSON(int d, std::string path, sImportOptions 
 
 	//SetValueFromJson(uint8_t, NumDrivers);
 
-	if (importOptions.led_settings) {
+	if (importOptions.led_settings || importOptions.init) {
+		if (importOptions.init) {
+			SetValueFromJson(uint8_t, NumDrivers);
+			device->DriverType = new uint8_t[device->NumDrivers];
+			device->DriverSpeed = new uint8_t[device->NumDrivers];
+			device->DriverExpandable = new uint8_t[device->NumDrivers];
+			device->DriverNames = new char*[device->NumDrivers];
+			device->Firmware = (uint8_t*)"EnessVirtual";
+
+			for (int i = 0; i < device->NumDrivers; i++) {
+				device->DriverNames[i] = new char[device->DriverNameLength + 1];
+			}
+		}
+
 		SetChildIntValuesFromJson(DriverType);
 		SetChildIntValuesFromJson(DriverSpeed);
 		SetChildIntValuesFromJson(DriverExpandable);
+		for (pt::ptree::value_type &node : root.get_child("DriverNames")) 
+		{
+			std::string sTempValue = node.second.data();
+			int index = std::stoi(node.first);
+			const char* sCStr = sTempValue.c_str();
+			memset(device->DriverNames[index], 0, sizeof(char) * (sTempValue.length()+1));
+			memcpy(device->DriverNames[index], sCStr, sizeof(char) * sTempValue.length());
+			//device->DriverNames[index] = "";
+		}
+
 		//SetChildStringValuesFromJson(DriverNames);
 
 		SetValueFromJson(int, CurrentDriver);
@@ -891,11 +951,15 @@ std::string advatek_manager::importJSON(int d, std::string path, sImportOptions 
 		SetValueFromJson(uint8_t, CurrentDriverExpanded);
 
 		SetChildIntValuesFromJson(Gamma);
+		device->Gammaf[0] = (float)device->Gamma[0] * 0.1;
+		device->Gammaf[1] = (float)device->Gamma[1] * 0.1;
+		device->Gammaf[2] = (float)device->Gamma[2] * 0.1;
+		device->Gammaf[3] = (float)device->Gamma[3] * 0.1;
 
 		report << "- Import LED Settings Succesfull.\n";
 	}
 
-	if (importOptions.nickname) {
+	if (importOptions.nickname || importOptions.init) {
 		s_hold = root.get<std::string>("Nickname");
 		strncpy(device->Nickname, s_hold.c_str(), 40);
 		report << "- Import Nickname Succesfull.\n";
@@ -913,13 +977,20 @@ void advatek_manager::exportJSON(int d, std::string path) {
 	auto device = advatek_manager::connectedDevices[d];
 	pt::ptree root;
 
+	root.put("ProtVer", device->ProtVer);
 	root.put("CurrentProtVer", device->CurrentProtVer);
 	root.put("Mac", macString(device->Mac));
 	root.put("DHCP", device->DHCP);
 	root.put("StaticIP", ipString(device->StaticIP));
 	root.put("StaticSM", ipString(device->StaticSM));
+	root.put("CurrentIP", ipString(device->CurrentIP));
+	root.put("CurrentSM", ipString(device->CurrentSM));
 
+	root.put("ModelLength", device->ModelLength);
 	root.put("Model", device->Model);
+	root.put("Brand", device->Brand);
+
+	root.put("Protocol", device->Protocol);
 	root.put("HoldLastFrame", device->HoldLastFrame);
 	root.put("SimpleConfig", device->SimpleConfig);
 	root.put("MaxPixPerOutput", device->MaxPixPerOutput);
@@ -958,7 +1029,7 @@ void advatek_manager::exportJSON(int d, std::string path) {
 	root.add_child("OutputGrouping", OutputGrouping);
 	root.add_child("OutputBrightness", OutputBrightness);
 
-	//root.put("NumDMXOutputs", device->NumDMXOutputs);
+	root.put("NumDMXOutputs", device->NumDMXOutputs);
 	root.put("ProtocolsOnDmxOut", device->ProtocolsOnDmxOut);
 
 	pt::ptree DmxOutOn;
@@ -974,6 +1045,7 @@ void advatek_manager::exportJSON(int d, std::string path) {
 	root.add_child("DmxOutUniv", DmxOutUniv);
 
 	root.put("NumDrivers", device->NumDrivers);
+	root.put("DriverNameLength", device->DriverNameLength);
 
 	pt::ptree DriverType;
 	pt::ptree DriverSpeed;
@@ -1009,6 +1081,7 @@ void advatek_manager::exportJSON(int d, std::string path) {
 
 	root.put("Nickname", device->Nickname);
 	root.put("MaxTargetTemp", device->MaxTargetTemp);
+	root.put("NumBanks", device->NumBanks);
 
 	//pt::write_json(std::cout, root);
 

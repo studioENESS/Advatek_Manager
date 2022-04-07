@@ -36,12 +36,18 @@ class IClient;
 #define SetChildIntValuesFromJson(atr) \
 	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
 	 device->atr[std::stoi(node.first)] = std::stoi(node.second.data()); }
-
+#define SetChildFloatValuesFromJson(atr) \
+	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
+	 device->atr[std::stoi(node.first)] = std::stof(node.second.data()); }
 #define SetChildStringValuesFromJson(atr) \
 	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
-	 device->atr[std::stoi(node.first)] = std::string(node.second.data()).c_str(); }
+	std::string sTempValue = node.second.data(); \\
+	 device->atr[std::stoi(node.first)] = sTempValue.c_str(); }
 
 typedef struct tAdvatekDevice {
+	/*tAdvatekDevice(){
+		constructor?
+	}*/
 	uint8_t ProtVer; // Protocol version
 	uint8_t CurrentProtVer; // Using Protocol version
 	uint8_t Mac[6]; // MAC Address
@@ -109,12 +115,13 @@ typedef struct tAdvatekDevice {
 } sAdvatekDevice;
 
 typedef struct tImportOptions {
-	bool network = false;
-	bool ethernet_control = false;
-	bool dmx_outputs = false;
-	bool led_settings = false;
-	bool nickname = false;
-	bool fan_on_temp = false;
+	bool init = false;
+	bool network = true;
+	bool ethernet_control = true;
+	bool dmx_outputs = true;
+	bool led_settings = true;
+	bool nickname = true;
+	bool fan_on_temp = true;
 } sImportOptions;
 
 std::string macString(uint8_t * address);
@@ -131,13 +138,6 @@ extern const char* TestModes[9];
 void insertSwapped16(std::vector<uint8_t> &dest, uint16_t* pData, int32_t size);
 
 bool deviceExist(uint8_t * Mac);
-//
-//extern boost::asio::io_context io_context;
-//extern boost::asio::ip::udp::endpoint adaptorEndpoint;
-//extern boost::asio::ip::udp::socket sock;
-//
-//extern boost::asio::ip::tcp::resolver resolver;
-//extern boost::asio::ip::tcp::resolver::query query;
 
 void setEndUniverseChannel(uint16_t startUniverse, uint16_t startChannel, uint16_t pixelCount, uint16_t outputGrouping, uint16_t &endUniverse, uint16_t &endChannel);
 void load_ipStr(std::string ipStr, uint8_t *address);
@@ -146,6 +146,7 @@ void load_macStr(std::string macStr, uint8_t *address);
 class advatek_manager
 {
 public:
+	uint8_t ProtVer = 8;
 	bool deviceExist(uint8_t * Mac);
 	std::string macStr(uint8_t * address);
 	std::string ipStr(uint8_t * address);
@@ -156,6 +157,7 @@ public:
 	std::vector<sAdvatekDevice*> connectedDevices;
 	std::vector<sAdvatekDevice*> virtualDevices;
 
+	void addVirtualDevice(std::string jsonPath);
 	void updateDevice(int d);
 	void identifyDevice(int d, uint8_t duration);
 	void setTest(int d);
@@ -175,7 +177,7 @@ public:
 	void refreshAdaptors();
 	void setCurrentAdaptor(int adaptorIndex);
 	
-	std::string importJSON(int d, std::string path, sImportOptions &importOptions);
+	std::string importJSON(sAdvatekDevice *device, std::string path, sImportOptions &importOptions);
 	void exportJSON(int d, std::string path);
 
 	static const char* RGBW_Order[24];
