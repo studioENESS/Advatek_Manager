@@ -157,7 +157,11 @@ public:
 	
 	std::vector<sAdvatekDevice*> connectedDevices;
 	std::vector<sAdvatekDevice*> virtualDevices;
+	std::vector<sAdvatekDevice*> memoryDevices;
 
+	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice, sImportOptions &importOptions);
+	void copyMemoryDevice(sAdvatekDevice* fromDevice);
+	void pasteMemoryDevice(sAdvatekDevice* toDevice, sImportOptions &importOptions);
 	void addVirtualDevice(std::string json, bool isPath);
 	void updateDevice(int d);
 	void identifyDevice(int d, uint8_t duration);
