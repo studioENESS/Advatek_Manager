@@ -159,9 +159,11 @@ public:
 	std::vector<sAdvatekDevice*> virtualDevices;
 	std::vector<sAdvatekDevice*> memoryDevices;
 
-	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice, sImportOptions &importOptions);
-	void copyMemoryDevice(sAdvatekDevice* fromDevice);
-	void pasteMemoryDevice(sAdvatekDevice* toDevice, sImportOptions &importOptions);
+	void clearDevices(std::vector<sAdvatekDevice*> &devices);
+	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
+	void copyToMemoryDevice(sAdvatekDevice* fromDevice);
+	void pasteFromMemoryDevice(sAdvatekDevice* toDevice);
+
 	void addVirtualDevice(std::string json, bool isPath);
 	void updateDevice(int d);
 	void identifyDevice(int d, uint8_t duration);
@@ -182,6 +184,7 @@ public:
 	void refreshAdaptors();
 	void setCurrentAdaptor(int adaptorIndex);
 	
+	void getJSON(sAdvatekDevice *device, boost::property_tree::ptree *root);
 	std::string importJSON(sAdvatekDevice *device, std::string path, sImportOptions &importOptions);
 	void exportJSON(sAdvatekDevice *device, std::string path);
 

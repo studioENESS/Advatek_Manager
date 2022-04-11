@@ -59,6 +59,7 @@ sImportOptions importOptions = sImportOptions();
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
 int b_newVirtualDeviceRequest = 0;
+int b_clearVirtualDevicesRequest = 0;
 int b_vDevicePath = false;
 
 static std::string adaptor_string = "No Adaptors Found";
@@ -249,6 +250,25 @@ void button_update_controller_settings(int i) {
 }
 
 void button_import_export_JSON(sAdvatekDevice *device) {
+	
+	if (ImGui::Button("Copy"))
+	{
+		adv.copyToMemoryDevice(device);
+		applog.AddLog("[INFO] Copied data from %s (%s)\n", device->Nickname, ipString(device->CurrentIP).c_str());
+	}
+
+	ImGui::SameLine();
+
+	if (adv.memoryDevices.size() == 1) {
+		if (ImGui::Button("Paste"))
+		{
+			adv.pasteFromMemoryDevice(device);
+			applog.AddLog("[INFO] Pasted data to %s (%s)\n", device->Nickname, ipString(device->CurrentIP).c_str());
+		}
+	}
+	
+	ImGui::SameLine();
+
 	if (ImGui::Button("Import JSON"))
 		ImGui::OpenPopup("Import");
 
@@ -323,9 +343,9 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 				{
 					adv.identifyDevice(i, 20);
 				}
+				ImGui::SameLine();
 			}
 
-			ImGui::SameLine();
 			button_import_export_JSON(devices[i]);
 
 			ImGui::Separator();
@@ -886,6 +906,7 @@ int main(int, char**)
 					ImGui::Spacing();
 					if (ImGui::BeginCombo("###NewVirtualDevice", vDeviceString.c_str(), 0))
 					{
+
 						for(const auto& jsonData:JSONControllers)
 						{
 							const bool is_selected = (vDeviceString.c_str() == jsonData[0].c_str());
@@ -914,6 +935,12 @@ int main(int, char**)
 					}
 
 					ImGui::SameLine();
+
+					if (ImGui::Button("Clear"))
+					{
+						b_clearVirtualDevicesRequest = true;
+					} ImGui::SameLine();
+
 					ImGui::Text("%li Device(s)", adv.virtualDevices.size());
 
 					ImGui::Spacing();
@@ -956,6 +983,12 @@ int main(int, char**)
 			adv.addVirtualDevice(vDeviceData, b_vDevicePath);
 			b_newVirtualDeviceRequest = false;
 		}
+		
+		if (b_clearVirtualDevicesRequest) {
+			adv.clearDevices(adv.virtualDevices);
+			b_clearVirtualDevicesRequest = false;
+		}
+		
     }
 
     // Cleanup
