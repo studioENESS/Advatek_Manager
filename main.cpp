@@ -24,7 +24,10 @@
 #define Version "1.1.0"
 
 double currTime = 0;
+double lastPoll = 0;
 double lastTime = 0;
+
+float rePollTime = 4;
 float testCycleSpeed = 0.5;
 int b_testPixelsReady = true;
 
@@ -681,11 +684,6 @@ int main(int, char**)
 {
 	applog.AddLog("[INFO] Advatek Assistor v%s\n", Version);
 	adv.refreshAdaptors();
-	if(adv.networkAdaptors.size() > 0) {
-		adaptor_string = adv.networkAdaptors[0];
-		adv.poll();
-		applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...\n").c_str());
-	}
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -765,9 +763,18 @@ int main(int, char**)
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+	currTime = ImGui::GetTime();
+	if (adv.networkAdaptors.size() > 0) {
+		adaptor_string = adv.networkAdaptors[0];
+		adv.poll();
+		applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...\n").c_str());
+		lastPoll = currTime;
+	}
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
+		currTime = ImGui::GetTime();
 		adv.listen();
 
         // Poll and handle events (inputs, window resize, etc.)
@@ -782,9 +789,13 @@ int main(int, char**)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
-		currTime = ImGui::GetTime();
-
+		
+		if ( (adv.connectedDevices.size() == 0) && (currTime - lastPoll > rePollTime)) {
+			adv.poll();
+			applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...\n").c_str());
+			lastPoll = currTime;
+		}
+		
         // Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             // Create a window and append into it.
