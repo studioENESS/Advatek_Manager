@@ -27,7 +27,7 @@ double currTime = 0;
 double lastPoll = 0;
 double lastTime = 0;
 
-float rePollTime = 4;
+float rePollTime = 3;
 float testCycleSpeed = 0.5;
 int b_testPixelsReady = true;
 
