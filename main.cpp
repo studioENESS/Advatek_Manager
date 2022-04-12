@@ -60,6 +60,7 @@ int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
 int b_newVirtualDeviceRequest = 0;
 int b_clearVirtualDevicesRequest = 0;
+int iClearVirtualDeviceID = -1;
 int b_vDevicePath = false;
 
 static std::string adaptor_string = "No Adaptors Found";
@@ -342,6 +343,12 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 				if (ImGui::Button("ID"))
 				{
 					adv.identifyDevice(i, 20);
+				}
+				ImGui::SameLine();
+			} else {
+				if (ImGui::Button("Delete"))
+				{
+					iClearVirtualDeviceID = i;
 				}
 				ImGui::SameLine();
 			}
@@ -975,10 +982,12 @@ int main(int, char**)
 			adv.refreshAdaptors();
 			b_refreshAdaptorsRequest = false;
 		}
+
 		if (b_pollRequest) {
 			adv.poll();
 			b_pollRequest = false;
 		}
+
 		if (b_newVirtualDeviceRequest) {
 			adv.addVirtualDevice(vDeviceData, b_vDevicePath);
 			b_newVirtualDeviceRequest = false;
@@ -988,7 +997,11 @@ int main(int, char**)
 			adv.clearDevices(adv.virtualDevices);
 			b_clearVirtualDevicesRequest = false;
 		}
-		
+
+		if (iClearVirtualDeviceID >= 0) {
+			adv.virtualDevices.erase(adv.virtualDevices.begin() + iClearVirtualDeviceID);
+			iClearVirtualDeviceID = -1;
+		}
     }
 
     // Cleanup
