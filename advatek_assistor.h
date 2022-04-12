@@ -165,6 +165,7 @@ public:
 	void pasteFromMemoryDevice(sAdvatekDevice* toDevice);
 
 	void addVirtualDevice(std::string json, bool isPath);
+	void pasteToNewVirtualDevice();
 	void updateDevice(int d);
 	void identifyDevice(int d, uint8_t duration);
 	void setTest(int d);

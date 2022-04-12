@@ -59,6 +59,7 @@ sImportOptions importOptions = sImportOptions();
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
 int b_newVirtualDeviceRequest = 0;
+int b_pasteToNewVirtualDevice = 0;
 int b_clearVirtualDevicesRequest = 0;
 int iClearVirtualDeviceID = -1;
 int b_vDevicePath = false;
@@ -911,6 +912,7 @@ int main(int, char**)
 				if (ImGui::BeginTabItem("Virtual Devices"))
 				{
 					ImGui::Spacing();
+
 					if (ImGui::BeginCombo("###NewVirtualDevice", vDeviceString.c_str(), 0))
 					{
 
@@ -938,6 +940,15 @@ int main(int, char**)
 							vDeviceData = path.at(0);
 							b_vDevicePath = true;
 							b_newVirtualDeviceRequest = true;
+						}
+					}
+
+					ImGui::SameLine();
+
+					if (adv.memoryDevices.size() == 1) {
+						if (ImGui::Button("Paste"))
+						{
+							b_pasteToNewVirtualDevice = true;
 						}
 					}
 
@@ -992,6 +1003,12 @@ int main(int, char**)
 			adv.addVirtualDevice(vDeviceData, b_vDevicePath);
 			b_newVirtualDeviceRequest = false;
 		}
+
+		if (b_pasteToNewVirtualDevice) {
+			adv.pasteToNewVirtualDevice();
+			applog.AddLog("[INFO] Pasted data into new virtual device\n");
+			b_pasteToNewVirtualDevice = false;
+		}
 		
 		if (b_clearVirtualDevicesRequest) {
 			adv.clearDevices(adv.virtualDevices);
@@ -1002,6 +1019,7 @@ int main(int, char**)
 			adv.virtualDevices.erase(adv.virtualDevices.begin() + iClearVirtualDeviceID);
 			iClearVirtualDeviceID = -1;
 		}
+
     }
 
     // Cleanup

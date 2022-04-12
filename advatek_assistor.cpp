@@ -202,6 +202,12 @@ void advatek_manager::addVirtualDevice(std::string json, bool isPath) {
 	advatek_manager::virtualDevices.emplace_back(device);
 }
 
+void advatek_manager::pasteToNewVirtualDevice() {
+	sAdvatekDevice * device = new sAdvatekDevice();
+	pasteFromMemoryDevice(device);
+	virtualDevices.emplace_back(device);
+}
+
 void advatek_manager::updateDevice(int d) {
 
 	auto device = advatek_manager::connectedDevices[d];
