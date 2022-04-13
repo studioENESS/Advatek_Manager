@@ -40,6 +40,9 @@
     <ClCompile Include="udpclient.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="defines.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\imgui\imconfig.h">
@@ -69,6 +72,7 @@
     <ClInclude Include="LockedQueue.h">
       <Filter>sources</Filter>
     </ClInclude>
+    <ClInclude Include="defines.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="External\imgui\misc\debuggers\imgui.natvis">

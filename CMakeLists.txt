@@ -13,6 +13,7 @@ set(IMGUI_BACKENDS "${PROJECT_SOURCE_DIR}/External/imgui/backends")
 set(PFD_ROOT "${PROJECT_SOURCE_DIR}/External/portable-file-dialogs")
 
 add_executable(advatek_assistor main.cpp
+	defines.cpp
 	advatek_assistor.cpp
 	udpclient.cpp
 	${IMGUI_ROOT}/imgui.cpp

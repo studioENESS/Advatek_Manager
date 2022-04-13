@@ -1,5 +1,6 @@
 #include "advatek_assistor.h"
 #include "udpclient.h"
+
 #ifndef _WIN32
 #include <netdb.h>
 #include <ifaddrs.h>
@@ -7,113 +8,12 @@
 
 namespace pt = boost::property_tree;
 
-const char* DriverTypes[3] = {
-		"RGB only",
-		"RGBW only",
-		"Either RGB or RGBW"
-};
-
-const char* DriverSpeedsMhz[12] = {
-	"0.4 MHz", // Data Only Slow
-	"0.6 MHz", // Data Only Fast
-	"0.8 MHz",
-	"1.0 MHz",
-	"1.2 MHz",
-	"1.4 MHz",
-	"1.6 MHz",
-	"1.8 MHz",
-	"2.0 MHz",
-	"2.2 MHz",
-	"2.5 MHz",
-	"2.9 MHz"
-};
-
-const char* TestModes[9] = {
-	"None(Live Control Data)",
-	"RGBW Cycle",
-	"Red",
-	"Green",
-	"Blue",
-	"White",
-	"Set Color",
-	"Color Fade",
-	"Single Pixel"
-};
-
- const char* advatek_manager::RGBW_Order[24] = {
-		"R-G-B/R-G-B-W",
-		"R-B-G/R-B-G-W",
-		"G-R-B/G-R-B-W",
-		"B-R-G/B-R-G-W",
-		"G-B-R/G-B-R-W",
-		"B-G-R/B-G-R-W",
-		"R-G-W-B",
-		"R-B-W-G",
-		"G-R-W-B",
-		"B-R-W-G",
-		"G-B-W-R",
-		"B-G-W-R",
-		"R-W-G-B",
-		"R-W-B-G",
-		"G-W-R-B",
-		"B-W-R-G",
-		"G-W-B-R",
-		"B-W-G-R",
-		"W-R-G-B",
-		"W-R-B-G",
-		"W-G-R-B",
-		"W-B-R-G",
-		"W-G-B-R",
-		"W-B-G-R"
-	};
-
-std::string macString(uint8_t * address) {
-	std::stringstream ss;
-
-	for (int i(0); i < 6; i++) {
-		ss << std::hex << std::uppercase << std::setw(2) << static_cast<int>(address[i]);
-		if (i < 5) ss << ":";
-	}
-
-	return ss.str();
-}
-
-std::string ipString(uint8_t * address) {
-	std::stringstream ss;
-
-	for (int i(0); i < 4; i++) {
-		ss << static_cast<int>(address[i]);
-		if (i < 3) ss << ".";
-	}
-
-	return ss.str();
-}
-
-std::vector<std::string> splitter(std::string in_pattern, std::string& content) {
-	std::vector<std::string> split_content;
-
-	std::regex pattern(in_pattern);
-	std::copy(std::sregex_token_iterator(content.begin(), content.end(), pattern, -1),
-		std::sregex_token_iterator(), std::back_inserter(split_content));
-	return split_content;
-}
-
-void insertSwapped16(std::vector<uint8_t> &dest, uint16_t* pData, int32_t size)
-{
-	for (int i = 0; i < size; i++)
-	{
-		uint16_t data = pData[i];
-		dest.push_back((uint8_t)(data >> 8));
-		dest.push_back((uint8_t)data);
-	}
-}
-
 bool advatek_manager::deviceExist(uint8_t * Mac) {
 
-	for (int d(0); d < advatek_manager::connectedDevices.size(); d++) {
+	for (int d(0); d < connectedDevices.size(); d++) {
 		bool exist = true;
 		for (int i(0); i < 6; i++) {
-			if (advatek_manager::connectedDevices[d]->Mac[i] != Mac[i]) exist = false;
+			if (connectedDevices[d]->Mac[i] != Mac[i]) exist = false;
 		}
 		if (exist) return true;
 	}
@@ -183,7 +83,7 @@ void advatek_manager::copyToMemoryDevice(sAdvatekDevice* fromDevice) {
 	advatek_manager::memoryDevices.emplace_back(memoryDevice);
 }
 
-void advatek_manager::pasteFromMemoryDevice(sAdvatekDevice* toDevice) {
+void advatek_manager::pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice) {
 	if (memoryDevices.size() == 0) {
 		return;
 	}
@@ -193,18 +93,15 @@ void advatek_manager::pasteFromMemoryDevice(sAdvatekDevice* toDevice) {
 	copyDevice(memoryDevices[0], toDevice);
 }
 
-void advatek_manager::addVirtualDevice(std::string json, bool isPath) {
+void advatek_manager::addVirtualDevice(sImportOptions &importOptions) {
 	sAdvatekDevice * device = new sAdvatekDevice();
-	sImportOptions importOptions = sImportOptions();
-	importOptions.init = true;
-	importOptions.isPath = isPath;
-	importJSON(device, json, importOptions);
+	importJSON(device, importOptions);
 	advatek_manager::virtualDevices.emplace_back(device);
 }
 
 void advatek_manager::pasteToNewVirtualDevice() {
 	sAdvatekDevice * device = new sAdvatekDevice();
-	pasteFromMemoryDevice(device);
+	pasteFromMemoryDeviceTo(device);
 	virtualDevices.emplace_back(device);
 }
 
@@ -338,45 +235,6 @@ void advatek_manager::clearDevices(std::vector<sAdvatekDevice*> &devices) {
 
 void advatek_manager::clearConnectedDevices() {
 	clearDevices(connectedDevices);
-	/*
-	for (auto device : advatek_manager::connectedDevices)
-	{
-		if (device)
-		{
-			delete device->Model;
-			delete device->Firmware;
-			delete[] device->OutputPixels;
-			delete[] device->OutputUniv;
-			delete[] device->OutputChan;
-			delete[] device->OutputNull;
-			delete[] device->OutputZig;
-			delete[] device->OutputReverse;
-			delete[] device->OutputColOrder;
-			delete[] device->OutputGrouping;
-			delete[] device->OutputBrightness;
-			delete[] device->DmxOutOn;
-			delete[] device->DmxOutUniv;
-			delete[] device->DriverType;
-			delete[] device->DriverSpeed;
-			delete[] device->DriverExpandable;
-			delete[] device->DriverNames;
-			delete[] device->VoltageBanks;
-			delete device;
-		}
-	}
-
-	advatek_manager::connectedDevices.clear();
-	*/
-}
-
-
-void setEndUniverseChannel(uint16_t startUniverse, uint16_t startChannel, uint16_t pixelCount, uint16_t outputGrouping, uint16_t &endUniverse, uint16_t &endChannel) {
-	pixelCount *= outputGrouping;
-	uint16_t pixelChannels = (3 * pixelCount); // R-G-B data
-	uint16_t pixelUniverses = ((float)(startChannel + pixelChannels) / 510.f);
-
-	endUniverse = startUniverse + pixelUniverses;
-	endChannel = (startChannel + pixelChannels - 1) % 510;
 }
 
 void advatek_manager::bc_networkConfig(int d) {
@@ -434,8 +292,7 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 
 	memcpy(&rec_data->ProtVer, data, sizeof(uint8_t));
 	data += 1;
-	//std::cout << "ProtVer: " << (int)rec_data->ProtVer << std::endl;
-
+	
 	memcpy(&rec_data->CurrentProtVer, data, sizeof(uint8_t));
 	data += 1;
 
@@ -875,15 +732,26 @@ void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
 	m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
 }
 
-std::string advatek_manager::importJSON(sAdvatekDevice *device, std::string json, sImportOptions &importOptions) {
+std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &importOptions) {
 	std::string s_hold;
 	pt::ptree root;
 
+	if (importOptions.json.empty()) {
+		auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
+		if (!path.empty()) {
+			//applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
+			importOptions.json = path.at(0);
+			importOptions.isPath = true;
+		} else {
+			return "";
+		}
+	}
+
 	if (importOptions.isPath) {
-		pt::read_json(json, root);
+		pt::read_json(importOptions.json, root);
 	} else { // data
 		std::stringstream ss;
-		ss << json;
+		ss << importOptions.json;
 		pt::read_json(ss, root);
 	}
 	
@@ -1157,37 +1025,28 @@ void advatek_manager::exportJSON(sAdvatekDevice *device, std::string path) {
 	outfile.close();
 }
 
+void advatek_manager::getJSON(sAdvatekDevice *fromDevice, sImportOptions &importOptions) {
+	pt::ptree data;
+	getJSON(fromDevice, &data);
+
+	std::stringstream jsonStringStream;
+	write_json(jsonStringStream, data);
+
+	importOptions.json = jsonStringStream.str();
+	importOptions.isPath = false;
+}
+
 void advatek_manager::copyDevice(sAdvatekDevice *fromDevice, sAdvatekDevice *toDevice) {
 	pt::ptree data;
 	getJSON(fromDevice, &data);
 
-	sImportOptions importOptions = sImportOptions();
-	importOptions.init = true;
-	importOptions.isPath = false;
-
 	std::stringstream jsonStringStream;
 	write_json(jsonStringStream, data);
-	importJSON(toDevice, jsonStringStream.str(), importOptions);
-}
 
-void load_ipStr(std::string ipStr, uint8_t *address)
-{
-	int ip1, ip2, ip3, ip4;
-	sscanf(ipStr.c_str(), "%i.%i.%i.%i", &ip1, &ip2, &ip3, &ip4);
-	address[0] = ip1;
-	address[1] = ip2;
-	address[2] = ip3;
-	address[3] = ip4;
-}
+	sImportOptions importOptions = sImportOptions();
+	importOptions.json = jsonStringStream.str();
+	importOptions.isPath = false;
+	importOptions.init = true;
 
-void load_macStr(std::string macStr, uint8_t *address)
-{
-	int mac1, mac2, mac3, mac4, mac5, mac6;
-	sscanf(macStr.c_str(), "%02x:%02x:%02x:%02x:%02x:%02x", &mac1, &mac2, &mac3, &mac4, &mac5, &mac6);
-	address[0] = mac1;
-	address[1] = mac2;
-	address[2] = mac3;
-	address[3] = mac4;
-	address[4] = mac5;
-	address[5] = mac6;
+	importJSON(toDevice, importOptions);
 }

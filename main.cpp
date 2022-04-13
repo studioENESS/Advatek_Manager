@@ -16,8 +16,6 @@
 #endif
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
-#include "portable-file-dialogs.h"
-
 #include "advatek_assistor.h"
 #include "standard_json_config.h"
 
@@ -54,7 +52,7 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 advatek_manager adv;
-sImportOptions importOptions = sImportOptions();
+sImportOptions userImportOptions = sImportOptions();
 
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
@@ -120,8 +118,8 @@ struct AppLog {
 		
 		ImGui::Spacing();
 
-		bool clear = ImGui::Button("Clear", ImVec2(50,0));
-		ImGui::SameLine();
+		//bool clear = ImGui::Button("Clear", ImVec2(50,0));
+		//ImGui::SameLine();
 		bool copy = ImGui::Button("Copy", ImVec2(50, 0));
 		ImGui::SameLine();
 		ImGui::PushItemWidth(130);
@@ -132,8 +130,8 @@ struct AppLog {
 		ImGui::Spacing();
 		ImGui::BeginChild("scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-		if (clear)
-			Clear();
+		//if (clear)
+		//	Clear();
 		if (copy)
 			ImGui::LogToClipboard();
 
@@ -251,6 +249,37 @@ void button_update_controller_settings(int i) {
 	}
 }
 
+void importUI(sAdvatekDevice *device, sImportOptions *importOptions) {
+	if (ImGui::BeginPopupModal("Import", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("What needs importing?");
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+
+		ImGui::Checkbox("Network", &importOptions->network);
+		ImGui::Checkbox("Ethernet Control (Mapping)", &importOptions->ethernet_control);
+		ImGui::Checkbox("DMX512 Outputs", &importOptions->dmx_outputs);
+		ImGui::Checkbox("LED Settings", &importOptions->led_settings);
+		ImGui::Checkbox("Nickname", &importOptions->nickname);
+		ImGui::Checkbox("Fan On Temp", &importOptions->fan_on_temp);
+
+		ImGui::PopStyleVar();
+		ImGui::Spacing();
+
+		if (ImGui::Button("Import", ImVec2(120, 0))) {
+			importOptions->userSet = true;
+			ImGui::CloseCurrentPopup();
+			//result = adv.importJSON(device, importOptions);
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
+	}
+}
+
 void button_import_export_JSON(sAdvatekDevice *device) {
 	
 	if (ImGui::Button("Copy"))
@@ -264,8 +293,8 @@ void button_import_export_JSON(sAdvatekDevice *device) {
 	if (adv.memoryDevices.size() == 1) {
 		if (ImGui::Button("Paste"))
 		{
-			adv.pasteFromMemoryDevice(device);
-			applog.AddLog("[INFO] Pasted data to %s (%s)\n", device->Nickname, ipString(device->CurrentIP).c_str());
+			adv.getJSON(adv.memoryDevices[0], userImportOptions);
+			ImGui::OpenPopup("Import");
 		}
 	}
 	
@@ -278,39 +307,13 @@ void button_import_export_JSON(sAdvatekDevice *device) {
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-	if (ImGui::BeginPopupModal("Import", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text("What needs importing?");
-		ImGui::Separator();
-		ImGui::Spacing();
+	importUI(device, &userImportOptions);
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-
-		ImGui::Checkbox("Network", &importOptions.network);
-		ImGui::Checkbox("Ethernet Control (Mapping)", &importOptions.ethernet_control);
-		ImGui::Checkbox("DMX512 Outputs", &importOptions.dmx_outputs);
-		ImGui::Checkbox("LED Settings", &importOptions.led_settings);
-		ImGui::Checkbox("Nickname", &importOptions.nickname);
-		ImGui::Checkbox("Fan On Temp", &importOptions.fan_on_temp);
-
-		ImGui::PopStyleVar();
-		ImGui::Spacing();
-
-		if (ImGui::Button("Import", ImVec2(120, 0))) { 
-			ImGui::CloseCurrentPopup(); 
-			auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
-			if (!path.empty()) {
-				applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
-				//result = adv.importJSON(adv.connectedDevices[d], path.at(0), importOptions);
-				result = adv.importJSON(device, path.at(0), importOptions);
-			}
-		}
-		ImGui::SetItemDefaultFocus();
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-		ImGui::EndPopup();
+	if(userImportOptions.userSet) {
+		result = adv.importJSON(device, userImportOptions);
+		userImportOptions = sImportOptions();
 	}
-	
+
 	ImGui::SameLine();
 
 	if (ImGui::Button("Export JSON"))
@@ -329,6 +332,9 @@ void button_import_export_JSON(sAdvatekDevice *device) {
 }
 
 void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
+
+	ImGui::Spacing();
+
 	for (uint8_t i = 0; i < devices.size(); i++) {
 		std::stringstream Title;
 		Title << devices[i]->Model << "	" << devices[i]->Firmware << "	" << ipString(devices[i]->CurrentIP) << "		" << "Temp: " << (float)devices[i]->Temperature*0.1 << "		" << devices[i]->Nickname;
@@ -546,7 +552,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 				}
 
 				int tempAllColOrder = devices[i]->OutputColOrder[0];
-				if (ImGui::Combo("RGB Order ##all", &tempAllColOrder, advatek_manager::RGBW_Order, 24)) {
+				if (ImGui::Combo("RGB Order ##all", &tempAllColOrder, RGBW_Order, 24)) {
 					for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
 						devices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
 					}
@@ -724,6 +730,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 			}
 			ImGui::EndTabBar();
 			ImGui::Spacing();
+			ImGui::Spacing();
 			ImGui::TreePop();		
 		}
 	}
@@ -792,8 +799,8 @@ int main(int, char**)
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     // Setup Dear ImGui style
-    //ImGui::StyleColorsDark();
-    ImGui::StyleColorsClassic();
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -863,6 +870,8 @@ int main(int, char**)
 
 			ImGui::Begin("Advatek Assistor", NULL, window_flags);
 
+			showResult(result);
+
 			if (ImGui::Button("Refresh Adaptors"))
 			{
 				b_refreshAdaptorsRequest = true;
@@ -898,9 +907,7 @@ int main(int, char**)
 						b_pollRequest = true;
 					} ImGui::SameLine();
 
-					ImGui::Text("%li Device(s) Connected", adv.connectedDevices.size());
-
-					showResult(result);
+					ImGui::Text("%li Connected Device(s)", adv.connectedDevices.size());
 
 					ImGui::Spacing();
 
@@ -959,10 +966,10 @@ int main(int, char**)
 						b_clearVirtualDevicesRequest = true;
 					} ImGui::SameLine();
 
-					ImGui::Text("%li Device(s)", adv.virtualDevices.size());
+					ImGui::Text("%li Virtual Device(s)", adv.virtualDevices.size());
 
 					ImGui::Spacing();
-
+					
 					showDevices(adv.virtualDevices, false);
 
 					ImGui::EndTabItem();
@@ -970,6 +977,7 @@ int main(int, char**)
 				ImGui::EndTabBar();
 			}
 
+			ImGui::Spacing();
 			ImGui::Spacing();
 			ImGui::Separator();
 
@@ -1000,7 +1008,11 @@ int main(int, char**)
 		}
 
 		if (b_newVirtualDeviceRequest) {
-			adv.addVirtualDevice(vDeviceData, b_vDevicePath);
+			sImportOptions vImportOptions = sImportOptions();
+			vImportOptions.init = true;
+			vImportOptions.isPath = b_vDevicePath;
+			vImportOptions.json = vDeviceData;
+			adv.addVirtualDevice(vImportOptions);
 			b_newVirtualDeviceRequest = false;
 		}
 
