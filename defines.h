@@ -8,8 +8,6 @@
 #include <vector>
 #include <regex>
 
-#include "portable-file-dialogs.h"
-
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
@@ -31,16 +29,16 @@
 
 #define bswap_16(x) x=((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
-#define EqualValueJson(type, atr) (device->atr == root.get<type>(#atr));
-#define SetValueFromJson(type, atr) device->atr = root.get<type>(#atr);
+#define EqualValueJson(type, atr) (device->atr == advatek_device.get<type>(#atr));
+#define SetValueFromJson(type, atr) device->atr = advatek_device.get<type>(#atr);
 #define SetChildIntValuesFromJson(atr) \
-	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
+	for (pt::ptree::value_type &node : advatek_device.get_child(#atr)) { \
 	 device->atr[std::stoi(node.first)] = std::stoi(node.second.data()); }
 #define SetChildFloatValuesFromJson(atr) \
-	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
+	for (pt::ptree::value_type &node : advatek_device.get_child(#atr)) { \
 	 device->atr[std::stoi(node.first)] = std::stof(node.second.data()); }
 #define SetChildStringValuesFromJson(atr) \
-	for (pt::ptree::value_type &node : root.get_child(#atr)) { \
+	for (pt::ptree::value_type &node : advatek_device.get_child(#atr)) { \
 	std::string sTempValue = node.second.data(); \\
 	 device->atr[std::stoi(node.first)] = sTempValue.c_str(); }
 
@@ -125,7 +123,7 @@ typedef struct tAdvatekDevice {
 typedef struct tImportOptions {
 	bool userSet = false;
 	std::string json = "";
-	bool isPath = true;
+	int loadIndex = 0;
 	bool init = false;
 	bool network = true;
 	bool ethernet_control = true;

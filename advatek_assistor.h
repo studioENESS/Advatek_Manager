@@ -43,7 +43,7 @@ public:
 	void setCurrentAdaptor(int adaptorIndex);
 	
 	void getJSON(sAdvatekDevice *fromDevice, sImportOptions &importOptions);
-	void getJSON(sAdvatekDevice *device, boost::property_tree::ptree *root);
+	void getJSON(sAdvatekDevice *device, boost::property_tree::ptree &root);
 	std::string importJSON(sAdvatekDevice *device, sImportOptions &importOptions);
 	void exportJSON(sAdvatekDevice *device, std::string path);
 

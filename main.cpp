@@ -17,6 +17,7 @@
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
 #include "advatek_assistor.h"
+#include "portable-file-dialogs.h"
 #include "standard_json_config.h"
 
 #define Version "1.1.0"
@@ -53,6 +54,7 @@ static void glfw_error_callback(int error, const char* description)
 
 advatek_manager adv;
 sImportOptions userImportOptions = sImportOptions();
+sImportOptions virtualImportOptions = sImportOptions();
 
 int b_pollRequest = 0;
 int b_refreshAdaptorsRequest = 0;
@@ -271,7 +273,6 @@ void importUI(sAdvatekDevice *device, sImportOptions *importOptions) {
 		if (ImGui::Button("Import", ImVec2(120, 0))) {
 			importOptions->userSet = true;
 			ImGui::CloseCurrentPopup();
-			//result = adv.importJSON(device, importOptions);
 		}
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
@@ -300,8 +301,21 @@ void button_import_export_JSON(sAdvatekDevice *device) {
 	
 	ImGui::SameLine();
 
-	if (ImGui::Button("Import JSON"))
-		ImGui::OpenPopup("Import");
+	if (ImGui::Button("Import JSON")) {
+		auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
+		if (!path.empty()) {
+			applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
+			boost::property_tree::ptree advatek_devices;
+			boost::property_tree::read_json(path.at(0), advatek_devices);
+
+			std::stringstream jsonStringStream;
+			write_json(jsonStringStream, advatek_devices);
+
+			userImportOptions.json = jsonStringStream.str();
+
+			ImGui::OpenPopup("Import");
+		}
+	}
 
 	// Always center this window when appearing
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -928,9 +942,9 @@ int main(int, char**)
 							const bool is_selected = (vDeviceString.c_str() == jsonData[0].c_str());
 							if (ImGui::Selectable(jsonData[0].c_str(), is_selected))
 							{
-								vDeviceString = jsonData[0];
-								vDeviceData = jsonData[1];
-								b_vDevicePath = false;
+								virtualImportOptions = sImportOptions();
+								virtualImportOptions.json = jsonData[1];
+								virtualImportOptions.init = true;
 								b_newVirtualDeviceRequest = true;
 							}
 						}
@@ -941,13 +955,30 @@ int main(int, char**)
 					ImGui::SameLine();
 
 					if (ImGui::Button("Import JSON")) {
+						//auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
+						//if (!path.empty()) {
+						//	applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
+						//	vDeviceData = path.at(0);
+						//	b_vDevicePath = true;
+						//	b_newVirtualDeviceRequest = true;
+						//}
+
 						auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
 						if (!path.empty()) {
 							applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
-							vDeviceData = path.at(0);
-							b_vDevicePath = true;
+							boost::property_tree::ptree advatek_devices;
+							boost::property_tree::read_json(path.at(0), advatek_devices);
+
+							std::stringstream jsonStringStream;
+							write_json(jsonStringStream, advatek_devices);
+
+							virtualImportOptions = sImportOptions();
+							virtualImportOptions.json = jsonStringStream.str();
+							virtualImportOptions.init = true;
+							//ImGui::OpenPopup("Import");
 							b_newVirtualDeviceRequest = true;
 						}
+
 					}
 
 					ImGui::SameLine();
@@ -1008,11 +1039,7 @@ int main(int, char**)
 		}
 
 		if (b_newVirtualDeviceRequest) {
-			sImportOptions vImportOptions = sImportOptions();
-			vImportOptions.init = true;
-			vImportOptions.isPath = b_vDevicePath;
-			vImportOptions.json = vDeviceData;
-			adv.addVirtualDevice(vImportOptions);
+			adv.addVirtualDevice(virtualImportOptions);
 			b_newVirtualDeviceRequest = false;
 		}
 
