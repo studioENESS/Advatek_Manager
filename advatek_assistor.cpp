@@ -92,6 +92,16 @@ void advatek_manager::pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice) {
 	copyDevice(memoryDevices[0], toDevice);
 }
 
+void advatek_manager::copyToNewVirtualDevice(sAdvatekDevice* fromDevice) {
+	pt::ptree advatek_device;
+	getJSON(fromDevice, advatek_device);
+	sAdvatekDevice * device = new sAdvatekDevice();
+	sImportOptions importOptions = sImportOptions();
+	importOptions.init = true;
+	importJSON(device, advatek_device, importOptions);
+	advatek_manager::virtualDevices.emplace_back(device);
+}
+
 void advatek_manager::addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions) {
 	sAdvatekDevice * device = new sAdvatekDevice();
 	importJSON(device, advatek_device, importOptions);

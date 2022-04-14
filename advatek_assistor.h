@@ -21,6 +21,7 @@ public:
 	void copyToMemoryDevice(sAdvatekDevice* fromDevice);
 	void pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice);
 
+	void copyToNewVirtualDevice(sAdvatekDevice* fromDevice);
 	void addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
 	void addVirtualDevice(sImportOptions &importOptions);
 	void pasteToNewVirtualDevice();

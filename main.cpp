@@ -398,9 +398,7 @@ void button_import_export_JSON(sAdvatekDevice *device) {
 void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 
 	ImGui::Spacing();
-	
-	
-	
+
 	for (uint8_t i = 0; i < devices.size(); i++) {
 		std::stringstream Title;
 		Title << " " << devices[i]->Model << "	" << devices[i]->Firmware << "	" << ipString(devices[i]->CurrentIP) << "	" << "Temp: " << (float)devices[i]->Temperature*0.1 << "	" << devices[i]->Nickname;
@@ -430,6 +428,15 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 			ImGui::SameLine();
 
 			button_import_export_JSON(devices[i]);
+
+			if (isConnected) {
+				ImGui::SameLine();
+				if (ImGui::Button("New Virtual Device"))
+				{
+					adv.copyToNewVirtualDevice(adv.connectedDevices[i]);
+					applog.AddLog("[INFO] Copied controller %s %s to new virtual device.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
+				}
+			}
 
 			ImGui::Separator();
 			ImGui::Spacing();
