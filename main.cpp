@@ -401,7 +401,14 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 
 	for (uint8_t i = 0; i < devices.size(); i++) {
 		std::stringstream Title;
-		Title << " " << devices[i]->Model << "	" << devices[i]->Firmware << "	" << ipString(devices[i]->CurrentIP) << "	" << "Temp: " << (float)devices[i]->Temperature*0.1 << "	" << devices[i]->Nickname;
+		Title << " " << devices[i]->Model << "	" << devices[i]->Firmware << "	";
+		if (isConnected) {
+			Title << ipString(devices[i]->CurrentIP);
+		}
+		else {
+			Title << ipString(devices[i]->StaticIP);
+		}
+		Title << "	" << "Temp: " << (float)devices[i]->Temperature*0.1 << "	" << devices[i]->Nickname;
 		Title << "###" << macString(devices[i]->Mac) << i;
 		
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f, 8.f));
@@ -891,10 +898,10 @@ int main(int, char**)
     // - Read 'docs/FONTS.md' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
     //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
+    io.Fonts->AddFontFromFileTTF("External/imgui/misc/fonts/Roboto-Medium.ttf", 16.0f);
+    //io.Fonts->AddFontFromFileTTF("External/imgui/misc/fonts/Cousine-Regular.ttf", 15.0f);
+    //io.Fonts->AddFontFromFileTTF("External/imgui/misc/fonts/DroidSans.ttf", 15.0f);
+    //io.Fonts->AddFontFromFileTTF("External/imgui/misc/fonts/ProggyTiny.ttf", 10.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
