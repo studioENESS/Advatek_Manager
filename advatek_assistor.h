@@ -21,6 +21,7 @@ public:
 	void copyToMemoryDevice(sAdvatekDevice* fromDevice);
 	void pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice);
 
+	void addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
 	void addVirtualDevice(sImportOptions &importOptions);
 	void pasteToNewVirtualDevice();
 	void updateDevice(int d);
@@ -45,7 +46,9 @@ public:
 	void getJSON(sAdvatekDevice *fromDevice, sImportOptions &importOptions);
 	void getJSON(sAdvatekDevice *device, boost::property_tree::ptree &root);
 	std::string importJSON(sAdvatekDevice *device, sImportOptions &importOptions);
+	std::string importJSON(sAdvatekDevice *device, boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
 	void exportJSON(sAdvatekDevice *device, std::string path);
+	void exportJSON(std::vector<sAdvatekDevice*> &devices, std::string path);
 
 	static const char* RGBW_Order[24];
 

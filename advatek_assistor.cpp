@@ -92,10 +92,32 @@ void advatek_manager::pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice) {
 	copyDevice(memoryDevices[0], toDevice);
 }
 
-void advatek_manager::addVirtualDevice(sImportOptions &importOptions) {
+void advatek_manager::addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions) {
 	sAdvatekDevice * device = new sAdvatekDevice();
-	importJSON(device, importOptions);
+	importJSON(device, advatek_device, importOptions);
 	advatek_manager::virtualDevices.emplace_back(device);
+}
+
+void advatek_manager::addVirtualDevice(sImportOptions &importOptions) {
+	//if (importOptions.json.empty()) return;
+	pt::ptree advatek_devices;
+	pt::ptree advatek_device;
+
+	std::stringstream ss;
+	ss << importOptions.json;
+	pt::read_json(ss, advatek_devices);
+	
+	if (advatek_devices.count("advatek_devices") > 0) {
+		// Might have multiple devices
+		for (auto &device : advatek_devices.get_child("advatek_devices"))
+		{
+			//advatek_device = device.second;
+			addVirtualDevice(device.second, importOptions);
+		}
+	} else { // Single device
+		//advatek_device = advatek_devices;
+		addVirtualDevice(advatek_devices, importOptions);
+	}
 }
 
 void advatek_manager::pasteToNewVirtualDevice() {
@@ -731,62 +753,10 @@ void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
 	m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
 }
 
-std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &importOptions) {
+std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_tree::ptree advatek_device, sImportOptions &importOptions) {
 	std::string s_hold;
-	pt::ptree advatek_devices;
-	pt::ptree advatek_device;
-
-	if (importOptions.json.empty()) {
-		//auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
-		//if (!path.empty()) {
-		//	//applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
-		//} else {
-			return "";
-		//}
-	} else { // data
-		std::stringstream ss;
-		ss << importOptions.json;
-		pt::read_json(ss, advatek_devices);
-	}
-
-	int i = 0;
-	if (advatek_devices.count("advatek_devices") > 0)
-	{
-		advatek_device = advatek_devices.get_child("advatek_devices").front().second;
-		//for ( auto &device : advatek_devices.get_child("advatek_devices"))
-		//{
-		//	
-		//	i++;
-		//	//_noop;
-		//	advatek_device = device.second;
-		//}
-	}
-	else
-	{
-		advatek_device = advatek_devices;
-		// TODO: Not valid file error 
-		//return false;
-		// nothing
-	}
-	/*
-
-	if (advatek_devices.count("advatek_device") == 0)
-	{
-		advatek_device = advatek_devices;
-	} else {
-		advatek_device = advatek_devices.get_child("advatek_device");
-	}
-
-	int index = 0;
-	for (pt::ptree &adevice : advatek_devices.get_child("advatek_device")) {
-		if (index == importOptions.loadIndex) {
-			advatek_device = adevice;
-		}
-		index++;
-	}*/
-
 	std::stringstream report;
-	
+
 	if (importOptions.init) {
 		SetValueFromJson(uint8_t, ProtVer);
 		SetValueFromJson(uint8_t, CurrentProtVer);
@@ -799,10 +769,11 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &
 		s_hold = advatek_device.get<std::string>("Mac");
 		load_macStr(s_hold, device->Mac);
 	}
-	
+
 	if (advatek_device.get<std::string>("Model").compare(std::string((char *)device->Model)) == 0) {
 		report << "Done!\n";
-	} else {
+	}
+	else {
 		report << "Beware: Loaded data from ";
 		report << advatek_device.get<std::string>("Model");
 		report << " to ";
@@ -824,7 +795,7 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &
 
 	if (importOptions.ethernet_control || importOptions.init) {
 		bool go = EqualValueJson(uint8_t, NumOutputs);
-		if ( go || importOptions.init) {
+		if (go || importOptions.init) {
 			SetValueFromJson(uint8_t, HoldLastFrame);
 			SetValueFromJson(uint8_t, SimpleConfig);
 			SetValueFromJson(uint16_t, MaxPixPerOutput);
@@ -850,7 +821,8 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &
 			SetChildIntValuesFromJson(OutputGrouping);
 			SetChildIntValuesFromJson(OutputBrightness);
 			report << "- Import Ethernet Control Succesfull.\n";
-		} else {
+		}
+		else {
 			report << "- Import Ethernet Control Failed. (Output count does not match)\n";
 		}
 	}
@@ -867,7 +839,8 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &
 			SetChildIntValuesFromJson(DmxOutOn);
 			SetChildIntValuesFromJson(DmxOutUniv);
 			report << "- Import DMX Control Succesfull.\n";
-		} else {
+		}
+		else {
 			report << "- Import DMX Control Failed. (Output count does not match)\n";
 		}
 	}
@@ -881,29 +854,27 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &
 			device->DriverNames = new char*[device->NumDrivers];
 			device->Firmware = new uint8_t[device->LenFirmware];
 			memset(device->Firmware, 0, sizeof(uint8_t)*device->LenFirmware);
-			char* tempFirmwareName = "EnessVirtual";
+			char* tempFirmwareName = "Virtual";
 			memcpy(device->Firmware, tempFirmwareName, 12);
 			SetValueFromJson(uint8_t, DriverNameLength);
 			for (int i = 0; i < device->NumDrivers; i++) {
 				device->DriverNames[i] = new char[device->DriverNameLength + 1];
 				memset(device->DriverNames[i], 0, sizeof(char) * (device->DriverNameLength + 1));
 			}
+			SetValueFromJson(uint8_t, DriverNameLength);
+			for (pt::ptree::value_type &node : advatek_device.get_child("DriverNames"))
+			{
+				std::string sTempValue = node.second.data();
+				int index = std::stoi(node.first);
+				const char* sCStr = sTempValue.c_str();
+
+				memcpy(device->DriverNames[index], sCStr, sizeof(char) * device->DriverNameLength);
+			}
 		}
 
 		SetChildIntValuesFromJson(DriverType);
 		SetChildIntValuesFromJson(DriverSpeed);
 		SetChildIntValuesFromJson(DriverExpandable);
-		SetValueFromJson(uint8_t, DriverNameLength);
-		for (pt::ptree::value_type &node : advatek_device.get_child("DriverNames")) 
-		{
-			std::string sTempValue = node.second.data();
-			int index = std::stoi(node.first);
-			const char* sCStr = sTempValue.c_str();
-			
-			memcpy(device->DriverNames[index], sCStr, sizeof(char) * device->DriverNameLength);
-		}
-
-		//SetChildStringValuesFromJson(DriverNames);
 
 		SetValueFromJson(int, CurrentDriver);
 		SetValueFromJson(uint8_t, CurrentDriverType);
@@ -929,8 +900,30 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &
 		SetValueFromJson(uint8_t, MaxTargetTemp);
 		report << "- Import Fan On Temp Succesfull.\n";
 	}
-	
+
 	return report.str();
+}
+
+std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &importOptions) {
+	pt::ptree advatek_devices;
+	pt::ptree advatek_device;
+
+	if (importOptions.json.empty()) {
+		return "Error: No JSON data found.";
+	} else { // data
+		std::stringstream ss;
+		ss << importOptions.json;
+		pt::read_json(ss, advatek_devices);
+	}
+
+	if (advatek_devices.count("advatek_devices") > 0) {
+		advatek_device = advatek_devices.get_child("advatek_devices").front().second;
+	} else {
+		advatek_device = advatek_devices;
+	}
+
+	return importJSON(device, advatek_device, importOptions);
+
 }
 
 void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptree &advatek_device) {
@@ -1043,12 +1036,40 @@ void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptre
 
 }
 
+void advatek_manager::getJSON(sAdvatekDevice *fromDevice, sImportOptions &importOptions) {
+	pt::ptree data;
+	getJSON(fromDevice, data);
+
+	std::stringstream jsonStringStream;
+	write_json(jsonStringStream, data);
+
+	importOptions.json = jsonStringStream.str();
+}
+
+void advatek_manager::exportJSON(std::vector<sAdvatekDevice*> &devices, std::string path) {
+	pt::ptree advatek_devices;
+	pt::ptree devicesArr;
+
+	for (auto & device : devices) {
+		pt::ptree advatek_device;
+		getJSON(device, advatek_device);
+		devicesArr.push_back(std::make_pair("", advatek_device));
+	}
+
+	advatek_devices.add_child("advatek_devices", devicesArr);
+
+	std::ofstream outfile;
+	outfile.open(path, std::ios::out | std::ios::trunc);
+	pt::write_json(outfile, advatek_devices);
+	outfile.close();
+}
+
 void advatek_manager::exportJSON(sAdvatekDevice *device, std::string path) {
 	
 	pt::ptree advatek_devices;
 	pt::ptree devices;
 	pt::ptree advatek_device;
-	
+
 	getJSON(device, advatek_device);
 
 	devices.push_back(std::make_pair("", advatek_device));
@@ -1061,16 +1082,6 @@ void advatek_manager::exportJSON(sAdvatekDevice *device, std::string path) {
 	//outfile << pt::write_json(std::cout, data) << endl;
 	pt::write_json(outfile, advatek_devices);
 	outfile.close();
-}
-
-void advatek_manager::getJSON(sAdvatekDevice *fromDevice, sImportOptions &importOptions) {
-	pt::ptree data;
-	getJSON(fromDevice, data);
-
-	std::stringstream jsonStringStream;
-	write_json(jsonStringStream, data);
-
-	importOptions.json = jsonStringStream.str();
 }
 
 void advatek_manager::copyDevice(sAdvatekDevice *fromDevice, sAdvatekDevice *toDevice) {

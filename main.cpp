@@ -22,6 +22,8 @@
 
 #define Version "1.1.0"
 
+namespace pt = boost::property_tree;
+
 double currTime = 0;
 double lastPoll = 0;
 double lastTime = 0;
@@ -61,10 +63,15 @@ int b_refreshAdaptorsRequest = 0;
 int b_newVirtualDeviceRequest = 0;
 int b_pasteToNewVirtualDevice = 0;
 int b_clearVirtualDevicesRequest = 0;
+int b_copyAllConnectedToVirtualRequest = 0;
 int iClearVirtualDeviceID = -1;
 int b_vDevicePath = false;
+int current_json_device = -1;
+
+pt::ptree pt_json_device;
 
 static std::string adaptor_string = "No Adaptors Found";
+static std::string json_device_string = "Select Device";
 static std::string vDeviceString = "New ...";
 static std::string result = "";
 static std::string vDeviceData = "";
@@ -251,29 +258,72 @@ void button_update_controller_settings(int i) {
 	}
 }
 
-void importUI(sAdvatekDevice *device, sImportOptions *importOptions) {
+void importUI(sAdvatekDevice *device, sImportOptions &importOptions) {
 	if (ImGui::BeginPopupModal("Import", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		// Read in devices
+		pt::ptree pt_json_devices;
+		std::vector<pt::ptree> loadedJsonDevices;
+		std::vector<std::string> jsonDeviceNames;
+
+		std::stringstream ss;
+		ss << importOptions.json;
+		pt::read_json(ss, pt_json_devices);
+
+		if (pt_json_devices.count("advatek_devices") > 0) {
+			// advatek_device = advatek_devices.get_child("advatek_devices").front().second;
+			for ( auto &json_device : pt_json_devices.get_child("advatek_devices")) {
+				//	advatek_device = device.second;
+				loadedJsonDevices.emplace_back(json_device.second);
+				std::string sModelName = json_device.second.get<std::string>("Model");
+				std::string sNickName  = json_device.second.get<std::string>("Nickname");
+				jsonDeviceNames.emplace_back(std::string(sModelName + " " + sNickName));
+			}
+		} else {
+			pt_json_device = pt_json_devices;
+		}
+
 		ImGui::Text("What needs importing?");
 		ImGui::Separator();
 		ImGui::Spacing();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
-		ImGui::Checkbox("Network", &importOptions->network);
-		ImGui::Checkbox("Ethernet Control (Mapping)", &importOptions->ethernet_control);
-		ImGui::Checkbox("DMX512 Outputs", &importOptions->dmx_outputs);
-		ImGui::Checkbox("LED Settings", &importOptions->led_settings);
-		ImGui::Checkbox("Nickname", &importOptions->nickname);
-		ImGui::Checkbox("Fan On Temp", &importOptions->fan_on_temp);
+		if (ImGui::BeginCombo("###devices", json_device_string.c_str(), 0))
+		{
+			for (int n = 0; n < jsonDeviceNames.size(); n++)
+			{
+				const bool is_selected = (current_json_device == n);
+				if (ImGui::Selectable(jsonDeviceNames[n].c_str(), is_selected))
+				{
+					json_device_string = jsonDeviceNames[n];
+					pt_json_device = loadedJsonDevices[n];
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::Spacing();
+
+		ImGui::Checkbox("Network", &importOptions.network);
+		ImGui::Checkbox("Ethernet Control (Mapping)", &importOptions.ethernet_control);
+		ImGui::Checkbox("DMX512 Outputs", &importOptions.dmx_outputs);
+		ImGui::Checkbox("LED Settings", &importOptions.led_settings);
+		ImGui::Checkbox("Nickname", &importOptions.nickname);
+		ImGui::Checkbox("Fan On Temp", &importOptions.fan_on_temp);
 
 		ImGui::PopStyleVar();
 		ImGui::Spacing();
 
 		if (ImGui::Button("Import", ImVec2(120, 0))) {
-			importOptions->userSet = true;
+			std::stringstream jsonStringStream;
+			write_json(jsonStringStream, pt_json_device);
+			importOptions.json = jsonStringStream.str();
+			importOptions.userSet = true;
 			ImGui::CloseCurrentPopup();
+			current_json_device = -1;
+			pt_json_device.clear();
 		}
+
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
@@ -321,7 +371,7 @@ void button_import_export_JSON(sAdvatekDevice *device) {
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-	importUI(device, &userImportOptions);
+	importUI(device, userImportOptions);
 
 	if(userImportOptions.userSet) {
 		result = adv.importJSON(device, userImportOptions);
@@ -348,12 +398,17 @@ void button_import_export_JSON(sAdvatekDevice *device) {
 void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 
 	ImGui::Spacing();
-
+	
+	
+	
 	for (uint8_t i = 0; i < devices.size(); i++) {
 		std::stringstream Title;
-		Title << devices[i]->Model << "	" << devices[i]->Firmware << "	" << ipString(devices[i]->CurrentIP) << "		" << "Temp: " << (float)devices[i]->Temperature*0.1 << "		" << devices[i]->Nickname;
+		Title << " " << devices[i]->Model << "	" << devices[i]->Firmware << "	" << ipString(devices[i]->CurrentIP) << "	" << "Temp: " << (float)devices[i]->Temperature*0.1 << "	" << devices[i]->Nickname;
 		Title << "###" << macString(devices[i]->Mac) << i;
+		
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f, 8.f));
 		bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns);
+		ImGui::PopStyleVar();
 
 		if (node_open)
 		{
@@ -365,14 +420,14 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 				{
 					adv.identifyDevice(i, 20);
 				}
-				ImGui::SameLine();
 			} else {
 				if (ImGui::Button("Delete"))
 				{
 					iClearVirtualDeviceID = i;
 				}
-				ImGui::SameLine();
 			}
+
+			ImGui::SameLine();
 
 			button_import_export_JSON(devices[i]);
 
@@ -748,6 +803,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 			ImGui::TreePop();		
 		}
 	}
+	
 }
 
 #ifndef DEBUG
@@ -919,8 +975,23 @@ int main(int, char**)
 					if (ImGui::Button("Search"))
 					{
 						b_pollRequest = true;
-					} ImGui::SameLine();
+					} 
 
+					if (adv.connectedDevices.size() > 1) {
+						ImGui::SameLine();
+						if (ImGui::Button("Export All")) {
+							auto path = pfd::save_file("Select a file", "controllerPack.json").result();
+							if (!path.empty()) {
+								adv.exportJSON(adv.connectedDevices, path);
+							}
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Copy All to Virtual Devices")) {
+							b_copyAllConnectedToVirtualRequest = true;
+						}
+					}
+
+					ImGui::SameLine();
 					ImGui::Text("%li Connected Device(s)", adv.connectedDevices.size());
 
 					ImGui::Spacing();
@@ -953,16 +1024,7 @@ int main(int, char**)
 					}
 
 					ImGui::SameLine();
-
 					if (ImGui::Button("Import JSON")) {
-						//auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
-						//if (!path.empty()) {
-						//	applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
-						//	vDeviceData = path.at(0);
-						//	b_vDevicePath = true;
-						//	b_newVirtualDeviceRequest = true;
-						//}
-
 						auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
 						if (!path.empty()) {
 							applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
@@ -975,14 +1037,23 @@ int main(int, char**)
 							virtualImportOptions = sImportOptions();
 							virtualImportOptions.json = jsonStringStream.str();
 							virtualImportOptions.init = true;
-							//ImGui::OpenPopup("Import");
+
 							b_newVirtualDeviceRequest = true;
 						}
 
 					}
 
-					ImGui::SameLine();
+					if (adv.virtualDevices.size() > 0) {
+						ImGui::SameLine();
+						if (ImGui::Button("Export All")) {
+							auto path = pfd::save_file("Select a file", "controllerPack.json").result();
+							if (!path.empty()) {
+								adv.exportJSON(adv.virtualDevices, path);
+							}
+						}
+					}
 
+					ImGui::SameLine();
 					if (adv.memoryDevices.size() == 1) {
 						if (ImGui::Button("Paste"))
 						{
@@ -1057,6 +1128,17 @@ int main(int, char**)
 		if (iClearVirtualDeviceID >= 0) {
 			adv.virtualDevices.erase(adv.virtualDevices.begin() + iClearVirtualDeviceID);
 			iClearVirtualDeviceID = -1;
+		}
+
+		if (b_copyAllConnectedToVirtualRequest) {
+			for (auto device : adv.connectedDevices) {
+				boost::property_tree::ptree advatek_device;
+				adv.getJSON(device, advatek_device);
+				sImportOptions conImportOptions = sImportOptions();
+				conImportOptions.init = true;
+				adv.addVirtualDevice(advatek_device, conImportOptions);
+			}
+			b_copyAllConnectedToVirtualRequest = false;
 		}
 
     }
