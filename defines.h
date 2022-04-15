@@ -14,6 +14,7 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
+#include <boost/optional/optional.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 
 #define AdvAdr "255.255.255.255" // Advatek zero network broadcast address

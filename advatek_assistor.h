@@ -50,6 +50,7 @@ public:
 	std::string importJSON(sAdvatekDevice *device, boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
 	void exportJSON(sAdvatekDevice *device, std::string path);
 	void exportJSON(std::vector<sAdvatekDevice*> &devices, std::string path);
+	std::string validateJSON(boost::property_tree::ptree advatek_devices);
 
 	static const char* RGBW_Order[24];
 

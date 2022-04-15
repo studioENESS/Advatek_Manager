@@ -358,12 +358,17 @@ void button_import_export_JSON(sAdvatekDevice *device) {
 			boost::property_tree::ptree advatek_devices;
 			boost::property_tree::read_json(path.at(0), advatek_devices);
 
-			std::stringstream jsonStringStream;
-			write_json(jsonStringStream, advatek_devices);
+			std::string result = adv.validateJSON(advatek_devices);
+			if (!result.empty()) {
+				applog.AddLog("[ERROR] Not a valid JSON file.\n");
+			} else {
+				std::stringstream jsonStringStream;
+				write_json(jsonStringStream, advatek_devices);
 
-			userImportOptions.json = jsonStringStream.str();
+				userImportOptions.json = jsonStringStream.str();
 
-			ImGui::OpenPopup("Import");
+				ImGui::OpenPopup("Import");
+			}
 		}
 	}
 
@@ -1045,16 +1050,21 @@ int main(int, char**)
 							boost::property_tree::ptree advatek_devices;
 							boost::property_tree::read_json(path.at(0), advatek_devices);
 
-							std::stringstream jsonStringStream;
-							write_json(jsonStringStream, advatek_devices);
+							std::string result = adv.validateJSON(advatek_devices);
 
-							virtualImportOptions = sImportOptions();
-							virtualImportOptions.json = jsonStringStream.str();
-							virtualImportOptions.init = true;
+							if (!result.empty()) {
+								applog.AddLog("[ERROR] Not a valid JSON file.\n");
+							} else {
+								std::stringstream jsonStringStream;
+								write_json(jsonStringStream, advatek_devices);
 
-							b_newVirtualDeviceRequest = true;
+								virtualImportOptions = sImportOptions();
+								virtualImportOptions.json = jsonStringStream.str();
+								virtualImportOptions.init = true;
+
+								b_newVirtualDeviceRequest = true;
+							}
 						}
-
 					}
 
 					if (adv.virtualDevices.size() > 0) {

@@ -1075,7 +1075,6 @@ void advatek_manager::exportJSON(std::vector<sAdvatekDevice*> &devices, std::str
 }
 
 void advatek_manager::exportJSON(sAdvatekDevice *device, std::string path) {
-	
 	pt::ptree advatek_devices;
 	pt::ptree devices;
 	pt::ptree advatek_device;
@@ -1092,6 +1091,28 @@ void advatek_manager::exportJSON(sAdvatekDevice *device, std::string path) {
 	//outfile << pt::write_json(std::cout, data) << endl;
 	pt::write_json(outfile, advatek_devices);
 	outfile.close();
+}
+
+std::string advatek_manager::validateJSON(boost::property_tree::ptree advatek_devices) {
+	std::vector<pt::ptree> checkDevices;
+	if (advatek_devices.count("advatek_devices") > 0) {
+		for (auto &json_device : advatek_devices.get_child("advatek_devices")) {
+			checkDevices.emplace_back(json_device.second);
+		}
+	} else { // single device to be checked
+		checkDevices.emplace_back(advatek_devices);
+	}
+	
+	// OK let's check these monsters
+	for (auto &device : checkDevices) {
+		boost::optional< pt::ptree& > child = device.get_child_optional("ProtVer");
+		if (!child)
+		{
+			return "Not a valid JSON";
+		}
+	}
+
+	return "";
 }
 
 void advatek_manager::copyDevice(sAdvatekDevice *fromDevice, sAdvatekDevice *toDevice) {
