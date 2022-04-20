@@ -70,6 +70,8 @@ int current_json_device = -1;
 
 pt::ptree pt_json_device;
 
+float tempTestCols[4];
+
 static std::string adaptor_string = "No Adaptors Found";
 static std::string json_device_string = "Select Device";
 static std::string vDeviceString = "New ...";
@@ -289,7 +291,7 @@ void importUI(sAdvatekDevice *device, sImportOptions &importOptions) {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
-		if (ImGui::BeginCombo("###devices", json_device_string.c_str(), 0))
+		if (ImGui::BeginCombo("###jsondevices", json_device_string.c_str(), 0))
 		{
 			for (int n = 0; n < jsonDeviceNames.size(); n++)
 			{
@@ -422,32 +424,50 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 
 		if (node_open)
 		{
-			ImGui::Columns(1);
+			//ImGui::Columns(1);
 			ImGui::Spacing();
 
 			if (isConnected) {
-				if (ImGui::Button("ID"))
-				{
-					adv.identifyDevice(i, 20);
+				if (devices[i]->ProtVer >= 8) {
+					if (ImGui::Button("ID"))
+					{
+						adv.identifyDevice(i, 20);
+					}
+					ImGui::SameLine();
 				}
 			} else {
 				if (ImGui::Button("Delete"))
 				{
 					iClearVirtualDeviceID = i;
 				}
+				ImGui::SameLine();
 			}
-
-			ImGui::SameLine();
 
 			button_import_export_JSON(devices[i]);
 
+			ImGui::SameLine();
+
 			if (isConnected) {
-				ImGui::SameLine();
 				if (ImGui::Button("New Virtual Device"))
 				{
 					adv.copyToNewVirtualDevice(adv.connectedDevices[i]);
 					applog.AddLog("[INFO] Copied controller %s %s to new virtual device.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
 				}
+			} else {
+				ImGui::PushItemWidth(240);
+				if (ImGui::BeginCombo("###senddevice", "Copy to Connected Device", 0))
+				{
+					for (int n = 0; n < adv.connectedDevices.size(); n++)
+					{
+						if (ImGui::Selectable(adv.connectedDevices[n]->Nickname))
+						{
+							adv.copyDevice(adv.virtualDevices[i], adv.connectedDevices[n], false);
+							applog.AddLog("[INFO] Copied virtual controller to new device  %s %s.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
+						}
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::PopItemWidth();
 			}
 
 			ImGui::Separator();
@@ -684,93 +704,102 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 				if (ImGui::BeginTabItem("Test"))
 				{
 					ImGui::Text("Prior to running test mode all other setings should be saved to controller. (Press 'Update Settings')");
+					bool b_setTest = false;
 
 					ImGui::PushItemWidth(200);
 
 					if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, 9)) {
-						devices[i]->TestPixelNum = 0;
-						b_testPixelsReady = true;
-						adv.setTest(i);
-					}
-
-					if ((devices[i]->TestMode == 6) || (devices[i]->TestMode == 8)) {
-						float tempTestCols[4];
 						tempTestCols[0] = ((float)devices[i]->TestCols[0] / 255);
 						tempTestCols[1] = ((float)devices[i]->TestCols[1] / 255);
 						tempTestCols[2] = ((float)devices[i]->TestCols[2] / 255);
 						tempTestCols[3] = ((float)devices[i]->TestCols[3] / 255);
+						devices[i]->TestPixelNum = 0;
+						b_testPixelsReady = true;
+						b_setTest = true;
+					}
 
+					if (devices[i]->ProtVer < 8 && devices[i]->TestMode == 8) {
+						ImGui::Text("Device does not support single pixel output...");
+						devices[i]->TestMode = 6;
+					}
+
+					if ((devices[i]->TestMode == 6) || (devices[i]->TestMode == 8)) {
 						if (ImGui::ColorEdit4("Test Colour", tempTestCols)) {
 							devices[i]->TestCols[0] = (int)(tempTestCols[0] * 255);
 							devices[i]->TestCols[1] = (int)(tempTestCols[1] * 255);
 							devices[i]->TestCols[2] = (int)(tempTestCols[2] * 255);
 							devices[i]->TestCols[3] = (int)(tempTestCols[3] * 255);
-							adv.setTest(i);
+							b_setTest = true;
 						}
 
-						if (devices[i]->testModeCycleOuputs || devices[i]->testModeCyclePixels) {
+						if (devices[i]->ProtVer > 7) {
 
-							if (currTime - lastTime > testCycleSpeed) {
-								if (devices[i]->TestMode == 8) {
-									// Set Pixel
-									devices[i]->TestPixelNum = (devices[i]->TestPixelNum) % ((int)(devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1])) + 1;
+							if (devices[i]->testModeCycleOuputs || devices[i]->testModeCyclePixels) {
 
-									if (devices[i]->TestPixelNum == 1) {
-										b_testPixelsReady = true;
+								if (currTime - lastTime > testCycleSpeed) {
+									if (devices[i]->TestMode == 8) {
+										// Set Pixel
+										devices[i]->TestPixelNum = (devices[i]->TestPixelNum) % ((int)(devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1])) + 1;
+
+										if (devices[i]->TestPixelNum == 1) {
+											b_testPixelsReady = true;
+										}
+										else {
+											b_testPixelsReady = false;
+										}
 									}
-									else {
-										b_testPixelsReady = false;
+									if (devices[i]->testModeCycleOuputs && b_testPixelsReady) {
+										devices[i]->TestOutputNum = (devices[i]->TestOutputNum) % ((int)(devices[i]->NumOutputs*0.5)) + 1;
 									}
+									lastTime = currTime;
+									b_setTest = true;
 								}
-								if (devices[i]->testModeCycleOuputs && b_testPixelsReady) {
-									devices[i]->TestOutputNum = (devices[i]->TestOutputNum) % ((int)(devices[i]->NumOutputs*0.5)) + 1;
-								}
-								lastTime = currTime;
-								adv.setTest(i);
+								/*
+								for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
+									ImGui::PushID(output);
+									ImGui::Text("Output %02i", output + 1);
+
+									ImGui::PopID();
+								}*/
 							}
-							/*
-							for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
-								ImGui::PushID(output);
-								ImGui::Text("Output %02i", output + 1);
 
-								ImGui::PopID();
-							}*/
+							bool testModeCycleOuputs = devices[i]->testModeCycleOuputs;
+							if (ImGui::Checkbox("Cycle Outputs", &testModeCycleOuputs)) {
+								devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
+							}
+
+							if (devices[i]->TestMode == 8) {
+								bool testModeCyclePixels = devices[i]->testModeCyclePixels;
+								if (ImGui::Checkbox("Cycle Pixels", &testModeCyclePixels)) {
+									devices[i]->testModeCyclePixels = (bool)testModeCyclePixels;
+								}
+							}
+
+							ImGui::SliderFloat("Speed", &testCycleSpeed, 5.0, 0.01, "%.01f");
+
 						}
 
-						bool testModeCycleOuputs = devices[i]->testModeCycleOuputs;
-						if (ImGui::Checkbox("Cycle Outputs", &testModeCycleOuputs)) {
-							devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
-						}
+					} // End ProtVer 8+
 
-						//ImGui::SameLine();
+					if (devices[i]->ProtVer > 7) {
+						//ImGui::PopItemWidth();
+
+						//ImGui::PushItemWidth(100);
+						//ImGui::Text("Output (All 0)"); ImGui::SameLine();
+						if (SliderInt8("Output (All 0)", (int*)&devices[i]->TestOutputNum, 0, (devices[i]->NumOutputs*0.5))) {
+							b_setTest = true;
+						}
 
 						if (devices[i]->TestMode == 8) {
-							bool testModeCyclePixels = devices[i]->testModeCyclePixels;
-							if (ImGui::Checkbox("Cycle Pixels", &testModeCyclePixels)) {
-								devices[i]->testModeCyclePixels = (bool)testModeCyclePixels;
+							//ImGui::Text("Pixels (All 0)"); ImGui::SameLine();
+							uint16_t TestPixelNum = devices[i]->TestPixelNum;
+							if (SliderInt16("Pixels (All 0)", (int*)&TestPixelNum, 0, (devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1]))) {
+								b_setTest = true;
 							}
 						}
-
-						//ImGui::PushItemWidth(80);
-						ImGui::SliderFloat("Speed", &testCycleSpeed, 5.0, 0.01, "%.01f");
-						//ImGui::PopItemWidth();
 					}
 
-					//ImGui::PopItemWidth();
-
-					//ImGui::PushItemWidth(100);
-					//ImGui::Text("Output (All 0)"); ImGui::SameLine();
-					if (SliderInt8("Output (All 0)", (int*)&devices[i]->TestOutputNum, 0, (devices[i]->NumOutputs*0.5))) {
-						adv.setTest(i);
-					}
-
-					if (devices[i]->TestMode == 8) {
-						//ImGui::Text("Pixels (All 0)"); ImGui::SameLine();
-						uint16_t TestPixelNum = devices[i]->TestPixelNum;
-						if (SliderInt16("Pixels (All 0)", (int*)&TestPixelNum, 0, (devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1]))) {
-							adv.setTest(i);
-						}
-					}
+					if (b_setTest) adv.setTest(i);
 
 					ImGui::PopItemWidth();
 
@@ -786,6 +815,8 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 				if (isConnected) {
 					ImGui::Text("MAC: %s", macString(devices[i]->Mac).c_str());
 				}
+
+				ImGui::Text("Protocol Version: %s", std::to_string(devices[i]->ProtVer).c_str());
 
 				ImGui::PushItemWidth(200);
 				char sName[40];
@@ -988,7 +1019,18 @@ int main(int, char**)
 			ImGui::Spacing();
 			// Connected Devices && Virtual Devices
 			if (ImGui::BeginTabBar("Devices")) {
-				if (ImGui::BeginTabItem("Connected Devices"))
+				std::stringstream tabTitleConnected;
+				std::stringstream tabTitleVirtual;
+				tabTitleConnected << "Connected Devices (";
+				tabTitleVirtual << "Virtual Devices (";
+				tabTitleConnected << adv.connectedDevices.size();
+				tabTitleVirtual << adv.virtualDevices.size();
+				tabTitleConnected << ")";
+				tabTitleVirtual << ")";
+				tabTitleConnected << "###connectedDevices";
+				tabTitleVirtual << "###virtualDevices";
+
+				if (ImGui::BeginTabItem(tabTitleConnected.str().c_str()))
 				{
 					ImGui::Spacing();
 					if (ImGui::Button("Search"))
@@ -996,7 +1038,7 @@ int main(int, char**)
 						b_pollRequest = true;
 					} 
 
-					if (adv.connectedDevices.size() > 1) {
+					if (adv.connectedDevices.size() >= 1) {
 						ImGui::SameLine();
 						if (ImGui::Button("Export All")) {
 							auto path = pfd::save_file("Select a file", "controllerPack.json").result();
@@ -1010,9 +1052,6 @@ int main(int, char**)
 						}
 					}
 
-					ImGui::SameLine();
-					ImGui::Text("%li Connected Device(s)", adv.connectedDevices.size());
-
 					ImGui::Spacing();
 
 					showDevices(adv.connectedDevices, true);
@@ -1020,7 +1059,7 @@ int main(int, char**)
 					// END Connected Devices
 					ImGui::EndTabItem();
 				}
-				if (ImGui::BeginTabItem("Virtual Devices"))
+				if (ImGui::BeginTabItem(tabTitleVirtual.str().c_str()))
 				{
 					ImGui::Spacing();
 
@@ -1077,22 +1116,21 @@ int main(int, char**)
 						}
 					}
 
-					ImGui::SameLine();
 					if (adv.memoryDevices.size() == 1) {
+						ImGui::SameLine();
 						if (ImGui::Button("Paste"))
 						{
 							b_pasteToNewVirtualDevice = true;
 						}
 					}
 
-					ImGui::SameLine();
-
-					if (ImGui::Button("Clear"))
-					{
-						b_clearVirtualDevicesRequest = true;
-					} ImGui::SameLine();
-
-					ImGui::Text("%li Virtual Device(s)", adv.virtualDevices.size());
+					if (adv.virtualDevices.size() >= 1) {
+						ImGui::SameLine();
+						if (ImGui::Button("Clear"))
+						{
+							b_clearVirtualDevicesRequest = true;
+						}
+					}
 
 					ImGui::Spacing();
 					
@@ -1100,6 +1138,7 @@ int main(int, char**)
 
 					ImGui::EndTabItem();
 				}
+
 				ImGui::EndTabBar();
 			}
 

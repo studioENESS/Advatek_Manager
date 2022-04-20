@@ -79,7 +79,7 @@ void advatek_manager::identifyDevice(int d, uint8_t duration) {
 void advatek_manager::copyToMemoryDevice(sAdvatekDevice* fromDevice) {
 	memoryDevices.clear();
 	sAdvatekDevice * memoryDevice = new sAdvatekDevice();
-	copyDevice(fromDevice, memoryDevice);
+	copyDevice(fromDevice, memoryDevice, true);
 	advatek_manager::memoryDevices.emplace_back(memoryDevice);
 }
 
@@ -87,9 +87,7 @@ void advatek_manager::pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice) {
 	if (memoryDevices.size() == 0) {
 		return;
 	}
-	sImportOptions importOptions = sImportOptions();
-	importOptions.init = true;
-	copyDevice(memoryDevices[0], toDevice);
+	copyDevice(memoryDevices[0], toDevice, true);
 }
 
 void advatek_manager::copyToNewVirtualDevice(sAdvatekDevice* fromDevice) {
@@ -217,7 +215,7 @@ void advatek_manager::setTest(int d) {
 	dataTape[8] = 0x00;   // Null Terminator
 	dataTape[9] = 0x00;   // OpCode
 	dataTape[10] = 0x08;  // OpCode
-	dataTape[11] = 0x08;  // ProtVer
+	dataTape[11] = device->ProtVer;
 
 	dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
 
@@ -225,6 +223,7 @@ void advatek_manager::setTest(int d) {
 
 	dataTape.insert(dataTape.end(), device->TestCols, device->TestCols + 4);
 
+	// Protver 7 does not process after this but we can still send it ...
 	dataTape.push_back(device->TestOutputNum);
 
 	dataTape.push_back((uint8_t)(device->TestPixelNum >> 8));
@@ -839,18 +838,22 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 
 	if (importOptions.dmx_outputs || importOptions.init) {
 		bool go = EqualValueJson(uint8_t, NumDMXOutputs);
-		if (go || importOptions.init) {
-			if (importOptions.init) {
-				SetValueFromJson(uint8_t, NumDMXOutputs);
-				device->DmxOutOn = new uint8_t[device->NumDMXOutputs];
-				device->DmxOutUniv = new uint16_t[device->NumDMXOutputs];
+		if ( go || importOptions.init ) {
+			if (advatek_device.get<uint8_t>("NumDMXOutputs") == 0) {
+				report << "- Import DMX Control Failed. (No DMX outputs found)\n";
 			}
-			SetValueFromJson(uint8_t, ProtocolsOnDmxOut);
-			SetChildIntValuesFromJson(DmxOutOn);
-			SetChildIntValuesFromJson(DmxOutUniv);
-			report << "- Import DMX Control Succesfull.\n";
-		}
-		else {
+			else {
+				if (importOptions.init) {
+					SetValueFromJson(uint8_t, NumDMXOutputs);
+					device->DmxOutOn = new uint8_t[device->NumDMXOutputs];
+					device->DmxOutUniv = new uint16_t[device->NumDMXOutputs];
+				}
+				SetValueFromJson(uint8_t, ProtocolsOnDmxOut);
+				SetChildIntValuesFromJson(DmxOutOn);
+				SetChildIntValuesFromJson(DmxOutUniv);
+				report << "- Import DMX Control Succesfull.\n";
+			}
+		} else {
 			report << "- Import DMX Control Failed. (Output count does not match)\n";
 		}
 	}
@@ -1115,7 +1118,7 @@ std::string advatek_manager::validateJSON(boost::property_tree::ptree advatek_de
 	return "";
 }
 
-void advatek_manager::copyDevice(sAdvatekDevice *fromDevice, sAdvatekDevice *toDevice) {
+void advatek_manager::copyDevice(sAdvatekDevice *fromDevice, sAdvatekDevice *toDevice, bool initialise) {
 	pt::ptree advatek_device;
 	getJSON(fromDevice, advatek_device);
 
@@ -1124,7 +1127,7 @@ void advatek_manager::copyDevice(sAdvatekDevice *fromDevice, sAdvatekDevice *toD
 
 	sImportOptions importOptions = sImportOptions();
 	importOptions.json = jsonStringStream.str();
-	importOptions.init = true;
+	importOptions.init = initialise;
 
 	importJSON(toDevice, importOptions);
 }

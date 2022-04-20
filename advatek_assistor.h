@@ -17,7 +17,7 @@ public:
 	std::vector<sAdvatekDevice*> memoryDevices;
 
 	void clearDevices(std::vector<sAdvatekDevice*> &devices);
-	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
+	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice, bool initialise);
 	void copyToMemoryDevice(sAdvatekDevice* fromDevice);
 	void pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice);
 

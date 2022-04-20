@@ -124,7 +124,6 @@ typedef struct tAdvatekDevice {
 typedef struct tImportOptions {
 	bool userSet = false;
 	std::string json = "";
-	int loadIndex = 0;
 	bool init = false;
 	bool network = true;
 	bool ethernet_control = true;
