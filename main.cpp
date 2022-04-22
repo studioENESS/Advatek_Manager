@@ -20,7 +20,7 @@
 #include "portable-file-dialogs.h"
 #include "standard_json_config.h"
 
-#define Version "1.1.0"
+#define Version "1.2.0"
 
 namespace pt = boost::property_tree;
 
@@ -291,20 +291,22 @@ void importUI(sAdvatekDevice *device, sImportOptions &importOptions) {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
-		if (ImGui::BeginCombo("###jsondevices", json_device_string.c_str(), 0))
-		{
-			for (int n = 0; n < jsonDeviceNames.size(); n++)
+		if (loadedJsonDevices.size() > 0) {
+			if (ImGui::BeginCombo("###jsondevices", json_device_string.c_str(), 0))
 			{
-				const bool is_selected = (current_json_device == n);
-				if (ImGui::Selectable(jsonDeviceNames[n].c_str(), is_selected))
+				for (int n = 0; n < jsonDeviceNames.size(); n++)
 				{
-					json_device_string = jsonDeviceNames[n];
-					pt_json_device = loadedJsonDevices[n];
+					const bool is_selected = (current_json_device == n);
+					if (ImGui::Selectable(jsonDeviceNames[n].c_str(), is_selected))
+					{
+						json_device_string = jsonDeviceNames[n];
+						pt_json_device = loadedJsonDevices[n];
+					}
 				}
+				ImGui::EndCombo();
 			}
-			ImGui::EndCombo();
+			ImGui::Spacing();
 		}
-		ImGui::Spacing();
 
 		ImGui::Checkbox("Network", &importOptions.network);
 		ImGui::Checkbox("Ethernet Control (Mapping)", &importOptions.ethernet_control);

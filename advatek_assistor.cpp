@@ -87,7 +87,7 @@ void advatek_manager::pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice) {
 	if (memoryDevices.size() == 0) {
 		return;
 	}
-	copyDevice(memoryDevices[0], toDevice, true);
+	copyDevice(memoryDevices[0], toDevice, false);
 }
 
 void advatek_manager::copyToNewVirtualDevice(sAdvatekDevice* fromDevice) {
@@ -859,7 +859,8 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 	}
 
 	if (importOptions.led_settings || importOptions.init) {
-		if (importOptions.init) {
+		bool go = EqualValueJson(uint8_t, NumDrivers);
+		if (go || importOptions.init) {
 			SetValueFromJson(uint8_t, NumDrivers);
 			device->DriverType = new uint8_t[device->NumDrivers];
 			device->DriverSpeed = new uint8_t[device->NumDrivers];
@@ -883,16 +884,17 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 
 				memcpy(device->DriverNames[index], sCStr, sizeof(char) * device->DriverNameLength);
 			}
+			SetChildIntValuesFromJson(DriverType);
+			SetChildIntValuesFromJson(DriverSpeed);
+			SetChildIntValuesFromJson(DriverExpandable);
+
+			SetValueFromJson(int, CurrentDriver);
+			SetValueFromJson(uint8_t, CurrentDriverType);
+			SetValueFromJson(int, CurrentDriverSpeed);
+			SetValueFromJson(uint8_t, CurrentDriverExpanded);
+		} else {
+			report << "- Import LED Settings Failed. (Driver count does not match)\n";
 		}
-
-		SetChildIntValuesFromJson(DriverType);
-		SetChildIntValuesFromJson(DriverSpeed);
-		SetChildIntValuesFromJson(DriverExpandable);
-
-		SetValueFromJson(int, CurrentDriver);
-		SetValueFromJson(uint8_t, CurrentDriverType);
-		SetValueFromJson(int, CurrentDriverSpeed);
-		SetValueFromJson(uint8_t, CurrentDriverExpanded);
 
 		SetChildIntValuesFromJson(Gamma);
 		device->Gammaf[0] = (float)device->Gamma[0] * 0.1;
