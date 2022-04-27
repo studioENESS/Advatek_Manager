@@ -1,6 +1,6 @@
-Package: AdvatekAssitor
+Package: AdvatekAssistor
 Version: 1.2
-Architecture: armv7
+Architecture: armhf
 Maintainer: Bruno Hefst <bruno0eness.com>
 Description: Advatek Assistor for Linux variants.
  A version of the Advatek Assistant software that is able to run on ARM and other Linux varients, aka Raspberry.
