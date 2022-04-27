@@ -55,3 +55,13 @@ This is an Advatek Assistant clone that can run under Linux and adds the followi
     make
     
     gdb ./advatek_assistor
+    
+## Creating Debian/Ubuntu .deb package
+
+Copy appplication file to `advatek_assistor_<major version>.<minor version>-<package revision>_<architecture>/usr/local/bin`
+
+    dpkg-deb --build advatek_assistor_<major version>.<minor version>-<package revision>_<architecture>
+
+
+
+
