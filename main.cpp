@@ -70,8 +70,6 @@ int current_json_device = -1;
 
 pt::ptree pt_json_device;
 
-float tempTestCols[4];
-
 static std::string adaptor_string = "No Adaptors Found";
 static std::string json_device_string = "Select Device";
 static std::string vDeviceString = "New ...";
@@ -711,10 +709,6 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 					ImGui::PushItemWidth(200);
 
 					if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, 9)) {
-						tempTestCols[0] = ((float)devices[i]->TestCols[0] / 255);
-						tempTestCols[1] = ((float)devices[i]->TestCols[1] / 255);
-						tempTestCols[2] = ((float)devices[i]->TestCols[2] / 255);
-						tempTestCols[3] = ((float)devices[i]->TestCols[3] / 255);
 						devices[i]->TestPixelNum = 0;
 						b_testPixelsReady = true;
 						b_setTest = true;
@@ -726,11 +720,11 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 					}
 
 					if ((devices[i]->TestMode == 6) || (devices[i]->TestMode == 8)) {
-						if (ImGui::ColorEdit4("Test Colour", tempTestCols)) {
-							devices[i]->TestCols[0] = (int)(tempTestCols[0] * 255);
-							devices[i]->TestCols[1] = (int)(tempTestCols[1] * 255);
-							devices[i]->TestCols[2] = (int)(tempTestCols[2] * 255);
-							devices[i]->TestCols[3] = (int)(tempTestCols[3] * 255);
+						if (ImGui::ColorEdit4("Test Colour", devices[i]->tempTestCols)) {
+							devices[i]->TestCols[0] = (int)(devices[i]->tempTestCols[0] * 255);
+							devices[i]->TestCols[1] = (int)(devices[i]->tempTestCols[1] * 255);
+							devices[i]->TestCols[2] = (int)(devices[i]->tempTestCols[2] * 255);
+							devices[i]->TestCols[3] = (int)(devices[i]->tempTestCols[3] * 255);
 							b_setTest = true;
 						}
 
@@ -784,18 +778,13 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 					} // End ProtVer 8+
 
 					if (devices[i]->ProtVer > 7) {
-						//ImGui::PopItemWidth();
-
-						//ImGui::PushItemWidth(100);
-						//ImGui::Text("Output (All 0)"); ImGui::SameLine();
+						
 						if (SliderInt8("Output (All 0)", (int*)&devices[i]->TestOutputNum, 0, (devices[i]->NumOutputs*0.5))) {
 							b_setTest = true;
 						}
 
 						if (devices[i]->TestMode == 8) {
-							//ImGui::Text("Pixels (All 0)"); ImGui::SameLine();
-							uint16_t TestPixelNum = devices[i]->TestPixelNum;
-							if (SliderInt16("Pixels (All 0)", (int*)&TestPixelNum, 0, (devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1]))) {
+							if (SliderInt16("Pixels (All 0)", (int*)&devices[i]->TestPixelNum, 0, (devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1]))) {
 								b_setTest = true;
 							}
 						}

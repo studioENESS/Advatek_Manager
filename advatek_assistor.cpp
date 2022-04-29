@@ -539,6 +539,28 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 	data += 2;
 	bswap_16(rec_data->TestPixelNum);
 
+	// No black test init colour
+	if (((int)rec_data->TestCols[0] + (int)rec_data->TestCols[1] + (int)rec_data->TestCols[2]) == 0)
+	{
+		rec_data->TestCols[0] = rand() % 255;
+		rec_data->TestCols[1] = rand() % 255;
+		rec_data->TestCols[2] = rand() % 255;
+		rec_data->TestCols[3] = 255;
+	}
+	else {
+		// Clean possible garbage from controller
+		rec_data->TestCols[0] = abs(rec_data->TestCols[0]) % 255;
+		rec_data->TestCols[1] = abs(rec_data->TestCols[1]) % 255;
+		rec_data->TestCols[2] = abs(rec_data->TestCols[2]) % 255;
+		rec_data->TestCols[3] = abs(rec_data->TestCols[3]) % 255;
+	}
+
+	// Set tempTestColour
+	rec_data->tempTestCols[0] = (float)rec_data->TestCols[0] / 255;
+	rec_data->tempTestCols[1] = (float)rec_data->TestCols[1] / 255;
+	rec_data->tempTestCols[2] = (float)rec_data->TestCols[2] / 255;
+	rec_data->tempTestCols[3] = (float)rec_data->TestCols[3] / 255;
+
 	if (!deviceExist(rec_data->Mac)) advatek_manager::connectedDevices.emplace_back(rec_data);
 
 }

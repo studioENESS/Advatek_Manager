@@ -113,7 +113,8 @@ typedef struct tAdvatekDevice {
 	uint8_t NumBanks; // Number of banks for voltage readings
 	uint16_t* VoltageBanks;// [NumBanks][2]; // Voltage on power banks (*10)
 	int TestMode; // Current test mode program (0 = off/live data)
-	int TestCols[4];
+	int TestCols[4] = { 0 };
+	float tempTestCols[4] = { 0 };
 	uint8_t TestOutputNum;
 	uint16_t TestPixelNum;
 	int* TestCycleCols; //[NumOutputs]
