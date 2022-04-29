@@ -703,7 +703,13 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 			if (isConnected) {
 				if (ImGui::BeginTabItem("Test"))
 				{
+					ImGui::Spacing();
+					auto txtCol = IM_COL32(120, 120, 120, 255);
+					ImGui::PushStyleColor(ImGuiCol_Text, txtCol);
 					ImGui::Text("Prior to running test mode all other setings should be saved to controller. (Press 'Update Settings')");
+					ImGui::PopStyleColor();
+					ImGui::Spacing();
+
 					bool b_setTest = false;
 
 					ImGui::PushItemWidth(200);
