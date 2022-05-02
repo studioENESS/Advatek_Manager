@@ -113,6 +113,8 @@ struct AppLog {
 			return;
 		}
 
+		ImGui::Text("Window DPI scale: %f", ImGui::GetWindowDpiScale());
+
 		// Options menu
 		//if (ImGui::BeginPopup("Options"))
 		//{
@@ -914,6 +916,8 @@ int main(int, char**)
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -965,6 +969,7 @@ int main(int, char**)
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+		
         ImGui::NewFrame();
 		
 		if ( (adv.connectedDevices.size() == 0) && (currTime - lastPoll > rePollTime)) {
@@ -1158,6 +1163,12 @@ int main(int, char**)
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
+		
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
 
 		if (b_refreshAdaptorsRequest) {
 			adv.refreshAdaptors();

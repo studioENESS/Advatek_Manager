@@ -36,7 +36,7 @@ This is an Advatek Assistant clone that can run under Linux and adds the followi
     cd External/boost
     git submodule update --init
 
-    ./bootstrap.sh or ./bootstrap.bat
+    ./bootstrap.sh or bootstrap.bat
     ./b2
     
     sudo apt-get install libglfw3-dev
