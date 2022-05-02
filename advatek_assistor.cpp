@@ -21,6 +21,19 @@ bool advatek_manager::deviceExist(uint8_t * Mac) {
 	return false;
 }
 
+bool advatek_manager::ipInRange(std::string ipStr, sAdvatekDevice* device) {
+
+	int ip0, ip1, ip2, ip3;
+	sscanf(ipStr.c_str(), "%i.%i.%i.%i", &ip0, &ip1, &ip2, &ip3);
+	
+	if (device->StaticIP[0] == ip0 &&
+		device->StaticIP[1] == ip1 &&
+		device->StaticIP[2] == ip2) {
+		return true;
+	}
+
+	return false;
+}
 
 void advatek_manager::listen() {
 	uint8_t buffer[100000];

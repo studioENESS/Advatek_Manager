@@ -6,6 +6,7 @@ class advatek_manager {
 public:
 	uint8_t ProtVer = 8;
 	bool deviceExist(uint8_t * Mac);
+	bool ipInRange(std::string ip, sAdvatekDevice* device);
 	std::string macStr(uint8_t * address);
 	std::string ipStr(uint8_t * address);
 
