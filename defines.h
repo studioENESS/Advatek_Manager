@@ -43,6 +43,7 @@
 	std::string sTempValue = node.second.data(); \\
 	 device->atr[std::stoi(node.first)] = sTempValue.c_str(); }
 
+extern const char* SortTypes[4];
 extern const char* RGBW_Order[24];
 extern const char* DriverTypes[3];
 extern const char* DriverSpeeds[5];

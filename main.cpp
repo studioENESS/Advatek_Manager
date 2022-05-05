@@ -1031,7 +1031,6 @@ int main(int, char**)
 					}
 				}
 				ImGui::EndCombo();
-				ImGui::PopItemWidth();
 			}
 			ImGui::Spacing();
 			// Connected Devices && Virtual Devices
@@ -1095,7 +1094,6 @@ int main(int, char**)
 							}
 						}
 						ImGui::EndCombo();
-						ImGui::PopItemWidth();
 					}
 
 					ImGui::SameLine();
@@ -1146,6 +1144,16 @@ int main(int, char**)
 						if (ImGui::Button("Clear"))
 						{
 							b_clearVirtualDevicesRequest = true;
+						}
+					}
+
+					if (adv.virtualDevices.size() > 1) {
+						ImGui::SameLine();
+
+						static int item_current = 0;
+						if (ImGui::Combo("###SortVirtualDevices", &item_current, SortTypes, IM_ARRAYSIZE(SortTypes))) {
+							adv.sortDevices(adv.virtualDevices, item_current);
+							item_current = 0;
 						}
 					}
 

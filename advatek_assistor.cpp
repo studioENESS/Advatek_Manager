@@ -250,16 +250,29 @@ bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
     return (device1->CurrentIP[3] < device2->CurrentIP[3]);
 }
 
+bool compareStaticIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	return (device1->StaticIP[3] < device2->StaticIP[3]);
+}
+
 bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
 	return (std::string(device1->Nickname).compare(std::string(device2->Nickname)) < 0);
 }
 
-void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, bool b_ip){
-	if(b_ip) {
+void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType){
+	switch (sortType) {
+	case 1:
 		sort(devices.begin(), devices.end(), compareCurrentIP);
-	} else {
+		break;
+	case 2:
+		sort(devices.begin(), devices.end(), compareStaticIP);
+		break;
+	case 3:
 		sort(devices.begin(), devices.end(), compareNickname);
+		break;
+	default:
+		break;
 	}
 }
 

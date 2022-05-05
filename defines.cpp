@@ -1,5 +1,12 @@
 #include "defines.h"
 
+const char* SortTypes[4] = {
+		"Sort ...",
+		"Current IP",
+		"Static IP",
+		"Nickname"
+};
+
 const char* DriverTypes[3] = {
 		"RGB only",
 		"RGBW only",
