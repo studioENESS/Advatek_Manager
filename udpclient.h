@@ -16,9 +16,9 @@ public:
 	virtual bool bind() = 0;
 	virtual bool HasMessages() = 0;
 	virtual void Send(const std::vector<uint8_t>& message, std::string& s_adr, bool b_broadcast) = 0;
+	//virtual void Send(const BYTE * message, const int messageLen, std::string& s_adr, bool b_broadcast) = 0;
 	virtual std::vector<uint8_t> PopMessage() = 0;
 };
-
 
 class UdpClient : public IClient
 {
@@ -29,6 +29,7 @@ public:
 	virtual bool bind() override;
 	virtual bool HasMessages() override;
 	virtual void Send(const std::vector<uint8_t>& message, std::string& s_adr, bool b_broadcast) override;
+	//virtual void Send(const BYTE * message, const int messageLen, std::string& s_adr, bool b_broadcast) override;
 	virtual std::vector<uint8_t> PopMessage() override;
 protected:
 	void run_service();

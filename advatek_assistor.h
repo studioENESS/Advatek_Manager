@@ -17,6 +17,7 @@ public:
 	std::vector<sAdvatekDevice*> virtualDevices;
 	std::vector<sAdvatekDevice*> memoryDevices;
 
+	void sortDevices(std::vector<sAdvatekDevice*> &devices, bool b_ip);
 	void clearDevices(std::vector<sAdvatekDevice*> &devices);
 	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice, bool initialise);
 	void copyToMemoryDevice(sAdvatekDevice* fromDevice);

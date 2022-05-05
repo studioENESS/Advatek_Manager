@@ -245,6 +245,24 @@ void advatek_manager::setTest(int d) {
 	unicast_udp_message(ipString(device->CurrentIP), dataTape);
 }
 
+bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+    return (device1->CurrentIP[3] < device2->CurrentIP[3]);
+}
+
+bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	return (std::string(device1->Nickname).compare(std::string(device2->Nickname)) < 0);
+}
+
+void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, bool b_ip){
+	if(b_ip) {
+		sort(devices.begin(), devices.end(), compareCurrentIP);
+	} else {
+		sort(devices.begin(), devices.end(), compareNickname);
+	}
+}
+
 void advatek_manager::clearDevices(std::vector<sAdvatekDevice*> &devices) {
 	for (auto device : devices)
 	{
@@ -274,7 +292,6 @@ void advatek_manager::clearDevices(std::vector<sAdvatekDevice*> &devices) {
 
 	devices.clear();
 }
-
 
 void advatek_manager::clearConnectedDevices() {
 	clearDevices(connectedDevices);

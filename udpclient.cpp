@@ -1,5 +1,6 @@
 #include "udpclient.h"
 #include <iostream>
+
 typedef boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option; //somewhere in your headers to be used everywhere you need it
 //...
 
@@ -16,8 +17,6 @@ UdpClient::UdpClient(std::string host, unsigned short server_port, unsigned shor
 
     socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
     recvsocket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
-    //socket.set_option(boost::asio::ip::udp::socket::{ 200 });
-
 
     socket.bind(server_endpoint);
 
@@ -37,6 +36,7 @@ bool UdpClient::bind()
     bool bOk = true;
     return bOk;
 }
+
 bool UdpClient::HasMessages()
 {
     return !incomingMessages.empty();
@@ -49,14 +49,26 @@ void UdpClient::Send(const std::vector<uint8_t>& message, std::string& s_adr, bo
     socket.set_option(option);
 
     socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
-    //remote_endpoint = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(s_adr.c_str()), m_serverport);
+ 
     boost::asio::ip::udp::endpoint sendpoint(boost::asio::ip::address::from_string(s_adr.c_str()), m_serverport);
 
-    //sock.send_to(boost::asio::buffer(message), sendpoint);
-
     socket.send_to(boost::asio::buffer(message), sendpoint);
-    //start_receive();
 }
+
+/*
+void UdpClient::Send(const BYTE * message, const int messageLen, std::string& s_adr, bool b_broadcast)
+{
+	boost::asio::ip::address_v4 local_interface = boost::asio::ip::address_v4::from_string(m_ipAddress.c_str());
+	boost::asio::ip::multicast::outbound_interface option(local_interface);
+	socket.set_option(option);
+
+	socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
+
+	boost::asio::ip::udp::endpoint sendpoint(boost::asio::ip::address::from_string(s_adr.c_str()), m_serverport);
+
+	socket.send_to(boost::asio::buffer(message, messageLen), sendpoint);
+}
+*/
 
 std::vector<uint8_t> UdpClient::PopMessage()
 {
