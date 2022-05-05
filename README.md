@@ -30,7 +30,7 @@ This is an Advatek Assistant clone that can run under Linux and adds the followi
 
 ## Build
     
-    git clone <this repo>
+    git clone https://github.com/studioENESS/advatek_assistor.git
     git submodule update --init
     
     cd External/boost
