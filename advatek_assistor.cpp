@@ -149,6 +149,42 @@ void advatek_manager::addUID(sAdvatekDevice* device) {
 	device->uid = hasher(macString(device->Mac).append(std::to_string(rand())));
 }
 
+std::vector<sAdvatekDevice*> advatek_manager::getDevicesWithStaticIP(std::vector<sAdvatekDevice*>& devices, std::string ipstr) {
+	std::vector<sAdvatekDevice*> matchedDevices;
+
+	for (int d(0); d < devices.size(); d++) {
+		if (ipString(devices[d]->StaticIP) == ipstr) {
+			matchedDevices.emplace_back(devices[d]);
+		}
+	}
+
+	return matchedDevices;
+}
+
+std::vector<sAdvatekDevice*> advatek_manager::getDevicesWithNickname(std::vector<sAdvatekDevice*>& devices, std::string nickname) {
+	std::vector<sAdvatekDevice*> matchedDevices;
+
+	for (int d(0); d < devices.size(); d++) {
+		if (std::string(devices[d]->Nickname) == nickname) {
+			matchedDevices.emplace_back(devices[d]);
+		}
+	}
+
+	return matchedDevices;
+}
+
+std::vector<sAdvatekDevice*> advatek_manager::getDevicesWithMac(std::vector<sAdvatekDevice*>& devices, std::string mac) {
+	std::vector<sAdvatekDevice*> matchedDevices;
+
+	for (int d(0); d < devices.size(); d++) {
+		if (macString(devices[d]->Mac) == mac) {
+			matchedDevices.emplace_back(devices[d]);
+		}
+	}
+
+	return matchedDevices;
+}
+
 void advatek_manager::pasteToNewVirtualDevice() {
 	sAdvatekDevice * device = new sAdvatekDevice();
 	pasteFromMemoryDeviceTo(device);

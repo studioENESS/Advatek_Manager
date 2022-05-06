@@ -67,6 +67,7 @@ int b_copyAllConnectedToVirtualRequest = 0;
 int iClearVirtualDeviceID = -1;
 int b_vDevicePath = false;
 int current_json_device = -1;
+int current_sync_type = 0;
 
 pt::ptree pt_json_device;
 
@@ -1085,6 +1086,93 @@ int main(int, char**)
 					// END Connected Devices
 					ImGui::EndTabItem();
 				}
+
+				// -------------------------------------- START SYNC
+				if (ImGui::BeginTabItem("<-"))
+				{
+					ImGui::Spacing();
+					ImGui::PushItemWidth(182);
+					ImGui::Combo("###SyncTypes", &current_sync_type, SyncTypes, IM_ARRAYSIZE(SyncTypes));
+					ImGui::PopItemWidth();
+					ImGui::SameLine();
+
+					// Check static IP of all virtual devices for conflict
+					// In name mode check for dupplicate names
+
+					for (uint8_t i = 0; i < adv.virtualDevices.size(); i++) {
+						ImGui::Spacing();
+						ImGui::Text("Virtual Device"); ImGui::SameLine();
+						ImGui::Text(ipString(adv.virtualDevices[i]->StaticIP).c_str()); ImGui::SameLine();
+						ImGui::Text(adv.virtualDevices[i]->Nickname);
+
+						bool deviceInRange = adv.ipInRange(adaptor_string, adv.virtualDevices[i]);
+						if (!deviceInRange) {
+							ImGui::Text("Has IP address settings not compatible with your adaptor settings.");
+							ImGui::Text("Change the IP settings of your adaptor.");
+							continue;
+						}
+						
+						int connectedDeviceWithIPCount = adv.getDevicesWithStaticIP(adv.connectedDevices, ipString(adv.virtualDevices[i]->StaticIP)).size();
+						int connectedDeviceWithNicknameCount = adv.getDevicesWithNickname(adv.connectedDevices, std::string(adv.virtualDevices[i]->Nickname)).size();
+						int connectedDeviceWithMacCount = adv.getDevicesWithMac(adv.connectedDevices, macString(adv.virtualDevices[i]->Mac)).size();
+
+						switch (current_sync_type) {
+							case 0: // Match Static IP
+								if (connectedDeviceWithIPCount != 1) {
+									if (connectedDeviceWithIPCount) {
+									continue;
+										ImGui::Text(std::string("Multiple connected devices with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str());
+									}
+									else {
+										ImGui::Text(std::string("No connected devices with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str());
+									}
+									continue;
+								}
+								break;
+							case 1: // Match Nickname
+								if (connectedDeviceWithNicknameCount != 1) {
+									if (connectedDeviceWithNicknameCount) {
+										ImGui::Text(std::string("Multiple connected devices with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str());
+									}
+									else {
+										ImGui::Text(std::string("No connected devices with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str());
+									}
+									continue;
+								}
+								break;
+							case 2: // Match MAC
+								if (connectedDeviceWithMacCount != 1) {
+									if (connectedDeviceWithMacCount) {
+										// This should never happen :)
+										ImGui::Text(std::string("Whoah!! Multiple connected devices with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str());
+									}
+									else {
+										ImGui::Text(std::string("No connected devices with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str());
+									}
+									continue;
+								}
+								break;
+							default:
+								continue;
+								break;
+						}
+
+						ImGui::Text("Is ready to go ...");
+
+						ImGui::Spacing();
+					}
+
+					ImGui::Spacing();
+
+					if (ImGui::Button("Start Updating Connected Devices"))
+					{
+						//b_pollRequest = true;
+					}
+
+					ImGui::EndTabItem();
+				}
+				// -------------------------------------- END SYNC
+
 				if (ImGui::BeginTabItem(tabTitleVirtual.str().c_str()))
 				{
 					ImGui::Spacing();

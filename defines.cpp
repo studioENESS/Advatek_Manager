@@ -1,5 +1,11 @@
 #include "defines.h"
 
+const char* SyncTypes[3] = {
+		"Match Static IP",
+		"Match Nickname",
+		"Match MAC addres"
+};
+
 const char* SortTypes[4] = {
 		"Sort ...",
 		"Current IP",

@@ -16,6 +16,9 @@ public:
 	std::vector<sAdvatekDevice*> connectedDevices;
 	std::vector<sAdvatekDevice*> virtualDevices;
 	std::vector<sAdvatekDevice*> memoryDevices;
+	std::vector<sAdvatekDevice*> getDevicesWithStaticIP(std::vector<sAdvatekDevice*>& devices, std::string ipstr);
+	std::vector<sAdvatekDevice*> getDevicesWithNickname(std::vector<sAdvatekDevice*>& devices, std::string nickname);
+	std::vector<sAdvatekDevice*> getDevicesWithMac(std::vector<sAdvatekDevice*>& devices, std::string mac);
 
 	void sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType);
 	void clearDevices(std::vector<sAdvatekDevice*> &devices);
