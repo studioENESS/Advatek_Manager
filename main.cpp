@@ -70,7 +70,7 @@ int current_json_device = -1;
 
 pt::ptree pt_json_device;
 
-static std::string adaptor_string = "No Adaptors Found";
+static std::string adaptor_string = "None";
 static std::string json_device_string = "Select Device";
 static std::string vDeviceString = "New ...";
 static std::string result = "";
@@ -1194,8 +1194,16 @@ int main(int, char**)
 		}
 
 		if (b_refreshAdaptorsRequest) {
-			adv.refreshAdaptors();
 			b_refreshAdaptorsRequest = false;
+			adv.refreshAdaptors();
+			if (adv.networkAdaptors.size() > 0) {
+				adaptor_string = adv.networkAdaptors[0];
+				adv.poll();
+				applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...\n").c_str());
+				lastPoll = currTime;
+			} else {
+				adaptor_string = "None";
+			}
 		}
 
 		if (b_pollRequest) {

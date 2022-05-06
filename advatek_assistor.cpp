@@ -804,27 +804,21 @@ void advatek_manager::refreshAdaptors() {
 	}
 	#endif
 
-	if (!networkAdaptors.empty()) {
-		currentAdaptor = 0;
-		if (m_pUdpClient)
-		{
-			delete m_pUdpClient;
-			m_pUdpClient = nullptr;
-		}
-		m_pUdpClient = new UdpClient(networkAdaptors[currentAdaptor].c_str(), AdvPort);
-	} else {
-		advatek_manager::currentAdaptor = -1;
-	}
-
+	currentAdaptor = (networkAdaptors.empty()) ? -1 : 0;
+	setCurrentAdaptor(currentAdaptor);
 }
 
 void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
 	boost::system::error_code err;
 
-	if (m_pUdpClient)
+	if (m_pUdpClient) {
 		delete m_pUdpClient;
+		m_pUdpClient = nullptr;
+	}
 
-	m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
+	if (adaptorIndex >= 0) {
+		m_pUdpClient = new UdpClient(networkAdaptors[adaptorIndex].c_str(), AdvPort);
+	}
 }
 
 std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_tree::ptree advatek_device, sImportOptions &importOptions) {
