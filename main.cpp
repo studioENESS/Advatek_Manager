@@ -462,7 +462,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 				{
 					for (int n = 0; n < adv.connectedDevices.size(); n++)
 					{
-						if (ImGui::Selectable(adv.connectedDevices[n]->Nickname))
+						if (ImGui::Selectable(ipString(adv.connectedDevices[n]->StaticIP).append(" ").append(adv.connectedDevices[n]->Nickname).c_str()))
 						{
 							adv.copyDevice(adv.virtualDevices[i], adv.connectedDevices[n], false);
 							applog.AddLog("[INFO] Copied virtual controller to new device  %s %s.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
