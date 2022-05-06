@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <vector>
 #include <regex>
+#include <unordered_map>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -121,6 +122,7 @@ typedef struct tAdvatekDevice {
 	int* TestCycleCols; //[NumOutputs]
 	bool testModeCycleOuputs = false;
 	bool testModeCyclePixels = false;
+	size_t uid;
 } sAdvatekDevice;
 
 typedef struct tImportOptions {

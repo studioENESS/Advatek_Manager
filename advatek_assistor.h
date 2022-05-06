@@ -43,6 +43,8 @@ public:
 	void auto_sequence_channels(int d);
 	void process_simple_config(int d);
 
+	void addUID(sAdvatekDevice* device);
+
 	void refreshAdaptors();
 	void setCurrentAdaptor(int adaptorIndex);
 	

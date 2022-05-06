@@ -419,8 +419,8 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 			Title << ipString(devices[i]->StaticIP);
 		}
 		Title << "	" << "Temp: " << (float)devices[i]->Temperature*0.1 << "	" << devices[i]->Nickname;
-		Title << "###" << macString(devices[i]->Mac) << i;
-		
+		Title << "###" << devices[i]->uid;
+
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f, 8.f));
 		bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns);
 		ImGui::PopStyleVar();
@@ -825,6 +825,16 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 				{
 					if (isConnected) {
 						ImGui::Text("MAC: %s", macString(devices[i]->Mac).c_str());
+					} else {
+						ImGui::Text("MAC: ");
+						ImGui::PushItemWidth(25);
+						ImGui::SameLine(); ImGui::InputScalar("###Mac01", ImGuiDataType_U8, &devices[i]->Mac[0], 0, 0, "%02X");
+						ImGui::SameLine(); ImGui::InputScalar("###Mac02", ImGuiDataType_U8, &devices[i]->Mac[1], 0, 0, "%02X");
+						ImGui::SameLine(); ImGui::InputScalar("###Mac03", ImGuiDataType_U8, &devices[i]->Mac[2], 0, 0, "%02X");
+						ImGui::SameLine(); ImGui::InputScalar("###Mac04", ImGuiDataType_U8, &devices[i]->Mac[3], 0, 0, "%02X");
+						ImGui::SameLine(); ImGui::InputScalar("###Mac05", ImGuiDataType_U8, &devices[i]->Mac[4], 0, 0, "%02X");
+						ImGui::SameLine(); ImGui::InputScalar("###Mac06", ImGuiDataType_U8, &devices[i]->Mac[5], 0, 0, "%02X");
+						ImGui::PopItemWidth();
 					}
 
 					ImGui::Text("Protocol Version: %s", std::to_string(devices[i]->ProtVer).c_str());

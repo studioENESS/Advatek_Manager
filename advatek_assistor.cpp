@@ -93,6 +93,7 @@ void advatek_manager::copyToMemoryDevice(sAdvatekDevice* fromDevice) {
 	memoryDevices.clear();
 	sAdvatekDevice * memoryDevice = new sAdvatekDevice();
 	copyDevice(fromDevice, memoryDevice, true);
+	addUID(memoryDevice);
 	advatek_manager::memoryDevices.emplace_back(memoryDevice);
 }
 
@@ -110,12 +111,14 @@ void advatek_manager::copyToNewVirtualDevice(sAdvatekDevice* fromDevice) {
 	sImportOptions importOptions = sImportOptions();
 	importOptions.init = true;
 	importJSON(device, advatek_device, importOptions);
+	addUID(device);
 	advatek_manager::virtualDevices.emplace_back(device);
 }
 
 void advatek_manager::addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions) {
 	sAdvatekDevice * device = new sAdvatekDevice();
 	importJSON(device, advatek_device, importOptions);
+	addUID(device);
 	advatek_manager::virtualDevices.emplace_back(device);
 }
 
@@ -141,9 +144,15 @@ void advatek_manager::addVirtualDevice(sImportOptions &importOptions) {
 	}
 }
 
+void advatek_manager::addUID(sAdvatekDevice* device) {
+	std::hash<std::string> hasher;
+	device->uid = hasher(macString(device->Mac).append(std::to_string(rand())));
+}
+
 void advatek_manager::pasteToNewVirtualDevice() {
 	sAdvatekDevice * device = new sAdvatekDevice();
 	pasteFromMemoryDeviceTo(device);
+	addUID(device);
 	virtualDevices.emplace_back(device);
 }
 
@@ -603,6 +612,8 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 	rec_data->tempTestCols[1] = (float)rec_data->TestCols[1] / 255;
 	rec_data->tempTestCols[2] = (float)rec_data->TestCols[2] / 255;
 	rec_data->tempTestCols[3] = (float)rec_data->TestCols[3] / 255;
+
+	addUID(rec_data);
 
 	if (!deviceExist(rec_data->Mac)) advatek_manager::connectedDevices.emplace_back(rec_data);
 
