@@ -27,7 +27,8 @@ uint32_t COL_LIGHTGREY = IM_COL32(180, 180, 180, 255);
 uint32_t COL_GREEN     = IM_COL32(  0, 180,   0, 255);
 uint32_t COL_RED       = IM_COL32(180,   0,   0, 255);
 std::vector<sAdvatekDevice*> foundDevices;
-sAdvatekDevice* foundDevice;
+std::vector<std::pair<sAdvatekDevice*,sAdvatekDevice*>> syncDevices;
+sAdvatekDevice* syncDevice;
 
 namespace pt = boost::property_tree;
 
@@ -77,6 +78,7 @@ int syncConnectedDeviceRequest = -1;
 int b_vDevicePath = false;
 int current_json_device = -1;
 int current_sync_type = 0;
+int b_syncAllRequest = 0;
 
 pt::ptree pt_json_device;
 
@@ -953,10 +955,8 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 		}
 		break;
 	default:
-	{
 		return;
-	};
-	break;
+		break;
 	}
 
 	if (adv.deviceCompatible(adv.virtualDevices[i], foundDevices[0])) {
@@ -965,9 +965,10 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 		}
 		else {
 			inSyncAll = false;
+			syncDevices.emplace_back(adv.virtualDevices[i], foundDevices[0]);
 			if (ImGui::Button("Update Connected Device"))
 			{
-				foundDevice = foundDevices[0];
+				syncDevice = foundDevices[0];
 				syncConnectedDeviceRequest = i;
 			}
 		}
@@ -1097,15 +1098,12 @@ int main(int, char**)
 		
         ImGui::NewFrame();
 		
-		if ( (adv.connectedDevices.size() == 0) && (currTime - lastPoll > rePollTime)) {
-			adv.poll();
-			applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...\n").c_str());
-			lastPoll = currTime;
-		} else if (currTime - lastSoftPoll > rePollTime) {
+		if (currTime - lastSoftPoll > rePollTime) {
 			adv.softPoll();
 			lastSoftPoll = currTime;
+			//applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...\n").c_str());
 		}
-		
+
         // Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             // Create a window and append into it.
@@ -1204,6 +1202,8 @@ int main(int, char**)
 					// Check static IP of all virtual devices for conflict
 					// In name mode check for dupplicate names
 
+					syncDevices.clear();
+
 					for (uint8_t i = 0; i < adv.virtualDevices.size(); i++) {
 						ImGui::PushID(i);
 						showSyncDevice(i, canSyncAll, inSyncAll);
@@ -1212,17 +1212,15 @@ int main(int, char**)
 
 					ImGui::Spacing();
 
-					/*
 					if (canSyncAll && !inSyncAll) {
 						ImGui::Separator();
 						ImGui::Spacing();
 						if (ImGui::Button("Update All"))
 						{
-							//b_pollRequest = true;
+							b_syncAllRequest = true;
 						}
 						ImGui::Spacing();
 					}
-					*/
 
 					ImGui::EndTabItem();
 				}
@@ -1397,9 +1395,17 @@ int main(int, char**)
 		}
 
 		if (syncConnectedDeviceRequest > -1) {
-			adv.updateConnectedDevice(adv.virtualDevices[syncConnectedDeviceRequest], foundDevice);
+			adv.updateConnectedDevice(adv.virtualDevices[syncConnectedDeviceRequest], syncDevice);
 			syncConnectedDeviceRequest = -1;
-			adv.removeConnectedDevice(macString(foundDevice->Mac));
+			adv.removeConnectedDevice(macString(syncDevice->Mac));
+		}
+
+		if (b_syncAllRequest) {
+			for (uint8_t i = 0; i < syncDevices.size(); i++) {
+				adv.updateConnectedDevice(syncDevices[i].first, syncDevices[i].second);
+				adv.removeConnectedDevice(macString(syncDevices[i].second->Mac));
+			}
+			b_syncAllRequest = false;
 		}
 
     }
