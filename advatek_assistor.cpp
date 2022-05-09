@@ -35,6 +35,120 @@ bool advatek_manager::ipInRange(std::string ipStr, sAdvatekDevice* device) {
 	return false;
 }
 
+size_t advatek_manager::getConnectedDeviceIndex(std::string mac) {
+	for (size_t index = 0; index < connectedDevices.size(); ++index) {
+		if (macString(connectedDevices[index]->Mac) == mac) return index;
+	}
+	return -1;
+}
+
+void advatek_manager::removeConnectedDevice(std::string mac) {
+	size_t index = getConnectedDeviceIndex(mac);
+	removeConnectedDevice(index);
+}
+
+void advatek_manager::removeConnectedDevice(size_t index) {
+	if (index < 0 || index > connectedDevices.size()-1) return;
+
+	auto device = connectedDevices[index];
+
+	if (device) {
+		if (device->Model) delete device->Model;
+		if (device->Firmware) delete device->Firmware;
+		if (device->OutputPixels) delete[] device->OutputPixels;
+		if (device->OutputUniv) delete[] device->OutputUniv;
+		if (device->OutputChan) delete[] device->OutputChan;
+		if (device->OutputNull) delete[] device->OutputNull;
+		if (device->OutputZig) delete[] device->OutputZig;
+		if (device->OutputReverse) delete[] device->OutputReverse;
+		if (device->OutputColOrder) delete[] device->OutputColOrder;
+		if (device->OutputGrouping) delete[] device->OutputGrouping;
+		if (device->OutputBrightness) delete[] device->OutputBrightness;
+		if (device->DmxOutOn) delete[] device->DmxOutOn;
+		if (device->DmxOutUniv) delete[] device->DmxOutUniv;
+		if (device->DriverType) delete[] device->DriverType;
+		if (device->DriverSpeed) delete[] device->DriverSpeed;
+		if (device->DriverExpandable) delete[] device->DriverExpandable;
+		if (device->DriverNames) delete[] device->DriverNames;
+		if (device->VoltageBanks) delete[] device->VoltageBanks;
+		if (device) delete device;
+	}
+	connectedDevices.erase(connectedDevices.begin() + index);
+}
+
+bool advatek_manager::sameNetworkSettings(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice) {
+	bool same = true;
+	
+	if (ipString(toDevice->StaticIP) != ipString(fromDevice->StaticIP)) same = false;
+	if (ipString(toDevice->StaticSM) != ipString(fromDevice->StaticSM)) same = false;
+	if (toDevice->DHCP != fromDevice->DHCP) same = false;
+
+	return same;
+}
+
+bool advatek_manager::devicesInSync(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice) {
+	if (!deviceCompatible(fromDevice, toDevice)) return false;
+	if (!sameNetworkSettings(fromDevice, toDevice)) return false;
+	if (toDevice->Protocol != fromDevice->Protocol) return false;
+	if (toDevice->HoldLastFrame != fromDevice->HoldLastFrame) return false;
+	if (toDevice->SimpleConfig != fromDevice->SimpleConfig) return false;
+	
+	// NumOutputs
+	for (int output = 0; output < toDevice->NumOutputs; output++) {
+		if (toDevice->OutputPixels[output] != fromDevice->OutputPixels[output]) return false;
+		if (toDevice->OutputUniv[output] != fromDevice->OutputUniv[output]) return false;
+		if (toDevice->OutputChan[output] != fromDevice->OutputChan[output]) return false;
+		if (toDevice->OutputNull[output] != fromDevice->OutputNull[output]) return false;
+		if (toDevice->OutputZig[output] != fromDevice->OutputZig[output]) return false;
+		if (toDevice->OutputReverse[output] != fromDevice->OutputReverse[output]) return false;
+		if (toDevice->OutputColOrder[output] != fromDevice->OutputColOrder[output]) return false;
+		if (toDevice->OutputGrouping[output] != fromDevice->OutputGrouping[output]) return false;
+		if (toDevice->OutputBrightness[output] != fromDevice->OutputBrightness[output]) return false;
+	}
+
+	// NumDMXOutputs
+	if (toDevice->ProtocolsOnDmxOut != fromDevice->ProtocolsOnDmxOut) return false;
+	for (int output = 0; output < toDevice->NumDMXOutputs; output++) {
+		if (toDevice->DmxOutOn[output] != fromDevice->DmxOutOn[output]) return false;
+		if (toDevice->DmxOutUniv[output] != fromDevice->DmxOutUniv[output]) return false;
+	}
+
+	//NumDrivers
+	for (int output = 0; output < toDevice->NumDrivers; output++) {
+		if (toDevice->DriverType[output] != fromDevice->DriverType[output]) return false;
+		if (toDevice->DriverSpeed[output] != fromDevice->DriverSpeed[output]) return false;
+		if (toDevice->DriverExpandable[output] != fromDevice->DriverExpandable[output]) return false;
+	}
+	
+	if (toDevice->CurrentDriver != fromDevice->CurrentDriver) return false;
+	if (toDevice->CurrentDriverType != fromDevice->CurrentDriverType) return false;
+	if (toDevice->CurrentDriverSpeed != fromDevice->CurrentDriverSpeed) return false;
+	if (toDevice->CurrentDriverExpanded != fromDevice->CurrentDriverExpanded) return false;
+
+	for (int i = 0; i < 4; i++) {
+		if (toDevice->Gamma[i] != fromDevice->Gamma[i]) return false;
+	}
+
+	if ( std::string(toDevice->Nickname) != std::string(fromDevice->Nickname)) return false;	
+	if (toDevice->MaxTargetTemp != fromDevice->MaxTargetTemp) return false;
+
+	return true;
+}
+
+bool advatek_manager::deviceCompatible(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice) {
+	// Check for output channel count etc.
+	// In the future we can add ignore flags for DMX etc.
+	// And make it compatable so you can map smaller devices to bigger ones
+	// toDevice->NumOutputs < fromDevice->NumOutputs
+	bool compatible = true;
+	if (toDevice->MaxPixPerOutput != fromDevice->MaxPixPerOutput) compatible = false;
+	if (toDevice->NumOutputs != fromDevice->NumOutputs) compatible = false;
+	if (toDevice->NumDMXOutputs != fromDevice->NumDMXOutputs) compatible = false;
+	if (toDevice->NumDrivers != fromDevice->NumDrivers) compatible = false;
+	if (toDevice->DriverNameLength != fromDevice->DriverNameLength) compatible = false;
+	return compatible;
+}
+
 void advatek_manager::listen() {
 	uint8_t buffer[100000];
 
@@ -192,14 +306,7 @@ void advatek_manager::pasteToNewVirtualDevice() {
 	virtualDevices.emplace_back(device);
 }
 
-void advatek_manager::updateDevice(int d) {
-
-	auto device = advatek_manager::connectedDevices[d];
-
-	if ((bool)device->SimpleConfig) {
-		advatek_manager::process_simple_config(d);
-	}
-
+void advatek_manager::updateDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr) {
 	std::vector<uint8_t> dataTape;
 
 	dataTape.resize(12);
@@ -216,7 +323,8 @@ void advatek_manager::updateDevice(int d) {
 	dataTape[10] = 0x05;  // OpCode
 	dataTape[11] = 0x08;  // ProtVer
 
-	dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
+	// Set Mac Address
+	dataTape.insert(dataTape.end(), Mac, Mac + 6);
 
 	dataTape.push_back(device->DHCP);
 
@@ -253,7 +361,22 @@ void advatek_manager::updateDevice(int d) {
 
 	dataTape.push_back(device->MaxTargetTemp);
 
-	unicast_udp_message(ipString(device->CurrentIP), dataTape);
+	unicast_udp_message(ipStr, dataTape);
+}
+
+void advatek_manager::updateDevice(int d) {
+
+	auto device = advatek_manager::connectedDevices[d];
+
+	if ((bool)device->SimpleConfig) {
+		advatek_manager::process_simple_config(d);
+	}
+
+	updateDeviceWithMac(device, device->Mac, ipString(device->CurrentIP));
+}
+
+void advatek_manager::updateConnectedDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* connectedDevice) {
+	updateDeviceWithMac(fromDevice, connectedDevice->Mac, ipString(connectedDevice->CurrentIP));
 }
 
 void advatek_manager::setTest(int d) {
@@ -357,6 +480,10 @@ void advatek_manager::clearConnectedDevices() {
 
 void advatek_manager::bc_networkConfig(int d) {
 	auto device = advatek_manager::connectedDevices[d];
+	bc_networkConfig(device);
+}
+
+void advatek_manager::bc_networkConfig(sAdvatekDevice* device) {
 	std::vector<uint8_t> dataTape;
 	dataTape.resize(12);
 	dataTape[0] = 'A';
@@ -383,8 +510,11 @@ void advatek_manager::bc_networkConfig(int d) {
 }
 
 void advatek_manager::poll() {
-
 	advatek_manager::clearDevices(connectedDevices);
+	softPoll();
+}
+
+void advatek_manager::softPoll() {
 
 	std::vector<uint8_t> dataTape;
 	dataTape.resize(12);

@@ -7,12 +7,17 @@ public:
 	uint8_t ProtVer = 8;
 	bool deviceExist(uint8_t * Mac);
 	bool ipInRange(std::string ip, sAdvatekDevice* device);
+	bool sameNetworkSettings(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
+	bool deviceCompatible(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
+	bool devicesInSync(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
+
 	std::string macStr(uint8_t * address);
 	std::string ipStr(uint8_t * address);
 
 	std::vector <std::string> networkAdaptors;
 	int currentAdaptor = -1;
-	
+	size_t getConnectedDeviceIndex(std::string mac);
+
 	std::vector<sAdvatekDevice*> connectedDevices;
 	std::vector<sAdvatekDevice*> virtualDevices;
 	std::vector<sAdvatekDevice*> memoryDevices;
@@ -20,6 +25,8 @@ public:
 	std::vector<sAdvatekDevice*> getDevicesWithNickname(std::vector<sAdvatekDevice*>& devices, std::string nickname);
 	std::vector<sAdvatekDevice*> getDevicesWithMac(std::vector<sAdvatekDevice*>& devices, std::string mac);
 
+	void removeConnectedDevice(size_t index);
+	void removeConnectedDevice(std::string mac);
 	void sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType);
 	void clearDevices(std::vector<sAdvatekDevice*> &devices);
 	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice, bool initialise);
@@ -30,12 +37,16 @@ public:
 	void addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
 	void addVirtualDevice(sImportOptions &importOptions);
 	void pasteToNewVirtualDevice();
+	void updateDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr);
 	void updateDevice(int d);
+	void updateConnectedDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* connectedDevice);
 	void identifyDevice(int d, uint8_t duration);
 	void setTest(int d);
 	void clearConnectedDevices();
 	void bc_networkConfig(int d);
+	void bc_networkConfig(sAdvatekDevice* device);
 	void poll();
+	void softPoll();
 	void process_opPollReply(uint8_t * data);
 	void process_opTestAnnounce(uint8_t * data);
 	void process_udp_message(uint8_t * data);

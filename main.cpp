@@ -20,12 +20,20 @@
 #include "portable-file-dialogs.h"
 #include "standard_json_config.h"
 
-#define Version "1.2.0"
+#define Version "1.3.0"
+
+uint32_t COL_GREY      = IM_COL32( 80,  80,  80, 255);
+uint32_t COL_LIGHTGREY = IM_COL32(180, 180, 180, 255);
+uint32_t COL_GREEN     = IM_COL32(  0, 180,   0, 255);
+uint32_t COL_RED       = IM_COL32(180,   0,   0, 255);
+std::vector<sAdvatekDevice*> foundDevices;
+sAdvatekDevice* foundDevice;
 
 namespace pt = boost::property_tree;
 
 double currTime = 0;
 double lastPoll = 0;
+double lastSoftPoll = 0;
 double lastTime = 0;
 
 float rePollTime = 3;
@@ -65,6 +73,7 @@ int b_pasteToNewVirtualDevice = 0;
 int b_clearVirtualDevicesRequest = 0;
 int b_copyAllConnectedToVirtualRequest = 0;
 int iClearVirtualDeviceID = -1;
+int syncConnectedDeviceRequest = -1;
 int b_vDevicePath = false;
 int current_json_device = -1;
 int current_sync_type = 0;
@@ -149,8 +158,7 @@ struct AppLog {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
-		auto txtCol = IM_COL32(120, 120, 120, 255);
-		ImGui::PushStyleColor(ImGuiCol_Text, txtCol);
+		ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
 
 		const char* buf = Buf.begin();
 		const char* buf_end = Buf.end();
@@ -239,8 +247,7 @@ void showResult(std::string& result) {
 		ImGui::PopStyleVar();
 		ImGui::Spacing();
 
-		auto txtCol = IM_COL32(80, 80, 80, 255);
-		ImGui::PushStyleColor(ImGuiCol_Text, txtCol);
+		ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
 		ImGui::TextWrapped("Please click the Update Network or Update Settings to save these changes to the controller.");
 		ImGui::PopStyleColor();
 
@@ -259,6 +266,12 @@ void button_update_controller_settings(int i) {
 		adv.updateDevice(i);
 		b_pollRequest = true;
 	}
+}
+
+void colouredText(const char* txt, uint32_t color) {
+	ImGui::PushStyleColor(ImGuiCol_Text, color);
+	ImGui::TextWrapped(txt);
+	ImGui::PopStyleColor();
 }
 
 void importUI(sAdvatekDevice *device, sImportOptions &importOptions) {
@@ -878,7 +891,93 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 			ImGui::TreePop();		
 		}
 	}
-	
+}
+
+
+void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
+{
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+	colouredText("(Virtual Device)", COL_GREY);  ImGui::SameLine();
+	ImGui::Text(ipString(adv.virtualDevices[i]->StaticIP).c_str()); ImGui::SameLine();
+	colouredText(adv.virtualDevices[i]->Nickname, COL_LIGHTGREY);
+
+	bool deviceInRange = adv.ipInRange(adaptor_string, adv.virtualDevices[i]);
+	if (!deviceInRange) {
+		colouredText("Has IP address settings not compatible with your adaptor settings.", COL_RED);
+		colouredText("Change the IP settings of your adaptor.", COL_RED);
+		canSyncAll = false;
+		return;
+	}
+
+	switch (current_sync_type) {
+	case 0: // Match Static IP
+		foundDevices = adv.getDevicesWithStaticIP(adv.connectedDevices, ipString(adv.virtualDevices[i]->StaticIP));
+		if (foundDevices.size() != 1) {
+			if (foundDevices.size()) {
+				colouredText(std::string("Multiple connected devices with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str(), COL_RED);
+			}
+			else {
+				colouredText(std::string("No connected device with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str(), COL_RED);
+			}
+			canSyncAll = false;
+			return;
+		}
+		break;
+	case 1: // Match Nickname
+		foundDevices = adv.getDevicesWithNickname(adv.connectedDevices, std::string(adv.virtualDevices[i]->Nickname));
+		if (foundDevices.size() != 1) {
+			if (foundDevices.size()) {
+				colouredText(std::string("Multiple connected devices with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str(), COL_RED);
+			}
+			else {
+				colouredText(std::string("No connected device with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str(), COL_RED);
+			}
+			canSyncAll = false;
+			return;
+		}
+		break;
+	case 2: // Match MAC
+		foundDevices = adv.getDevicesWithMac(adv.connectedDevices, macString(adv.virtualDevices[i]->Mac));
+		if (foundDevices.size() != 1) {
+			if (foundDevices.size()) {
+				// This should never happen :)
+				colouredText(std::string("Whoah!! Multiple connected devices with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str(), COL_RED);
+			}
+			else {
+				colouredText(std::string("No connected device with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str(), COL_RED);
+			}
+			canSyncAll = false;
+			return;
+		}
+		break;
+	default:
+	{
+		return;
+	};
+	break;
+	}
+
+	if (adv.deviceCompatible(adv.virtualDevices[i], foundDevices[0])) {
+		if (adv.devicesInSync(adv.virtualDevices[i], foundDevices[0])) {
+			colouredText("Device in sync ...", COL_GREEN);
+		}
+		else {
+			inSyncAll = false;
+			if (ImGui::Button("Update Connected Device"))
+			{
+				foundDevice = foundDevices[0];
+				syncConnectedDeviceRequest = i;
+			}
+		}
+		return;
+	}
+	else {
+		colouredText("Device not compatable ...", COL_RED);
+		canSyncAll = false;
+		return;
+	}
 }
 
 #ifndef DEBUG
@@ -1002,6 +1101,9 @@ int main(int, char**)
 			adv.poll();
 			applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...\n").c_str());
 			lastPoll = currTime;
+		} else if (currTime - lastSoftPoll > rePollTime) {
+			adv.softPoll();
+			lastSoftPoll = currTime;
 		}
 		
         // Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
@@ -1096,78 +1198,31 @@ int main(int, char**)
 					ImGui::PopItemWidth();
 					ImGui::SameLine();
 
+					bool canSyncAll = true;
+					bool inSyncAll = true;
+
 					// Check static IP of all virtual devices for conflict
 					// In name mode check for dupplicate names
 
 					for (uint8_t i = 0; i < adv.virtualDevices.size(); i++) {
-						ImGui::Spacing();
-						ImGui::Text("Virtual Device"); ImGui::SameLine();
-						ImGui::Text(ipString(adv.virtualDevices[i]->StaticIP).c_str()); ImGui::SameLine();
-						ImGui::Text(adv.virtualDevices[i]->Nickname);
-
-						bool deviceInRange = adv.ipInRange(adaptor_string, adv.virtualDevices[i]);
-						if (!deviceInRange) {
-							ImGui::Text("Has IP address settings not compatible with your adaptor settings.");
-							ImGui::Text("Change the IP settings of your adaptor.");
-							continue;
-						}
-						
-						int connectedDeviceWithIPCount = adv.getDevicesWithStaticIP(adv.connectedDevices, ipString(adv.virtualDevices[i]->StaticIP)).size();
-						int connectedDeviceWithNicknameCount = adv.getDevicesWithNickname(adv.connectedDevices, std::string(adv.virtualDevices[i]->Nickname)).size();
-						int connectedDeviceWithMacCount = adv.getDevicesWithMac(adv.connectedDevices, macString(adv.virtualDevices[i]->Mac)).size();
-
-						switch (current_sync_type) {
-							case 0: // Match Static IP
-								if (connectedDeviceWithIPCount != 1) {
-									if (connectedDeviceWithIPCount) {
-									continue;
-										ImGui::Text(std::string("Multiple connected devices with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str());
-									}
-									else {
-										ImGui::Text(std::string("No connected devices with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str());
-									}
-									continue;
-								}
-								break;
-							case 1: // Match Nickname
-								if (connectedDeviceWithNicknameCount != 1) {
-									if (connectedDeviceWithNicknameCount) {
-										ImGui::Text(std::string("Multiple connected devices with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str());
-									}
-									else {
-										ImGui::Text(std::string("No connected devices with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str());
-									}
-									continue;
-								}
-								break;
-							case 2: // Match MAC
-								if (connectedDeviceWithMacCount != 1) {
-									if (connectedDeviceWithMacCount) {
-										// This should never happen :)
-										ImGui::Text(std::string("Whoah!! Multiple connected devices with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str());
-									}
-									else {
-										ImGui::Text(std::string("No connected devices with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str());
-									}
-									continue;
-								}
-								break;
-							default:
-								continue;
-								break;
-						}
-
-						ImGui::Text("Is ready to go ...");
-
-						ImGui::Spacing();
+						ImGui::PushID(i);
+						showSyncDevice(i, canSyncAll, inSyncAll);
+						ImGui::PopID();
 					}
 
 					ImGui::Spacing();
 
-					if (ImGui::Button("Start Updating Connected Devices"))
-					{
-						//b_pollRequest = true;
+					/*
+					if (canSyncAll && !inSyncAll) {
+						ImGui::Separator();
+						ImGui::Spacing();
+						if (ImGui::Button("Update All"))
+						{
+							//b_pollRequest = true;
+						}
+						ImGui::Spacing();
 					}
+					*/
 
 					ImGui::EndTabItem();
 				}
@@ -1339,6 +1394,12 @@ int main(int, char**)
 				adv.addVirtualDevice(advatek_device, conImportOptions);
 			}
 			b_copyAllConnectedToVirtualRequest = false;
+		}
+
+		if (syncConnectedDeviceRequest > -1) {
+			adv.updateConnectedDevice(adv.virtualDevices[syncConnectedDeviceRequest], foundDevice);
+			syncConnectedDeviceRequest = -1;
+			adv.removeConnectedDevice(macString(foundDevice->Mac));
 		}
 
     }

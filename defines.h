@@ -110,8 +110,8 @@ typedef struct tAdvatekDevice {
 	uint8_t Gamma[4]; // R, G & B Gamma
 	float Gammaf[4];
 
-	char Nickname[40]; // if the product has a nickname, null terminatedDriverNames    uint16_t Temperature; // Hi byte of temp reading
-	uint16_t Temperature;
+	char Nickname[40]; // if the product has a nickname, null terminatedDriverNames
+	uint16_t Temperature; // current temp reading
 	uint8_t MaxTargetTemp; // Max target temperature (fan control). 0xFF means no fan control.
 	uint8_t NumBanks; // Number of banks for voltage readings
 	uint16_t* VoltageBanks;// [NumBanks][2]; // Voltage on power banks (*10)
