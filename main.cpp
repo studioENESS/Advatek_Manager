@@ -430,8 +430,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 		Title << " " << devices[i]->Model << "	" << devices[i]->Firmware << "	";
 		if (isConnected) {
 			Title << ipString(devices[i]->CurrentIP);
-		}
-		else {
+		} else {
 			Title << ipString(devices[i]->StaticIP);
 		}
 		Title << "	" << "Temp: " << (float)devices[i]->Temperature*0.1 << "	" << devices[i]->Nickname;
@@ -544,14 +543,6 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 					devices[i]->DHCP = 0;
 				}
 
-				if (isConnected) {
-					if (ImGui::Button("Update Network"))
-					{
-						adv.bc_networkConfig(i);
-						b_pollRequest = true;
-					}
-				}
-
 				ImGui::EndTabItem();
 			}
 			
@@ -641,11 +632,6 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 					} // End Else/If Simple Config
 
 					ImGui::PopItemWidth();
-
-					if (isConnected) {
-						button_update_controller_settings(i);
-					}
-
 					ImGui::EndTabItem();
 				}
 				if (ImGui::BeginTabItem("DMX512 Outputs"))
@@ -671,11 +657,6 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 					}
 
 					ImGui::PopItemWidth();
-
-					if (isConnected) {
-						button_update_controller_settings(i);
-					}
-
 					ImGui::EndTabItem();
 				}
 
@@ -723,11 +704,6 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 						devices[i]->Gamma[3] = (int)(devices[i]->Gammaf[3] * 10);
 					};
 					ImGui::PopItemWidth();
-
-					if (isConnected) {
-						button_update_controller_settings(i);
-					}
-
 					ImGui::EndTabItem();
 				}
 				if (isConnected) {
@@ -829,12 +805,8 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 						if (b_setTest) adv.setTest(i);
 
 						ImGui::PopItemWidth();
-
-						button_update_controller_settings(i);
-
 						ImGui::EndTabItem();
 					} // End Test Tab
-
 				}
 
 				if (ImGui::BeginTabItem("Misc"))
@@ -877,8 +849,6 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 							ImGui::Text("Bank %i: %.2f V", bank + 1, ((float)devices[i]->VoltageBanks[bank] / 10.f));
 							ImGui::PopID();
 						}
-
-						button_update_controller_settings(i);
 					}
 
 					ImGui::EndTabItem();
@@ -888,6 +858,20 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 			}
 
 			ImGui::EndTabBar();
+
+			ImGui::Spacing();
+			ImGui::Spacing();
+
+			if (isConnected && !deviceInRange) {
+				if (ImGui::Button("Update Network"))
+				{
+					adv.bc_networkConfig(i);
+					b_pollRequest = true;
+				}
+			} else if (isConnected) {
+				button_update_controller_settings(i);
+			}
+
 			ImGui::Spacing();
 			ImGui::Spacing();
 			ImGui::TreePop();		
