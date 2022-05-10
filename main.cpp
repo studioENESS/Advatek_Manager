@@ -40,6 +40,7 @@ double lastTime = 0;
 float rePollTime = 3;
 float testCycleSpeed = 0.5;
 int b_testPixelsReady = true;
+float scale = 1;
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
@@ -125,8 +126,6 @@ struct AppLog {
 			return;
 		}
 
-		//ImGui::Text("Window DPI scale: %f", ImGui::GetWindowDpiScale());
-
 		// Options menu
 		//if (ImGui::BeginPopup("Options"))
 		//{
@@ -141,11 +140,11 @@ struct AppLog {
 		
 		ImGui::Spacing();
 
-		//bool clear = ImGui::Button("Clear", ImVec2(50,0));
+		//bool clear = ImGui::Button("Clear", ImVec2(50 * scale,0));
 		//ImGui::SameLine();
-		bool copy = ImGui::Button("Copy", ImVec2(50, 0));
+		bool copy = ImGui::Button("Copy", ImVec2(50 * scale, 0));
 		ImGui::SameLine();
-		ImGui::PushItemWidth(130);
+		ImGui::PushItemWidth(130 * scale);
 		Filter.Draw("Filter");
 		ImGui::PopItemWidth();
 
@@ -227,9 +226,9 @@ void showResult(std::string& result) {
 
 	//Always center this window when appearing
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f * scale, 0.5f * scale));
 	//ImGui::SetNextWindowSize(ImVec2(400, 300));
-	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, -1.f), ImVec2(INFINITY, -1.f));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f * scale, -1.f * scale), ImVec2(INFINITY, -1.f * scale));
 
 	if (ImGui::BeginPopupModal("Result", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -254,7 +253,7 @@ void showResult(std::string& result) {
 		ImGui::PopStyleColor();
 
 		ImGui::Spacing();
-		if (ImGui::Button("OK", ImVec2(120, 0))) {
+		if (ImGui::Button("OK", ImVec2(120 * scale, 0))) {
 			result = std::string("");
 			ImGui::CloseCurrentPopup();
 		}
@@ -334,7 +333,7 @@ void importUI(sAdvatekDevice *device, sImportOptions &importOptions) {
 		ImGui::PopStyleVar();
 		ImGui::Spacing();
 
-		if (ImGui::Button("Import", ImVec2(120, 0))) {
+		if (ImGui::Button("Import", ImVec2(120 * scale, 0))) {
 			std::stringstream jsonStringStream;
 			write_json(jsonStringStream, pt_json_device);
 			importOptions.json = jsonStringStream.str();
@@ -346,7 +345,7 @@ void importUI(sAdvatekDevice *device, sImportOptions &importOptions) {
 
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		if (ImGui::Button("Cancel", ImVec2(120 * scale, 0))) { ImGui::CloseCurrentPopup(); }
 		ImGui::EndPopup();
 	}
 }
@@ -394,7 +393,7 @@ void button_import_export_JSON(sAdvatekDevice *device) {
 
 	// Always center this window when appearing
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f * scale, 0.5f * scale));
 
 	importUI(device, userImportOptions);
 
@@ -436,7 +435,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 		Title << "	" << "Temp: " << (float)devices[i]->Temperature*0.1 << "	" << devices[i]->Nickname;
 		Title << "###" << devices[i]->uid;
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f, 8.f));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f * scale, 8.f * scale));
 		bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns);
 		ImGui::PopStyleVar();
 
@@ -472,7 +471,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 					applog.AddLog("[INFO] Copied controller %s %s to new virtual device.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
 				}
 			} else {
-				ImGui::PushItemWidth(240);
+				ImGui::PushItemWidth(240 * scale);
 				if (ImGui::BeginCombo("###senddevice", "Copy to Connected Device", 0))
 				{
 					for (int n = 0; n < adv.connectedDevices.size(); n++)
@@ -505,7 +504,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 
 				ImGui::Text("Static IP Address:");
 
-				ImGui::PushItemWidth(30);
+				ImGui::PushItemWidth(30 * scale);
 
 				ImGui::InputScalar(".##CurrentIP0", ImGuiDataType_U8, &devices[i]->StaticIP[0], 0, 0, 0);
 
@@ -567,14 +566,13 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 						devices[i]->SimpleConfig = tempSimpleConfig;
 					}
 
-					ImGui::PushItemWidth(50);
+					ImGui::PushItemWidth(50 * scale);
 
 					if ((bool)devices[i]->SimpleConfig) {
 						ImGui::InputScalar("Start Universe", ImGuiDataType_U16, &devices[i]->OutputUniv[0], 0, 0, 0);
 						ImGui::InputScalar("Start Channel ", ImGuiDataType_U16, &devices[i]->OutputChan[0], 0, 0, 0);
 						ImGui::InputScalar("Pixels Per Output", ImGuiDataType_U16, &devices[i]->OutputPixels[0], 0, 0, 0);
-					}
-					else {
+					} else {
 						bool autoChannels = false;
 						ImGui::SameLine();
 						ImGui::Checkbox("Automatic Sequence Channels", &autoChannels);
@@ -638,7 +636,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 				{
 					bool* tempDMXOffOn = new bool[devices[i]->NumDMXOutputs];
 
-					ImGui::PushItemWidth(50);
+					ImGui::PushItemWidth(50 * scale);
 
 					for (int DMXoutput = 0; DMXoutput < devices[i]->NumDMXOutputs; DMXoutput++) {
 						ImGui::PushID(DMXoutput);
@@ -662,7 +660,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 
 				if (ImGui::BeginTabItem("LEDs"))
 				{
-					ImGui::PushItemWidth(120);
+					ImGui::PushItemWidth(120 * scale);
 					ImGui::Combo("Pixel IC", &devices[i]->CurrentDriver, devices[i]->DriverNames, devices[i]->NumDrivers);
 					ImGui::Combo("Clock Speed", &devices[i]->CurrentDriverSpeed, DriverSpeedsMhz, 12);
 					bool tempExpanded = (bool)devices[i]->CurrentDriverExpanded;
@@ -718,7 +716,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 
 						bool b_setTest = false;
 
-						ImGui::PushItemWidth(200);
+						ImGui::PushItemWidth(200 * scale);
 
 						if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, 9)) {
 							devices[i]->TestPixelNum = 0;
@@ -815,7 +813,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 						ImGui::Text("MAC: %s", macString(devices[i]->Mac).c_str());
 					} else {
 						ImGui::Text("MAC: ");
-						ImGui::PushItemWidth(25);
+						ImGui::PushItemWidth(25 * scale);
 						ImGui::SameLine(); ImGui::InputScalar("###Mac01", ImGuiDataType_U8, &devices[i]->Mac[0], 0, 0, "%02X");
 						ImGui::SameLine(); ImGui::InputScalar("###Mac02", ImGuiDataType_U8, &devices[i]->Mac[1], 0, 0, "%02X");
 						ImGui::SameLine(); ImGui::InputScalar("###Mac03", ImGuiDataType_U8, &devices[i]->Mac[2], 0, 0, "%02X");
@@ -827,7 +825,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 
 					ImGui::Text("Protocol Version: %s", std::to_string(devices[i]->ProtVer).c_str());
 
-					ImGui::PushItemWidth(200);
+					ImGui::PushItemWidth(200 * scale);
 					char sName[40];
 					memcpy(sName, devices[i]->Nickname, 40);
 					if (ImGui::InputText("Nickname", sName, 40)) {
@@ -836,7 +834,7 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 					}
 					ImGui::PopItemWidth();
 
-					ImGui::PushItemWidth(30);
+					ImGui::PushItemWidth(30 * scale);
 
 					ImGui::InputScalar("Fan Control On Temp", ImGuiDataType_U8, &devices[i]->MaxTargetTemp, 0, 0, 0);
 					ImGui::PopItemWidth();
@@ -854,7 +852,6 @@ void showDevices(std::vector<sAdvatekDevice*> &devices, bool isConnected) {
 					ImGui::EndTabItem();
 
 				}
-
 			}
 
 			ImGui::EndTabBar();
@@ -903,8 +900,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
 				colouredText(std::string("Multiple connected devices with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str(), COL_RED);
-			}
-			else {
+			} else {
 				colouredText(std::string("No connected device with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str(), COL_RED);
 			}
 			canSyncAll = false;
@@ -916,8 +912,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
 				colouredText(std::string("Multiple connected devices with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str(), COL_RED);
-			}
-			else {
+			} else {
 				colouredText(std::string("No connected device with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str(), COL_RED);
 			}
 			canSyncAll = false;
@@ -930,8 +925,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 			if (foundDevices.size()) {
 				// This should never happen :)
 				colouredText(std::string("Whoah!! Multiple connected devices with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str(), COL_RED);
-			}
-			else {
+			} else {
 				colouredText(std::string("No connected device with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str(), COL_RED);
 			}
 			canSyncAll = false;
@@ -946,8 +940,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 	if (adv.deviceCompatible(adv.virtualDevices[i], foundDevices[0])) {
 		if (adv.devicesInSync(adv.virtualDevices[i], foundDevices[0])) {
 			colouredText("Device in sync ...", COL_GREEN);
-		}
-		else {
+		} else {
 			inSyncAll = false;
 			syncDevices.emplace_back(adv.virtualDevices[i], foundDevices[0]);
 			if (ImGui::Button("Update Connected Device"))
@@ -957,8 +950,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 			}
 		}
 		return;
-	}
-	else {
+	} else {
 		colouredText("Device not compatable ...", COL_RED);
 		canSyncAll = false;
 		return;
@@ -969,15 +961,39 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 #pragma comment(linker, "/SUBSYSTEM:Windows /ENTRY:mainCRTStartup")
 #endif
 
+void ScaleToScreenDPI(float& scale, ImGuiIO& io)
+{
+	ImGui::GetStyle().ScaleAllSizes(scale);
+	ImFontConfig fc = ImFontConfig();
+	fc.OversampleH = fc.OversampleV = scale;
+	fc.SizePixels = 13.f * scale;
+	io.Fonts->AddFontDefault(&fc);
+}
+
 int main(int, char**)
 {
 	applog.AddLog("[INFO] Advatek Assistor v%s\n", Version);
 	adv.refreshAdaptors();
+	GLFWwindow* window;
+	float xscale, yscale;
+	int window_w, window_h, centery, centerx;
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
+
+	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+	xscale = mode->width / 1920.f;
+	yscale = mode->height / 1080.f;
+	scale = std::max(xscale, yscale);
+
+	window_w = 800 * xscale;
+	window_h = 600 * yscale;
+
+	centerx = (mode->width / 2) - (window_w / 2);
+	centery = (mode->height / 2) - (window_h / 2);
 
     // Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -1002,16 +1018,8 @@ int main(int, char**)
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-	const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
-	int window_w = 800;
-	int window_h = 600;
-
-	int centerx = (mode->width / 2) - (window_w / 2);
-	int centery = (mode->height / 2) - (window_h / 2);
-
 	// Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(window_w, window_h, "Advatek Assistor", NULL, NULL);
+    window = glfwCreateWindow(window_w, window_h, "Advatek Assistor", NULL, NULL);
 
 	glfwSetWindowPos(window, centerx, centery);
 
@@ -1032,27 +1040,10 @@ int main(int, char**)
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
+	ScaleToScreenDPI(scale, io);
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
-
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("External/imgui/misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("External/imgui/misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("External/imgui/misc/fonts/DroidSans.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("External/imgui/misc/fonts/ProggyTiny.ttf", 10.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
-
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	currTime = ImGui::GetTime();
 	if (adv.networkAdaptors.size() > 0) {
@@ -1101,7 +1092,7 @@ int main(int, char**)
 			window_flags |= ImGuiWindowFlags_NoCollapse;
 
 			ImGui::Begin("Advatek Assistor", NULL, window_flags);
-
+			//ImGui::SetWindowFontScale(std::max(xscale, yscale));
 			showResult(result);
 
 			if (ImGui::Button("Refresh Adaptors"))
@@ -1109,7 +1100,7 @@ int main(int, char**)
 				b_refreshAdaptorsRequest = true;
 			} ImGui::SameLine();
 
-			ImGui::PushItemWidth(130);
+			ImGui::PushItemWidth(130 * scale);
 
 			if (ImGui::BeginCombo("###Adaptor", adaptor_string.c_str(), 0))
 			{
@@ -1175,7 +1166,7 @@ int main(int, char**)
 				if (ImGui::BeginTabItem("<-"))
 				{
 					ImGui::Spacing();
-					ImGui::PushItemWidth(182);
+					ImGui::PushItemWidth(182 * scale);
 					ImGui::Combo("###SyncTypes", &current_sync_type, SyncTypes, IM_ARRAYSIZE(SyncTypes));
 					ImGui::PopItemWidth();
 					ImGui::SameLine();
@@ -1316,7 +1307,6 @@ int main(int, char**)
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
