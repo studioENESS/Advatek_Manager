@@ -116,13 +116,13 @@ void setupWindow(GLFWwindow*& window, int& window_w, int& window_h, float& scale
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
-	ScaleToScreenDPI(scale, io);
+	scaleToScreenDPI(scale, io);
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
-void ScaleToScreenDPI(float& scale, ImGuiIO& io)
+void scaleToScreenDPI(float& scale, ImGuiIO& io)
 {
 	ImGui::GetStyle().ScaleAllSizes(scale);
 	ImFontConfig fc = ImFontConfig();
@@ -131,7 +131,7 @@ void ScaleToScreenDPI(float& scale, ImGuiIO& io)
 	io.Fonts->AddFontDefault(&fc);
 }
 
-void showResult(std::string& result) {
+void showResult(std::string& result, float scale) {
 	if (result.empty() == false)
 		ImGui::OpenPopup("Result");
 
@@ -186,7 +186,7 @@ void colouredText(const char* txt, uint32_t color) {
 	ImGui::PopStyleColor();
 }
 
-void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
+void importUI(sAdvatekDevice* device, sImportOptions& importOptions, float scale) {
 	if (ImGui::BeginPopupModal("Import", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		// Read in devices
@@ -308,7 +308,7 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f * scale, 0.5f * scale));
 
-	importUI(device, userImportOptions);
+	importUI(device, userImportOptions, scale);
 
 	if (userImportOptions.userSet) {
 		result = adv.importJSON(device, userImportOptions);
@@ -895,7 +895,7 @@ void showWindow(GLFWwindow*& window, int window_w, int window_h, float scale)
 
 		ImGui::Begin("Advatek Assistor", NULL, window_flags);
 
-		showResult(result);
+		showResult(result, scale);
 
 		if (ImGui::Button("Refresh Adaptors"))
 		{
@@ -1100,7 +1100,7 @@ void showWindow(GLFWwindow*& window, int window_w, int window_h, float scale)
 		ImGui::Spacing();
 		ImGui::Separator();
 
-		applog.Draw("Advatek Assistor", &logOpen);
+		applog.Draw("Advatek Assistor", &logOpen, scale);
 
 		ImGui::End();
 	}

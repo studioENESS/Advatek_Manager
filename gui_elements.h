@@ -67,7 +67,7 @@ struct AppLog {
 				LineOffsets.push_back(old_size + 1);
 	}
 
-	void Draw(const char* title, bool* p_open = NULL) {
+	void Draw(const char* title, bool* p_open = NULL, float scale = 1) {
 		if (!ImGui::Begin(title, p_open))
 		{
 			ImGui::End();
@@ -170,15 +170,15 @@ extern AppLog applog;
 
 void setupWindow(GLFWwindow*& window, int& window_w, int& window_h, float& scale);
 
-void ScaleToScreenDPI(float& scale, ImGuiIO& io);
+void scaleToScreenDPI(float& scale, ImGuiIO& io);
 
-void showResult(std::string& result);
+void showResult(std::string& result, float scale);
 
 void button_update_controller_settings(int i);
 
 void colouredText(const char* txt, uint32_t color);
 
-void importUI(sAdvatekDevice* device, sImportOptions& importOptions);
+void importUI(sAdvatekDevice* device, sImportOptions& importOptions, float scale);
 
 void button_import_export_JSON(sAdvatekDevice* device);
 
