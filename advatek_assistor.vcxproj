@@ -164,6 +164,7 @@
     <ClCompile Include="External\imgui\imgui_widgets.cpp" />
     <ClCompile Include="External\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="External\imgui\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="gui_elements.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="udpclient.cpp" />
   </ItemGroup>
@@ -176,6 +177,7 @@
     <ClInclude Include="External\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="External\imgui\backends\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="gui_elements.h" />
     <ClInclude Include="LockedQueue.h" />
     <ClInclude Include="udpclient.h" />
   </ItemGroup>

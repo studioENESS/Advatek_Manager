@@ -1,3 +1,5 @@
+#pragma once
+
 // JSON dump of default settings of Pixlite controllers
 
 std::vector<std::vector<std::string>> JSONControllers{

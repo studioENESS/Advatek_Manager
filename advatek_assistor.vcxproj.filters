@@ -43,6 +43,9 @@
     <ClCompile Include="defines.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="gui_elements.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\imgui\imconfig.h">
@@ -73,6 +76,7 @@
       <Filter>sources</Filter>
     </ClInclude>
     <ClInclude Include="defines.h" />
+    <ClInclude Include="gui_elements.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="External\imgui\misc\debuggers\imgui.natvis">
