@@ -33,11 +33,7 @@ extern int b_testPixelsReady, b_pollRequest, b_refreshAdaptorsRequest, b_newVirt
 b_clearVirtualDevicesRequest, b_copyAllConnectedToVirtualRequest, iClearVirtualDeviceID, syncConnectedDeviceRequest, b_vDevicePath, current_json_device, current_sync_type, b_syncAllRequest;
 extern bool logOpen;
 
-static std::string adaptor_string = "None";
-static std::string json_device_string = "Select Device";
-static std::string vDeviceString = "New ...";
-static std::string result = "";
-static std::string vDeviceData = "";
+extern std::string adaptor_string, json_device_string, vDeviceString, result, vDeviceData;
 
 bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
 
@@ -172,7 +168,7 @@ struct AppLog {
 
 extern AppLog applog;
 
-void setupWindow(int& window_w, int& window_h, float& scale, int& center_x, int& center_y, GLFWwindow*& window);
+void setupWindow(GLFWwindow*& window, int& window_w, int& window_h, float& scale);
 
 void ScaleToScreenDPI(float& scale, ImGuiIO& io);
 
@@ -188,4 +184,8 @@ void button_import_export_JSON(sAdvatekDevice* device);
 
 void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected);
 
-void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll);
+void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll, float scale);
+
+void showWindow(GLFWwindow*& window, int window_w, int window_h, float scale);
+
+void processUpdateRequests();
