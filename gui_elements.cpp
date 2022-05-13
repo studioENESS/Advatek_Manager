@@ -956,6 +956,15 @@ void showWindow(GLFWwindow*& window, int window_w, int window_h, float scale)
 					}
 				}
 
+				if (adv.connectedDevices.size() > 1) {
+					ImGui::SameLine();
+
+					static int item_current = 0;
+					if (ImGui::Combo("###SortConnectedDevices", &item_current, SortTypes, IM_ARRAYSIZE(SortTypes))) {
+						adv.sortDevices(adv.connectedDevices, item_current);
+						item_current = 0;
+					}
+				}
 				ImGui::Spacing();
 
 				showDevices(adv.connectedDevices, true, scale);
