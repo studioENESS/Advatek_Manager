@@ -8,6 +8,15 @@ uint32_t COL_LIGHTGREY = IM_COL32(180, 180, 180, 255);
 uint32_t COL_GREEN = IM_COL32(0, 180, 0, 255);
 uint32_t COL_RED = IM_COL32(180, 0, 0, 255);
 
+float eness_colourcode_ouptput[4][4] = {
+	{0,255,0,255},
+	{255,255,0,255},
+	{255,255,255,255},
+	{255,0,255,255}
+};
+
+bool current_eness_colourcode_ouptput;
+
 std::vector<sAdvatekDevice*> foundDevices;
 std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
 sAdvatekDevice* syncDevice;
@@ -635,7 +644,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 
 						ImGui::PushItemWidth(200 * scale);
 
-						if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, 9)) {
+						if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, sizeof(TestModes) / sizeof(TestModes[0]))) {
 							devices[i]->TestPixelNum = 0;
 							b_testPixelsReady = true;
 							b_setTest = true;
@@ -647,12 +656,33 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 						}
 
 						if ((devices[i]->TestMode == 6) || (devices[i]->TestMode == 8)) {
-							if (ImGui::ColorEdit4("Test Colour", devices[i]->tempTestCols)) {
-								devices[i]->TestCols[0] = (int)(devices[i]->tempTestCols[0] * 255);
-								devices[i]->TestCols[1] = (int)(devices[i]->tempTestCols[1] * 255);
-								devices[i]->TestCols[2] = (int)(devices[i]->tempTestCols[2] * 255);
-								devices[i]->TestCols[3] = (int)(devices[i]->tempTestCols[3] * 255);
-								b_setTest = true;
+
+							bool testModeEnessColourOuputs = devices[i]->testModeEnessColourOuputs;
+							if (ImGui::Checkbox("ENESS Output Test", &testModeEnessColourOuputs)) {
+								devices[i]->testModeEnessColourOuputs = (bool)testModeEnessColourOuputs;
+							}
+
+							if (devices[i]->testModeEnessColourOuputs) {
+								// Cycle colours
+								if (currTime - lastTime > testCycleSpeed) {
+									devices[i]->TestOutputNum = (devices[i]->TestOutputNum) % ((int)(devices[i]->NumOutputs * 0.5)) + 1;
+
+									devices[i]->TestCols[0] = (int)(eness_colourcode_ouptput[devices[i]->TestOutputNum-1][0] * 255);
+									devices[i]->TestCols[1] = (int)(eness_colourcode_ouptput[devices[i]->TestOutputNum-1][1] * 255);
+									devices[i]->TestCols[2] = (int)(eness_colourcode_ouptput[devices[i]->TestOutputNum-1][2] * 255);
+									devices[i]->TestCols[3] = (int)(eness_colourcode_ouptput[devices[i]->TestOutputNum-1][3] * 255);
+
+									lastTime = currTime;
+									b_setTest = true;
+								}
+							} else {
+								if (ImGui::ColorEdit4("Test Colour", devices[i]->tempTestCols)) {
+									devices[i]->TestCols[0] = (int)(devices[i]->tempTestCols[0] * 255);
+									devices[i]->TestCols[1] = (int)(devices[i]->tempTestCols[1] * 255);
+									devices[i]->TestCols[2] = (int)(devices[i]->tempTestCols[2] * 255);
+									devices[i]->TestCols[3] = (int)(devices[i]->tempTestCols[3] * 255);
+									b_setTest = true;
+								}
 							}
 
 							if (devices[i]->ProtVer > 7) {
@@ -687,8 +717,11 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 								}
 
 								bool testModeCycleOuputs = devices[i]->testModeCycleOuputs;
-								if (ImGui::Checkbox("Cycle Outputs", &testModeCycleOuputs)) {
-									devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
+								
+								if (!devices[i]->testModeEnessColourOuputs) {
+									if (ImGui::Checkbox("Cycle Outputs", &testModeCycleOuputs)) {
+										devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
+									}
 								}
 
 								if (devices[i]->TestMode == 8) {

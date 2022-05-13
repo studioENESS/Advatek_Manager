@@ -33,6 +33,8 @@ extern int b_testPixelsReady, b_pollRequest, b_refreshAdaptorsRequest, b_newVirt
 b_clearVirtualDevicesRequest, b_copyAllConnectedToVirtualRequest, iClearVirtualDeviceID, syncConnectedDeviceRequest, b_vDevicePath, current_json_device, current_sync_type, b_syncAllRequest;
 extern bool logOpen;
 
+extern float eness_colourcode_ouptput[4][4];
+
 extern std::string adaptor_string, json_device_string, vDeviceString, result, vDeviceData;
 
 bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);

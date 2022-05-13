@@ -123,6 +123,7 @@ typedef struct tAdvatekDevice {
 	int* TestCycleCols; //[NumOutputs]
 	bool testModeCycleOuputs = false;
 	bool testModeCyclePixels = false;
+	bool testModeEnessColourOuputs = false;
 	size_t uid;
 } sAdvatekDevice;
 
