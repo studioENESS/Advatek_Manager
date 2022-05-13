@@ -8,14 +8,26 @@ uint32_t COL_LIGHTGREY = IM_COL32(180, 180, 180, 255);
 uint32_t COL_GREEN = IM_COL32(0, 180, 0, 255);
 uint32_t COL_RED = IM_COL32(180, 0, 0, 255);
 
-float eness_colourcode_ouptput[4][4] = {
+float eness_colourcode_ouptput[16][4] = {
+	{0,255,0,255},
+	{255,255,0,255},
+	{255,255,255,255},
+	{255,0,255,255},
+	{0,255,0,255},
+	{255,255,0,255},
+	{255,255,255,255},
+	{255,0,255,255},
+	{0,255,0,255},
+	{255,255,0,255},
+	{255,255,255,255},
+	{255,0,255,255},
 	{0,255,0,255},
 	{255,255,0,255},
 	{255,255,255,255},
 	{255,0,255,255}
 };
 
-bool current_eness_colourcode_ouptput;
+bool testAll = false;
 
 std::vector<sAdvatekDevice*> foundDevices;
 std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
@@ -647,6 +659,13 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 						if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, sizeof(TestModes) / sizeof(TestModes[0]))) {
 							devices[i]->TestPixelNum = 0;
 							b_testPixelsReady = true;
+							b_setTest = true;
+						}
+
+						ImGui::SameLine();
+
+						// testAll
+						if (ImGui::Checkbox("Test All", &adv.bTestAll)) {
 							b_setTest = true;
 						}
 

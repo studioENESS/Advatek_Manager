@@ -31,9 +31,9 @@ extern double currTime, lastPoll, lastSoftPoll, lastTime;
 extern float rePollTime, testCycleSpeed, scale;
 extern int b_testPixelsReady, b_pollRequest, b_refreshAdaptorsRequest, b_newVirtualDeviceRequest, b_pasteToNewVirtualDevice,
 b_clearVirtualDevicesRequest, b_copyAllConnectedToVirtualRequest, iClearVirtualDeviceID, syncConnectedDeviceRequest, b_vDevicePath, current_json_device, current_sync_type, b_syncAllRequest;
-extern bool logOpen;
+extern bool logOpen, testAll;
 
-extern float eness_colourcode_ouptput[4][4];
+extern float eness_colourcode_ouptput[16][4];
 
 extern std::string adaptor_string, json_device_string, vDeviceString, result, vDeviceData;
 

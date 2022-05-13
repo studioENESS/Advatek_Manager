@@ -73,6 +73,8 @@ public:
 	static const char* RGBW_Order[24];
 
 	IClient* m_pUdpClient;
+
+	bool bTestAll=false;
 private:
 
 };

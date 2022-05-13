@@ -383,34 +383,71 @@ void advatek_manager::setTest(int d) {
 
 	auto device = advatek_manager::connectedDevices[d];
 
-	std::vector<uint8_t> dataTape;
-	dataTape.resize(12);
-	dataTape[0] = 'A';
-	dataTape[1] = 'd';
-	dataTape[2] = 'v';
-	dataTape[3] = 'a';
-	dataTape[4] = 't';
-	dataTape[5] = 'e';
-	dataTape[6] = 'c';
-	dataTape[7] = 'h';
-	dataTape[8] = 0x00;   // Null Terminator
-	dataTape[9] = 0x00;   // OpCode
-	dataTape[10] = 0x08;  // OpCode
-	dataTape[11] = device->ProtVer;
+	if (bTestAll) {
+		
+		std::vector<uint8_t> dataTape;
+		dataTape.resize(12);
+		dataTape[0] = 'A';
+		dataTape[1] = 'd';
+		dataTape[2] = 'v';
+		dataTape[3] = 'a';
+		dataTape[4] = 't';
+		dataTape[5] = 'e';
+		dataTape[6] = 'c';
+		dataTape[7] = 'h';
+		dataTape[8] = 0x00;   // Null Terminator
+		dataTape[9] = 0x00;   // OpCode
+		dataTape[10] = 0x08;  // OpCode
+		dataTape[11] = device->ProtVer;
 
-	dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
+		dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
 
-	dataTape.push_back(device->TestMode);
+		dataTape.push_back(device->TestMode);
 
-	dataTape.insert(dataTape.end(), device->TestCols, device->TestCols + 4);
+		dataTape.insert(dataTape.end(), device->TestCols, device->TestCols + 4);
 
-	// Protver 7 does not process after this but we can still send it ...
-	dataTape.push_back(device->TestOutputNum);
+		// Protver 7 does not process after this but we can still send it ...
+		dataTape.push_back(device->TestOutputNum);
 
-	dataTape.push_back((uint8_t)(device->TestPixelNum >> 8));
-	dataTape.push_back((uint8_t)device->TestPixelNum);
+		dataTape.push_back((uint8_t)(device->TestPixelNum >> 8));
+		dataTape.push_back((uint8_t)device->TestPixelNum);
+		for (auto adevice : connectedDevices) {
+			dataTape[11] = adevice->ProtVer;
+			for(int mac=0;mac<6;mac++)
+				dataTape[12+mac] = adevice->Mac[mac];
 
-	unicast_udp_message(ipString(device->CurrentIP), dataTape);
+			unicast_udp_message(ipString(adevice->CurrentIP), dataTape);
+		}
+	} else {
+		std::vector<uint8_t> dataTape;
+		dataTape.resize(12);
+		dataTape[0] = 'A';
+		dataTape[1] = 'd';
+		dataTape[2] = 'v';
+		dataTape[3] = 'a';
+		dataTape[4] = 't';
+		dataTape[5] = 'e';
+		dataTape[6] = 'c';
+		dataTape[7] = 'h';
+		dataTape[8] = 0x00;   // Null Terminator
+		dataTape[9] = 0x00;   // OpCode
+		dataTape[10] = 0x08;  // OpCode
+		dataTape[11] = device->ProtVer;
+
+		dataTape.insert(dataTape.end(), device->Mac, device->Mac + 6);
+
+		dataTape.push_back(device->TestMode);
+
+		dataTape.insert(dataTape.end(), device->TestCols, device->TestCols + 4);
+
+		// Protver 7 does not process after this but we can still send it ...
+		dataTape.push_back(device->TestOutputNum);
+
+		dataTape.push_back((uint8_t)(device->TestPixelNum >> 8));
+		dataTape.push_back((uint8_t)device->TestPixelNum);
+
+		unicast_udp_message(ipString(device->CurrentIP), dataTape);
+	}
 }
 
 bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
@@ -786,6 +823,7 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 }
 
 void advatek_manager::process_opTestAnnounce(uint8_t * data) {
+	if (bTestAll) return;
 
 	uint8_t ProtVer;
 	memcpy(&ProtVer, data, sizeof(uint8_t));
