@@ -367,6 +367,8 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 		else {
 			Title << ipString(devices[i]->StaticIP);
 		}
+		Title.setf(std::ios::fixed, std::ios::floatfield);
+		Title.precision(2);
 		Title << "	" << "Temp: " << (float)devices[i]->Temperature * 0.1 << "	" << devices[i]->Nickname;
 		Title << "###" << devices[i]->uid;
 
