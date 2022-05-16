@@ -94,6 +94,7 @@ typedef struct tAdvatekDevice {
 	uint8_t NumDMXOutputs; // Number of DMX outputs
 	uint8_t ProtocolsOnDmxOut;
 	uint8_t* DmxOutOn;//[NumDMXOutputs]; // DMX outputs on or off
+	bool* TempDmxOutOn;
 	uint16_t* DmxOutUniv;//[2 * NumDMXOutputs]; // Hi and Lo bytes of DMX output universes
 
 	uint8_t NumDrivers; // Number of pixel drivers

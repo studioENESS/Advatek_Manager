@@ -2,8 +2,28 @@
 
 #include "defines.h"
 
+namespace pt = boost::property_tree;
+
 class advatek_manager {
 public:
+
+	pt::ptree OutputPixels;
+	pt::ptree OutputUniv;
+	pt::ptree OutputChan;
+	pt::ptree OutputNull;
+	pt::ptree OutputZig;
+	pt::ptree OutputReverse;
+	pt::ptree OutputColOrder;
+	pt::ptree OutputGrouping;
+	pt::ptree OutputBrightness;
+	pt::ptree DmxOutOn;
+	pt::ptree DmxOutUniv;
+	pt::ptree DriverType;
+	pt::ptree DriverSpeed;
+	pt::ptree DriverExpandable;
+	pt::ptree DriverNames;
+	pt::ptree Gamma;
+
 	uint8_t ProtVer = 8;
 	bool deviceExist(uint8_t * Mac);
 	bool ipInRange(std::string ip, sAdvatekDevice* device);
@@ -29,6 +49,7 @@ public:
 	void removeConnectedDevice(std::string mac);
 	void sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType);
 	void clearDevices(std::vector<sAdvatekDevice*> &devices);
+	void clearDevice(sAdvatekDevice* device);
 	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice, bool initialise);
 	void copyToMemoryDevice(sAdvatekDevice* fromDevice);
 	void pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice);

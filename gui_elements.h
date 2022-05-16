@@ -188,6 +188,6 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected);
 
 void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll, float scale);
 
-void showWindow(GLFWwindow*& window, int window_w, int window_h, float scale);
+void showWindow(GLFWwindow*& window, float scale);
 
 void processUpdateRequests();

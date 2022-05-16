@@ -44,7 +44,9 @@ int main(int, char**)
 			//applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...\n").c_str());
 		}
 
-		showWindow(window, window_w, window_h, scale);
+		ImGui::SetNextWindowPos(ImVec2(0, 0));
+		ImGui::SetNextWindowSize(ImVec2(window_w, window_h));
+		showWindow(window, scale);
 		processUpdateRequests();
     }
 

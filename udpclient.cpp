@@ -1,8 +1,7 @@
 #include "udpclient.h"
 #include <iostream>
 
-typedef boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option; //somewhere in your headers to be used everywhere you need it
-//...
+typedef boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO> rcv_timeout_option;
 
 UdpClient::UdpClient(std::string host, unsigned short server_port, unsigned short local_port)
     : recvsocket(io_service, udp::endpoint(udp::v4(), server_port))
@@ -44,8 +43,7 @@ bool UdpClient::HasMessages()
 
 void UdpClient::Send(const std::vector<uint8_t>& message, std::string& s_adr, bool b_broadcast)
 {
-    boost::asio::ip::address_v4 local_interface = boost::asio::ip::address_v4::from_string(m_ipAddress.c_str());
-    boost::asio::ip::multicast::outbound_interface option(local_interface);
+    boost::asio::ip::multicast::outbound_interface option(boost::asio::ip::address_v4::from_string(m_ipAddress.c_str()));
     socket.set_option(option);
 
     socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
@@ -54,21 +52,6 @@ void UdpClient::Send(const std::vector<uint8_t>& message, std::string& s_adr, bo
 
     socket.send_to(boost::asio::buffer(message), sendpoint);
 }
-
-/*
-void UdpClient::Send(const BYTE * message, const int messageLen, std::string& s_adr, bool b_broadcast)
-{
-	boost::asio::ip::address_v4 local_interface = boost::asio::ip::address_v4::from_string(m_ipAddress.c_str());
-	boost::asio::ip::multicast::outbound_interface option(local_interface);
-	socket.set_option(option);
-
-	socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
-
-	boost::asio::ip::udp::endpoint sendpoint(boost::asio::ip::address::from_string(s_adr.c_str()), m_serverport);
-
-	socket.send_to(boost::asio::buffer(message, messageLen), sendpoint);
-}
-*/
 
 std::vector<uint8_t> UdpClient::PopMessage()
 {
@@ -85,9 +68,7 @@ void UdpClient::run_service()
 
 void UdpClient::start_receive()
 {
-    try
-    {
-        
+    try {
 		size_t availBytes = recvsocket.available();
         if (availBytes > 0)
         {
@@ -103,8 +84,7 @@ void UdpClient::start_receive()
                 incomingMessages.push(message);
             }
         }
-    }
-    catch (const boost::system::system_error& ex)
+    } catch (const boost::system::system_error& ex)
     {
         std::cout << "Failed to receive from socket ... " << std::endl;
         std::cout << ex.what() << std::endl;
@@ -117,7 +97,6 @@ void UdpClient::handle_receive(const std::error_code& error, std::size_t bytes_t
     {
         std::vector<uint8_t> message(recv_buffer.data(), recv_buffer.data() + bytes_transferred);
         incomingMessages.push(message);
-        //statistics.RegisterReceivedMessage(bytes_transferred);
     }
     else
     {

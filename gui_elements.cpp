@@ -27,8 +27,6 @@ float eness_colourcode_ouptput[16][4] = {
 	{255,0,255,255}
 };
 
-bool testAll = false;
-
 std::vector<sAdvatekDevice*> foundDevices;
 std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
 sAdvatekDevice* syncDevice;
@@ -153,8 +151,9 @@ void scaleToScreenDPI(float& scale, ImGuiIO& io)
 }
 
 void showResult(std::string& result, float scale) {
-	if (result.empty() == false)
-		ImGui::OpenPopup("Result");
+	if (result.empty()) return;
+		
+	ImGui::OpenPopup("Result");
 
 	//Always center this window when appearing
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -353,13 +352,17 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 	}
 }
 
+std::stringstream Title;
+bool b_setTest, testModeEnessColourOuputs = NULL;
+
 void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float scale) {
 
 	ImGui::Spacing();
 
 	for (uint8_t i = 0; i < devices.size(); i++) {
 		bool deviceInRange = adv.ipInRange(adaptor_string, devices[i]);
-		std::stringstream Title;
+		Title.str(std::string());
+		Title.clear();
 		Title << " " << devices[i]->Model << "	" << devices[i]->Firmware << "	";
 		if (isConnected) {
 			Title << ipString(devices[i]->CurrentIP);
@@ -434,8 +437,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 			{
 				if (isConnected && !deviceInRange) {
 					ImGui::Spacing();
-					auto txtCol = IM_COL32(120, 120, 120, 255);
-					ImGui::PushStyleColor(ImGuiCol_Text, txtCol);
+					ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
 					ImGui::Text("The IP address settings are not compatible with your adaptor settings.\nChange the IP settings on the device to access all settings.");
 					ImGui::PopStyleColor();
 					ImGui::Spacing();
@@ -567,6 +569,11 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 							}
 							ImGui::EndTable();
 						}
+
+						delete[] tempReversed;
+						delete[] tempEndUniverse;
+						delete[] tempEndChannel;
+
 					} // End Else/If Simple Config
 
 					ImGui::PopItemWidth();
@@ -574,19 +581,17 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 				}
 				if (ImGui::BeginTabItem("DMX512 Outputs"))
 				{
-					bool* tempDMXOffOn = new bool[devices[i]->NumDMXOutputs];
-
 					ImGui::PushItemWidth(50 * scale);
 
 					for (int DMXoutput = 0; DMXoutput < devices[i]->NumDMXOutputs; DMXoutput++) {
 						ImGui::PushID(DMXoutput);
-						tempDMXOffOn[DMXoutput] = (bool)devices[i]->DmxOutOn[DMXoutput];
+						devices[i]->TempDmxOutOn[DMXoutput] = (bool)devices[i]->DmxOutOn[DMXoutput];
 
 						ImGui::Text("Output %i", DMXoutput + 1);
 						ImGui::SameLine();
 
-						if (ImGui::Checkbox("Enabled", &tempDMXOffOn[DMXoutput])) {
-							devices[i]->DmxOutOn[DMXoutput] = (uint8_t)tempDMXOffOn[DMXoutput];
+						if (ImGui::Checkbox("Enabled", &devices[i]->TempDmxOutOn[DMXoutput])) {
+							devices[i]->DmxOutOn[DMXoutput] = (uint8_t)devices[i]->TempDmxOutOn[DMXoutput];
 						}
 
 						ImGui::SameLine();
@@ -648,13 +653,12 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 					if (ImGui::BeginTabItem("Test"))
 					{
 						ImGui::Spacing();
-						auto txtCol = IM_COL32(120, 120, 120, 255);
-						ImGui::PushStyleColor(ImGuiCol_Text, txtCol);
+						ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
 						ImGui::Text("Prior to running test mode all other setings should be saved to controller. (Press 'Update Settings')");
 						ImGui::PopStyleColor();
 						ImGui::Spacing();
 
-						bool b_setTest = false;
+						b_setTest = false;
 
 						ImGui::PushItemWidth(200 * scale);
 
@@ -678,7 +682,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 
 						if ((devices[i]->TestMode == 6) || (devices[i]->TestMode == 8)) {
 
-							bool testModeEnessColourOuputs = devices[i]->testModeEnessColourOuputs;
+							testModeEnessColourOuputs = devices[i]->testModeEnessColourOuputs;
 							if (ImGui::Checkbox("ENESS Output Test", &testModeEnessColourOuputs)) {
 								devices[i]->testModeEnessColourOuputs = (bool)testModeEnessColourOuputs;
 							}
@@ -737,21 +741,25 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 									}*/
 								}
 
-								bool testModeCycleOuputs = devices[i]->testModeCycleOuputs;
+								//bool testModeCycleOuputs = devices[i]->testModeCycleOuputs;
 								
-								if (!devices[i]->testModeEnessColourOuputs) {
-									if (ImGui::Checkbox("Cycle Outputs", &testModeCycleOuputs)) {
-										devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
-									}
-								}
+								
+								
+								//if (!devices[i]->testModeEnessColourOuputs) {
+								//	if (ImGui::Checkbox("Cycle Outputs", &devices[i]->testModeCycleOuputs)) {
+								//		devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
+								//	}
+								//}
 
-								if (devices[i]->TestMode == 8) {
-									bool testModeCyclePixels = devices[i]->testModeCyclePixels;
-									if (ImGui::Checkbox("Cycle Pixels", &testModeCyclePixels)) {
-										devices[i]->testModeCyclePixels = (bool)testModeCyclePixels;
-									}
-								}
+								//if (devices[i]->TestMode == 8) {
+								//	bool testModeCyclePixels = devices[i]->testModeCyclePixels;
+								//	if (ImGui::Checkbox("Cycle Pixels", &testModeCyclePixels)) {
+								//		devices[i]->testModeCyclePixels = (bool)testModeCyclePixels;
+								//	}
+								//}
 
+								ImGui::Checkbox("Cycle Outputs", &devices[i]->testModeCycleOuputs);
+								ImGui::Checkbox("Cycle Pixels", &devices[i]->testModeCyclePixels);
 								ImGui::SliderFloat("Speed", &testCycleSpeed, 5.0, 0.01, "%.01f");
 
 							}
@@ -860,7 +868,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 
 	bool deviceInRange = adv.ipInRange(adaptor_string, adv.virtualDevices[i]);
 	if (!deviceInRange) {
-		colouredText("Has IP address settings not compatible with your adaptor settings.", COL_RED);
+		colouredText("Device IP address settings not compatible with your adaptor settings.", COL_RED);
 		colouredText("Change the IP settings of your adaptor.", COL_RED);
 		canSyncAll = false;
 		return;
@@ -934,13 +942,13 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 	}
 }
 
-void showWindow(GLFWwindow*& window, int window_w, int window_h, float scale)
+std::stringstream tabTitleConnected;
+std::stringstream tabTitleVirtual;
+bool canSyncAll, inSyncAll = NULL;
+
+void showWindow(GLFWwindow*& window, float scale)
 {
 	{
-		// Create a window and append into it.
-		ImGui::SetNextWindowPos(ImVec2(0, 0));
-		ImGui::SetNextWindowSize(ImVec2(window_w, window_h));
-
 		ImGuiWindowFlags window_flags = 0;
 		window_flags |= ImGuiWindowFlags_NoTitleBar;
 		window_flags |= ImGuiWindowFlags_NoMove;
@@ -966,19 +974,19 @@ void showWindow(GLFWwindow*& window, int window_w, int window_h, float scale)
 				if (ImGui::Selectable(adv.networkAdaptors[n].c_str(), is_selected))
 				{
 					adaptor_string = adv.networkAdaptors[n];
-
 					adv.setCurrentAdaptor(n);
-
 					b_pollRequest = true;
 				}
 			}
 			ImGui::EndCombo();
 		}
 		ImGui::Spacing();
-		// Connected Devices && Virtual Devices
+
 		if (ImGui::BeginTabBar("Devices")) {
-			std::stringstream tabTitleConnected;
-			std::stringstream tabTitleVirtual;
+			tabTitleConnected.str(std::string());
+			tabTitleVirtual.str(std::string());
+			tabTitleConnected.clear();
+			tabTitleVirtual.clear();
 			tabTitleConnected << "Connected Devices (";
 			tabTitleVirtual << "Virtual Devices (";
 			tabTitleConnected << adv.connectedDevices.size();
@@ -1036,8 +1044,8 @@ void showWindow(GLFWwindow*& window, int window_w, int window_h, float scale)
 				ImGui::PopItemWidth();
 				ImGui::SameLine();
 
-				bool canSyncAll = true;
-				bool inSyncAll = true;
+				canSyncAll = true;
+				inSyncAll = true;
 
 				// Check static IP of all virtual devices for conflict
 				// In name mode check for dupplicate names
