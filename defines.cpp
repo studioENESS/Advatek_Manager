@@ -6,13 +6,6 @@ const char* SyncTypes[3] = {
 		"Match MAC addres"
 };
 
-const char* SortTypes[4] = {
-		"Sort ...",
-		"Nickname",
-		"Static IP",
-		"Current IP"
-};
-
 const char* DriverTypes[3] = {
 		"RGB only",
 		"RGBW only",

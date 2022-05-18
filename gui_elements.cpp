@@ -323,7 +323,6 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 		if (!path.empty()) {
 			adv.exportJSON(device, path);
 		}
-
 	}
 }
 
@@ -815,6 +814,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 
 	switch (s_loopVar.current_sync_type) {
 	case 0: // Match Static IP
+		adv.clearDevices(foundDevices);
 		foundDevices = adv.getDevicesWithStaticIP(adv.connectedDevices, ipString(adv.virtualDevices[i]->StaticIP));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
@@ -828,6 +828,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 		}
 		break;
 	case 1: // Match Nickname
+		adv.clearDevices(foundDevices);
 		foundDevices = adv.getDevicesWithNickname(adv.connectedDevices, std::string(adv.virtualDevices[i]->Nickname));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
@@ -841,6 +842,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 		}
 		break;
 	case 2: // Match MAC
+		adv.clearDevices(foundDevices);
 		foundDevices = adv.getDevicesWithMac(adv.connectedDevices, macString(adv.virtualDevices[i]->Mac));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
@@ -961,10 +963,8 @@ void showWindow(GLFWwindow*& window)
 				if (adv.connectedDevices.size() > 1) {
 					ImGui::SameLine();
 
-					static int item_current = 0;
-					if (ImGui::Combo("###SortConnectedDevices", &item_current, SortTypes, IM_ARRAYSIZE(SortTypes))) {
-						adv.sortDevices(adv.connectedDevices, item_current);
-						item_current = 0;
+					if (ImGui::Combo("###SortConnectedDevices", &adv.sortTypeConnected, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes))) {
+						adv.sortDevices(adv.connectedDevices, adv.sortTypeConnected);
 					}
 				}
 				ImGui::Spacing();
@@ -1090,10 +1090,8 @@ void showWindow(GLFWwindow*& window)
 				if (adv.virtualDevices.size() > 1) {
 					ImGui::SameLine();
 
-					static int item_current = 0;
-					if (ImGui::Combo("###SortVirtualDevices", &item_current, SortTypes, IM_ARRAYSIZE(SortTypes)-1)) {
-						adv.sortDevices(adv.virtualDevices, item_current);
-						item_current = 0;
+					if (ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes)-1)) {
+						adv.sortDevices(adv.virtualDevices, adv.sortTypeVirtual);
 					}
 				}
 

@@ -25,6 +25,15 @@ public:
 	pt::ptree DriverNames;
 	pt::ptree Gamma;
 
+	const char* advatek_manager::SortTypes[3] = {
+		"Nickname",
+		"Static IP",
+		"Current IP"
+	};
+
+	int sortTypeConnected = 0;
+	int sortTypeVirtual = 0;
+
 	bool deviceExist(std::vector<sAdvatekDevice*>& devices, uint8_t * Mac);
 	bool ipInRange(std::string ip, sAdvatekDevice* device);
 	bool sameNetworkSettings(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);

@@ -225,14 +225,16 @@ void advatek_manager::copyToNewVirtualDevice(sAdvatekDevice* fromDevice) {
 	importOptions.init = true;
 	importJSON(device, tree_virt_device, importOptions);
 	addUID(device);
-	advatek_manager::virtualDevices.emplace_back(device);
+	virtualDevices.emplace_back(device);
+	sortDevices(virtualDevices, sortTypeVirtual);
 }
 
 void advatek_manager::addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions) {
 	sAdvatekDevice * device = new sAdvatekDevice();
 	importJSON(device, advatek_device, importOptions);
 	addUID(device);
-	advatek_manager::virtualDevices.emplace_back(device);
+	virtualDevices.emplace_back(device);
+	sortDevices(virtualDevices, sortTypeVirtual);
 }
 
 std::stringstream ss_json;
@@ -301,6 +303,7 @@ void advatek_manager::pasteToNewVirtualDevice() {
 	pasteFromMemoryDeviceTo(device);
 	addUID(device);
 	virtualDevices.emplace_back(device);
+	sortDevices(virtualDevices, sortTypeVirtual);
 }
 
 void advatek_manager::updateDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr) {
@@ -462,13 +465,13 @@ bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
 
 void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType){
 	switch (sortType) {
-	case 1:
+	case 0:
 		sort(devices.begin(), devices.end(), compareNickname);
 		break;
-	case 2:
+	case 1:
 		sort(devices.begin(), devices.end(), compareStaticIP);
 		break;
-	case 3:
+	case 2:
 		sort(devices.begin(), devices.end(), compareCurrentIP);
 		break;
 	default:
@@ -795,6 +798,7 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 
 	if (!deviceExist(connectedDevices, rec_data->Mac)) {
 		connectedDevices.emplace_back(rec_data);
+		sortDevices(connectedDevices, sortTypeConnected);
 	} else {
 		if (rec_data) delete rec_data;
 	}
@@ -1351,7 +1355,7 @@ void advatek_manager::exportJSON(std::vector<sAdvatekDevice*> &devices, std::str
 
 	tree_exportJSON_devices.add_child("advatek_devices", tree_exportJSON_devicesArr);
 
-	std::ofstream outfile; // CHECK
+	std::ofstream outfile;
 	outfile.open(path, std::ios::out | std::ios::trunc);
 	pt::write_json(outfile, tree_exportJSON_devices);
 	outfile.close();
