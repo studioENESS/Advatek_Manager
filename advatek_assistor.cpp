@@ -463,13 +463,13 @@ bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
 void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType){
 	switch (sortType) {
 	case 1:
-		sort(devices.begin(), devices.end(), compareCurrentIP);
+		sort(devices.begin(), devices.end(), compareNickname);
 		break;
 	case 2:
 		sort(devices.begin(), devices.end(), compareStaticIP);
 		break;
 	case 3:
-		sort(devices.begin(), devices.end(), compareNickname);
+		sort(devices.begin(), devices.end(), compareCurrentIP);
 		break;
 	default:
 		break;

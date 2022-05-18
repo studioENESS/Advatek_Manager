@@ -8,9 +8,9 @@ const char* SyncTypes[3] = {
 
 const char* SortTypes[4] = {
 		"Sort ...",
-		"Current IP",
+		"Nickname",
 		"Static IP",
-		"Nickname"
+		"Current IP"
 };
 
 const char* DriverTypes[3] = {

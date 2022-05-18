@@ -334,7 +334,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 	ImGui::Spacing();
 
-	for (uint8_t i = 0; i < devices.size(); i++) {
+	for (int i = 0; i < devices.size(); i++) {
 		bool deviceInRange = adv.ipInRange(adaptor_string, devices[i]);
 		Title.str(std::string());
 		Title.clear();
@@ -589,7 +589,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 					int tempAllColOrder = devices[i]->OutputColOrder[0];
 					if (ImGui::Combo("RGB Order ##all", &tempAllColOrder, RGBW_Order, 24)) {
-						for (uint8_t output = 0; output < devices[i]->NumOutputs * 0.5; output++) {
+						for (int output = 0; output < devices[i]->NumOutputs * 0.5; output++) {
 							devices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
 						}
 					}
@@ -695,13 +695,6 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 										s_loopVar.lastTime = s_loopVar.currTime;
 										b_setTest = true;
 									}
-									/*
-									for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
-										ImGui::PushID(output);
-										ImGui::Text("Output %02i", output + 1);
-
-										ImGui::PopID();
-									}*/
 								}
 
 								ImGui::Checkbox("Cycle Outputs", &devices[i]->testModeCycleOuputs);
@@ -768,7 +761,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					if (isConnected) {
 						int* tempVoltage = new int[devices[i]->NumBanks];
 
-						for (uint8_t bank = 0; bank < devices[i]->NumBanks; bank++) {
+						for (int bank = 0; bank < devices[i]->NumBanks; bank++) {
 							ImGui::PushID(bank);
 							ImGui::Text("Bank %i: %.2f V", bank + 1, ((float)devices[i]->VoltageBanks[bank] / 10.f));
 							ImGui::PopID();
@@ -999,7 +992,7 @@ void showWindow(GLFWwindow*& window)
 
 				syncDevices.clear();
 
-				for (uint8_t i = 0; i < adv.virtualDevices.size(); i++) {
+				for (int i = 0; i < adv.virtualDevices.size(); i++) {
 					ImGui::PushID(i);
 					showSyncDevice(i, canSyncAll, inSyncAll);
 					ImGui::PopID();
@@ -1098,7 +1091,7 @@ void showWindow(GLFWwindow*& window)
 					ImGui::SameLine();
 
 					static int item_current = 0;
-					if (ImGui::Combo("###SortVirtualDevices", &item_current, SortTypes, IM_ARRAYSIZE(SortTypes))) {
+					if (ImGui::Combo("###SortVirtualDevices", &item_current, SortTypes, IM_ARRAYSIZE(SortTypes)-1)) {
 						adv.sortDevices(adv.virtualDevices, item_current);
 						item_current = 0;
 					}
@@ -1206,7 +1199,7 @@ void processUpdateRequests()
 	}
 
 	if (s_updateRequest.syncVirtualDevices) {
-		for (uint8_t i = 0; i < syncDevices.size(); i++) {
+		for (int i = 0; i < syncDevices.size(); i++) {
 			adv.updateConnectedDevice(syncDevices[i].first, syncDevices[i].second);
 			adv.removeConnectedDevice(macString(syncDevices[i].second->Mac));
 		}
