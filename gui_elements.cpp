@@ -1,8 +1,6 @@
 #include "gui_elements.h"
 #include "standard_json_config.h"
 
-pt::ptree pt_json_device;
-
 uint32_t COL_GREY = IM_COL32(80, 80, 80, 255);
 uint32_t COL_LIGHTGREY = IM_COL32(180, 180, 180, 255);
 uint32_t COL_GREEN = IM_COL32(0, 180, 0, 255);
@@ -41,30 +39,9 @@ std::string vDeviceString = "New ...";
 std::string result = "";
 std::string vDeviceData = "";
 
-double currTime = 0;
-double lastPoll = 0;
-double lastSoftPoll = 0;
-double lastTime = 0;
-
-float rePollTime = 3;
-float testCycleSpeed = 0.5;
-float scale = 1;
-
-int b_testPixelsReady = true;
-int b_pollRequest = 0;
-int b_refreshAdaptorsRequest = 0;
-int b_newVirtualDeviceRequest = 0;
-int b_pasteToNewVirtualDevice = 0;
-int b_clearVirtualDevicesRequest = 0;
-int b_copyAllConnectedToVirtualRequest = 0;
-int iClearVirtualDeviceID = -1;
-int syncConnectedDeviceRequest = -1;
-int b_vDevicePath = false;
-int current_json_device = -1;
-int current_sync_type = 0;
-int b_syncAllRequest = 0;
-
-bool logOpen = true;
+loopVar s_loopVar;
+updateRequest s_updateRequest;
+AppLog applog;
 
 bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
@@ -76,9 +53,7 @@ bool SliderInt16(const char* label, int* v, int v_min, int v_max, const char* fo
 	return ImGui::SliderScalar(label, ImGuiDataType_U16, v, &v_min, &v_max, format, flags);
 }
 
-AppLog applog;
-
-void setupWindow(GLFWwindow*& window, int& window_w, int& window_h, float& scale)
+void setupWindow(GLFWwindow*& window)
 {
 	if (!glfwInit()) exit(0);
 
@@ -109,15 +84,15 @@ void setupWindow(GLFWwindow*& window, int& window_w, int& window_h, float& scale
 
 	float xscale = mode->width / 1920.f;
 	float yscale = mode->height / 1080.f;
-	window_w = 800 * xscale;
-	window_h = 600 * yscale;
-	scale = std::max(xscale, yscale);
+	s_loopVar.window_w = 800 * xscale;
+	s_loopVar.window_h = 600 * yscale;
+	s_loopVar.scale = std::max(xscale, yscale);
 
-	int center_x = (mode->width / 2) - (window_w / 2);
-	int center_y = (mode->height / 2) - (window_h / 2);
+	int center_x = (mode->width / 2) - (s_loopVar.window_w / 2);
+	int center_y = (mode->height / 2) - (s_loopVar.window_h / 2);
 
 	// Create window with graphics context
-	window = glfwCreateWindow(window_w, window_h, "Advatek Assistor", NULL, NULL);
+	window = glfwCreateWindow(s_loopVar.window_w, s_loopVar.window_h, "Advatek Assistor", NULL, NULL);
 
 	glfwSetWindowPos(window, center_x, center_y);
 
@@ -135,31 +110,31 @@ void setupWindow(GLFWwindow*& window, int& window_w, int& window_h, float& scale
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
-	scaleToScreenDPI(scale, io);
+	scaleToScreenDPI(io);
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
-void scaleToScreenDPI(float& scale, ImGuiIO& io)
+void scaleToScreenDPI(ImGuiIO& io)
 {
-	ImGui::GetStyle().ScaleAllSizes(scale);
+	ImGui::GetStyle().ScaleAllSizes(s_loopVar.scale);
 	ImFontConfig fc = ImFontConfig();
-	fc.OversampleH = fc.OversampleV = scale;
-	fc.SizePixels = 13.f * scale;
+	fc.OversampleH = fc.OversampleV = s_loopVar.scale;
+	fc.SizePixels = 13.f * s_loopVar.scale;
 	io.Fonts->AddFontDefault(&fc);
 }
 
-void showResult(std::string& result, float scale) {
+void showResult(std::string& result) {
 	if (result.empty()) return;
 		
 	ImGui::OpenPopup("Result");
 
 	//Always center this window when appearing
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f * scale, 0.5f * scale));
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f * s_loopVar.scale, 0.5f * s_loopVar.scale));
 	//ImGui::SetNextWindowSize(ImVec2(400, 300));
-	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f * scale, -1.f * scale), ImVec2(INFINITY, -1.f * scale));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f * s_loopVar.scale, -1.f * s_loopVar.scale), ImVec2(INFINITY, -1.f * s_loopVar.scale));
 
 	if (ImGui::BeginPopupModal("Result", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -184,7 +159,7 @@ void showResult(std::string& result, float scale) {
 		ImGui::PopStyleColor();
 
 		ImGui::Spacing();
-		if (ImGui::Button("OK", ImVec2(120 * scale, 0))) {
+		if (ImGui::Button("OK", ImVec2(120 * s_loopVar.scale, 0))) {
 			result = std::string("");
 			ImGui::CloseCurrentPopup();
 		}
@@ -196,7 +171,7 @@ void button_update_controller_settings(int i) {
 	if (ImGui::Button("Update Settings"))
 	{
 		adv.updateDevice(i);
-		b_pollRequest = true;
+		s_updateRequest.poll = true;
 	}
 }
 
@@ -206,7 +181,7 @@ void colouredText(const char* txt, uint32_t color) {
 	ImGui::PopStyleColor();
 }
 
-void importUI(sAdvatekDevice* device, sImportOptions& importOptions, float scale) {
+void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 	if (ImGui::BeginPopupModal("Import", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		// Read in devices
@@ -214,9 +189,9 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions, float scale
 		std::vector<pt::ptree> loadedJsonDevices;
 		std::vector<std::string> jsonDeviceNames;
 
-		std::stringstream ss;
-		ss << importOptions.json;
-		pt::read_json(ss, pt_json_devices);
+		std::stringstream ss_json_devices;
+		ss_json_devices << importOptions.json;
+		pt::read_json(ss_json_devices, pt_json_devices);
 
 		if (pt_json_devices.count("advatek_devices") > 0) {
 			// advatek_device = advatek_devices.get_child("advatek_devices").front().second;
@@ -229,7 +204,7 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions, float scale
 			}
 		}
 		else {
-			pt_json_device = pt_json_devices;
+			s_loopVar.pt_json_device = pt_json_devices;
 		}
 
 		ImGui::Text("What needs importing?");
@@ -243,11 +218,11 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions, float scale
 			{
 				for (int n = 0; n < jsonDeviceNames.size(); n++)
 				{
-					const bool is_selected = (current_json_device == n);
+					const bool is_selected = (s_loopVar.selectedNewImportIndex == n);
 					if (ImGui::Selectable(jsonDeviceNames[n].c_str(), is_selected))
 					{
 						json_device_string = jsonDeviceNames[n];
-						pt_json_device = loadedJsonDevices[n];
+						s_loopVar.pt_json_device = loadedJsonDevices[n];
 					}
 				}
 				ImGui::EndCombo();
@@ -265,19 +240,19 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions, float scale
 		ImGui::PopStyleVar();
 		ImGui::Spacing();
 
-		if (ImGui::Button("Import", ImVec2(120 * scale, 0))) {
+		if (ImGui::Button("Import", ImVec2(120 * s_loopVar.scale, 0))) {
 			std::stringstream jsonStringStream;
-			write_json(jsonStringStream, pt_json_device);
+			write_json(jsonStringStream, s_loopVar.pt_json_device);
 			importOptions.json = jsonStringStream.str();
 			importOptions.userSet = true;
 			ImGui::CloseCurrentPopup();
-			current_json_device = -1;
-			pt_json_device.clear();
+			s_loopVar.selectedNewImportIndex = -1;
+			s_loopVar.pt_json_device.clear();
 		}
 
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120 * scale, 0))) { ImGui::CloseCurrentPopup(); }
+		if (ImGui::Button("Cancel", ImVec2(120 * s_loopVar.scale, 0))) { ImGui::CloseCurrentPopup(); }
 		ImGui::EndPopup();
 	}
 }
@@ -326,9 +301,9 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 
 	// Always center this window when appearing
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f * scale, 0.5f * scale));
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f * s_loopVar.scale, 0.5f * s_loopVar.scale));
 
-	importUI(device, userImportOptions, scale);
+	importUI(device, userImportOptions);
 
 	if (userImportOptions.userSet) {
 		result = adv.importJSON(device, userImportOptions);
@@ -355,7 +330,7 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 std::stringstream Title;
 bool b_setTest, testModeEnessColourOuputs = NULL;
 
-void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float scale) {
+void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 	ImGui::Spacing();
 
@@ -375,13 +350,12 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 		Title << "	" << "Temp: " << (float)devices[i]->Temperature * 0.1 << "	" << devices[i]->Nickname;
 		Title << "###" << devices[i]->uid;
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f * scale, 8.f * scale));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f * s_loopVar.scale, 8.f * s_loopVar.scale));
 		bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns);
 		ImGui::PopStyleVar();
 
 		if (node_open)
 		{
-			//ImGui::Columns(1);
 			ImGui::Spacing();
 
 			if (isConnected) {
@@ -396,7 +370,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 			else {
 				if (ImGui::Button("Delete"))
 				{
-					iClearVirtualDeviceID = i;
+					s_updateRequest.clearVirtualDeviceIndex = i;
 				}
 				ImGui::SameLine();
 			}
@@ -413,7 +387,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 				}
 			}
 			else {
-				ImGui::PushItemWidth(240 * scale);
+				ImGui::PushItemWidth(240 * s_loopVar.scale);
 				if (ImGui::BeginCombo("###senddevice", "Copy to Connected Device", 0))
 				{
 					for (int n = 0; n < adv.connectedDevices.size(); n++)
@@ -445,7 +419,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 
 				ImGui::Text("Static IP Address:");
 
-				ImGui::PushItemWidth(30 * scale);
+				ImGui::PushItemWidth(30 * s_loopVar.scale);
 
 				ImGui::InputScalar(".##CurrentIP0", ImGuiDataType_U8, &devices[i]->StaticIP[0], 0, 0, 0);
 
@@ -507,7 +481,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 						devices[i]->SimpleConfig = tempSimpleConfig;
 					}
 
-					ImGui::PushItemWidth(50 * scale);
+					ImGui::PushItemWidth(50 * s_loopVar.scale);
 
 					if ((bool)devices[i]->SimpleConfig) {
 						ImGui::InputScalar("Start Universe", ImGuiDataType_U16, &devices[i]->OutputUniv[0], 0, 0, 0);
@@ -581,7 +555,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 				}
 				if (ImGui::BeginTabItem("DMX512 Outputs"))
 				{
-					ImGui::PushItemWidth(50 * scale);
+					ImGui::PushItemWidth(50 * s_loopVar.scale);
 
 					for (int DMXoutput = 0; DMXoutput < devices[i]->NumDMXOutputs; DMXoutput++) {
 						ImGui::PushID(DMXoutput);
@@ -605,7 +579,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 
 				if (ImGui::BeginTabItem("LEDs"))
 				{
-					ImGui::PushItemWidth(120 * scale);
+					ImGui::PushItemWidth(120 * s_loopVar.scale);
 					ImGui::Combo("Pixel IC", &devices[i]->CurrentDriver, devices[i]->DriverNames, devices[i]->NumDrivers);
 					ImGui::Combo("Clock Speed", &devices[i]->CurrentDriverSpeed, DriverSpeedsMhz, 12);
 					bool tempExpanded = (bool)devices[i]->CurrentDriverExpanded;
@@ -619,17 +593,6 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 							devices[i]->OutputColOrder[output] = (uint8_t)tempAllColOrder;
 						}
 					}
-
-					//int * tempOutputColOrder = new int[devices[i]->NumOutputs];
-					//for (uint8_t output = 0; output < devices[i]->NumOutputs*0.5; output++) {
-					//	ImGui::PushID(output);
-					//	ImGui::Text("Output %02i", output + 1); ImGui::SameLine();
-					//	tempOutputColOrder[output] = devices[i]->OutputColOrder[output];
-					//	if (ImGui::Combo("Order", &tempOutputColOrder[output], adv.RGBW_Order, 24)) {
-					//		devices[i]->OutputColOrder[output] = (uint8_t)tempOutputColOrder[output];
-					//	}
-					//	ImGui::PopID();
-					//}
 
 					ImGui::Separator();
 					ImGui::Text("Gamma Correction only applied to chips that are higher then 8bit:");
@@ -660,11 +623,11 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 
 						b_setTest = false;
 
-						ImGui::PushItemWidth(200 * scale);
+						ImGui::PushItemWidth(200 * s_loopVar.scale);
 
 						if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, sizeof(TestModes) / sizeof(TestModes[0]))) {
 							devices[i]->TestPixelNum = 0;
-							b_testPixelsReady = true;
+							s_loopVar.b_testPixelsReady = true;
 							b_setTest = true;
 						}
 
@@ -689,7 +652,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 
 							if (devices[i]->testModeEnessColourOuputs) {
 								// Cycle colours
-								if (currTime - lastTime > testCycleSpeed) {
+								if (s_loopVar.currTime - s_loopVar.lastTime > s_loopVar.testCycleSpeed) {
 									devices[i]->TestOutputNum = (devices[i]->TestOutputNum) % ((int)(devices[i]->NumOutputs * 0.5)) + 1;
 
 									devices[i]->TestCols[0] = (int)(eness_colourcode_ouptput[devices[i]->TestOutputNum-1][0] * 255);
@@ -697,7 +660,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 									devices[i]->TestCols[2] = (int)(eness_colourcode_ouptput[devices[i]->TestOutputNum-1][2] * 255);
 									devices[i]->TestCols[3] = (int)(eness_colourcode_ouptput[devices[i]->TestOutputNum-1][3] * 255);
 
-									lastTime = currTime;
+									s_loopVar.lastTime = s_loopVar.currTime;
 									b_setTest = true;
 								}
 							} else {
@@ -714,22 +677,22 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 
 								if (devices[i]->testModeCycleOuputs || devices[i]->testModeCyclePixels) {
 
-									if (currTime - lastTime > testCycleSpeed) {
+									if (s_loopVar.currTime - s_loopVar.lastTime > s_loopVar.testCycleSpeed) {
 										if (devices[i]->TestMode == 8) {
 											// Set Pixel
 											devices[i]->TestPixelNum = (devices[i]->TestPixelNum) % ((int)(devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1])) + 1;
 
 											if (devices[i]->TestPixelNum == 1) {
-												b_testPixelsReady = true;
+												s_loopVar.b_testPixelsReady = true;
 											}
 											else {
-												b_testPixelsReady = false;
+												s_loopVar.b_testPixelsReady = false;
 											}
 										}
-										if (devices[i]->testModeCycleOuputs && b_testPixelsReady) {
+										if (devices[i]->testModeCycleOuputs && s_loopVar.b_testPixelsReady) {
 											devices[i]->TestOutputNum = (devices[i]->TestOutputNum) % ((int)(devices[i]->NumOutputs * 0.5)) + 1;
 										}
-										lastTime = currTime;
+										s_loopVar.lastTime = s_loopVar.currTime;
 										b_setTest = true;
 									}
 									/*
@@ -741,26 +704,9 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 									}*/
 								}
 
-								//bool testModeCycleOuputs = devices[i]->testModeCycleOuputs;
-								
-								
-								
-								//if (!devices[i]->testModeEnessColourOuputs) {
-								//	if (ImGui::Checkbox("Cycle Outputs", &devices[i]->testModeCycleOuputs)) {
-								//		devices[i]->testModeCycleOuputs = (bool)testModeCycleOuputs;
-								//	}
-								//}
-
-								//if (devices[i]->TestMode == 8) {
-								//	bool testModeCyclePixels = devices[i]->testModeCyclePixels;
-								//	if (ImGui::Checkbox("Cycle Pixels", &testModeCyclePixels)) {
-								//		devices[i]->testModeCyclePixels = (bool)testModeCyclePixels;
-								//	}
-								//}
-
 								ImGui::Checkbox("Cycle Outputs", &devices[i]->testModeCycleOuputs);
 								ImGui::Checkbox("Cycle Pixels", &devices[i]->testModeCyclePixels);
-								ImGui::SliderFloat("Speed", &testCycleSpeed, 5.0, 0.01, "%.01f");
+								ImGui::SliderFloat("Speed", &s_loopVar.testCycleSpeed, 5.0, 0.01, "%.01f");
 
 							}
 
@@ -793,7 +739,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 					}
 					else {
 						ImGui::Text("MAC: ");
-						ImGui::PushItemWidth(25 * scale);
+						ImGui::PushItemWidth(25 * s_loopVar.scale);
 						ImGui::SameLine(); ImGui::InputScalar("###Mac01", ImGuiDataType_U8, &devices[i]->Mac[0], 0, 0, "%02X");
 						ImGui::SameLine(); ImGui::InputScalar("###Mac02", ImGuiDataType_U8, &devices[i]->Mac[1], 0, 0, "%02X");
 						ImGui::SameLine(); ImGui::InputScalar("###Mac03", ImGuiDataType_U8, &devices[i]->Mac[2], 0, 0, "%02X");
@@ -805,7 +751,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 
 					ImGui::Text("Protocol Version: %s", std::to_string(devices[i]->ProtVer).c_str());
 
-					ImGui::PushItemWidth(200 * scale);
+					ImGui::PushItemWidth(200 * s_loopVar.scale);
 					char sName[40];
 					memcpy(sName, devices[i]->Nickname, 40);
 					if (ImGui::InputText("Nickname", sName, 40)) {
@@ -814,7 +760,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 					}
 					ImGui::PopItemWidth();
 
-					ImGui::PushItemWidth(30 * scale);
+					ImGui::PushItemWidth(30 * s_loopVar.scale);
 
 					ImGui::InputScalar("Fan Control On Temp", ImGuiDataType_U8, &devices[i]->MaxTargetTemp, 0, 0, 0);
 					ImGui::PopItemWidth();
@@ -843,7 +789,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected, float 
 				if (ImGui::Button("Update Network"))
 				{
 					adv.bc_networkConfig(i);
-					b_pollRequest = true;
+					s_updateRequest.poll = true;
 				}
 			}
 			else if (isConnected) {
@@ -874,7 +820,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 		return;
 	}
 
-	switch (current_sync_type) {
+	switch (s_loopVar.current_sync_type) {
 	case 0: // Match Static IP
 		foundDevices = adv.getDevicesWithStaticIP(adv.connectedDevices, ipString(adv.virtualDevices[i]->StaticIP));
 		if (foundDevices.size() != 1) {
@@ -930,7 +876,7 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 			if (ImGui::Button("Update Connected Device"))
 			{
 				syncDevice = foundDevices[0];
-				syncConnectedDeviceRequest = i;
+				s_updateRequest.syncVirtualDeviceIndex = i;
 			}
 		}
 		return;
@@ -946,7 +892,7 @@ std::stringstream tabTitleConnected;
 std::stringstream tabTitleVirtual;
 bool canSyncAll, inSyncAll = NULL;
 
-void showWindow(GLFWwindow*& window, float scale)
+void showWindow(GLFWwindow*& window)
 {
 	{
 		ImGuiWindowFlags window_flags = 0;
@@ -957,14 +903,14 @@ void showWindow(GLFWwindow*& window, float scale)
 
 		ImGui::Begin("Advatek Assistor", NULL, window_flags);
 
-		showResult(result, scale);
+		showResult(result);
 
 		if (ImGui::Button("Refresh Adaptors"))
 		{
-			b_refreshAdaptorsRequest = true;
+			s_updateRequest.refreshAdaptors = true;
 		} ImGui::SameLine();
 
-		ImGui::PushItemWidth(130 * scale);
+		ImGui::PushItemWidth(130 * s_loopVar.scale);
 
 		if (ImGui::BeginCombo("###Adaptor", adaptor_string.c_str(), 0))
 		{
@@ -975,7 +921,8 @@ void showWindow(GLFWwindow*& window, float scale)
 				{
 					adaptor_string = adv.networkAdaptors[n];
 					adv.setCurrentAdaptor(n);
-					b_pollRequest = true;
+					applog.AddLog(("[INFO] Set network adaptor to " + adaptor_string + "...\n").c_str());
+					s_updateRequest.poll = true;
 				}
 			}
 			ImGui::EndCombo();
@@ -1001,7 +948,7 @@ void showWindow(GLFWwindow*& window, float scale)
 				ImGui::Spacing();
 				if (ImGui::Button("Search"))
 				{
-					b_pollRequest = true;
+					s_updateRequest.poll = true;
 				}
 
 				if (adv.connectedDevices.size() >= 1) {
@@ -1014,7 +961,7 @@ void showWindow(GLFWwindow*& window, float scale)
 					}
 					ImGui::SameLine();
 					if (ImGui::Button("Copy All to Virtual Devices")) {
-						b_copyAllConnectedToVirtualRequest = true;
+						s_updateRequest.connectedDevicesToVirtualDevices = true;
 					}
 				}
 
@@ -1029,7 +976,7 @@ void showWindow(GLFWwindow*& window, float scale)
 				}
 				ImGui::Spacing();
 
-				showDevices(adv.connectedDevices, true, scale);
+				showDevices(adv.connectedDevices, true);
 
 				// END Connected Devices
 				ImGui::EndTabItem();
@@ -1039,8 +986,8 @@ void showWindow(GLFWwindow*& window, float scale)
 			if (ImGui::BeginTabItem("<-"))
 			{
 				ImGui::Spacing();
-				ImGui::PushItemWidth(182 * scale);
-				ImGui::Combo("###SyncTypes", &current_sync_type, SyncTypes, IM_ARRAYSIZE(SyncTypes));
+				ImGui::PushItemWidth(182 * s_loopVar.scale);
+				ImGui::Combo("###SyncTypes", &s_loopVar.current_sync_type, SyncTypes, IM_ARRAYSIZE(SyncTypes));
 				ImGui::PopItemWidth();
 				ImGui::SameLine();
 
@@ -1065,7 +1012,7 @@ void showWindow(GLFWwindow*& window, float scale)
 					ImGui::Spacing();
 					if (ImGui::Button("Update All"))
 					{
-						b_syncAllRequest = true;
+						s_updateRequest.syncVirtualDevices = true;
 					}
 					ImGui::Spacing();
 				}
@@ -1089,7 +1036,7 @@ void showWindow(GLFWwindow*& window, float scale)
 							virtualImportOptions = sImportOptions();
 							virtualImportOptions.json = jsonData[1];
 							virtualImportOptions.init = true;
-							b_newVirtualDeviceRequest = true;
+							s_updateRequest.newVirtualDevice = true;
 						}
 					}
 					ImGui::EndCombo();
@@ -1116,7 +1063,7 @@ void showWindow(GLFWwindow*& window, float scale)
 							virtualImportOptions.json = jsonStringStream.str();
 							virtualImportOptions.init = true;
 
-							b_newVirtualDeviceRequest = true;
+							s_updateRequest.newVirtualDevice = true;
 						}
 					}
 				}
@@ -1135,7 +1082,7 @@ void showWindow(GLFWwindow*& window, float scale)
 					ImGui::SameLine();
 					if (ImGui::Button("Paste"))
 					{
-						b_pasteToNewVirtualDevice = true;
+						s_updateRequest.pasteToNewVirtualDevice = true;
 					}
 				}
 
@@ -1143,7 +1090,7 @@ void showWindow(GLFWwindow*& window, float scale)
 					ImGui::SameLine();
 					if (ImGui::Button("Clear"))
 					{
-						b_clearVirtualDevicesRequest = true;
+						s_updateRequest.clearVirtualDevices = true;
 					}
 				}
 
@@ -1159,7 +1106,7 @@ void showWindow(GLFWwindow*& window, float scale)
 
 				ImGui::Spacing();
 
-				showDevices(adv.virtualDevices, false, scale);
+				showDevices(adv.virtualDevices, false);
 
 				ImGui::EndTabItem();
 			}
@@ -1171,8 +1118,13 @@ void showWindow(GLFWwindow*& window, float scale)
 		ImGui::Spacing();
 		ImGui::Separator();
 
-		applog.Draw("Advatek Assistor", &logOpen, scale);
+		applog.Draw("Advatek Assistor");
 
+		ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+		ImGui::Spacing();
 		ImGui::End();
 	}
 
@@ -1189,47 +1141,54 @@ void showWindow(GLFWwindow*& window, float scale)
 
 void processUpdateRequests()
 {
-	if (b_refreshAdaptorsRequest) {
-		b_refreshAdaptorsRequest = false;
+	if (s_updateRequest.refreshAdaptors) {
+		applog.AddLog("[INFO] Refreshing network adaptors...\n");
+		s_updateRequest.refreshAdaptors = false;
 		adv.refreshAdaptors();
 		if (adv.networkAdaptors.size() > 0) {
 			adaptor_string = adv.networkAdaptors[0];
 			adv.poll();
-			applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + " ...\n").c_str());
-			lastPoll = currTime;
+			applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + "...\n").c_str());
+			s_loopVar.lastPoll = s_loopVar.currTime;
 		}
 		else {
 			adaptor_string = "None";
 		}
 	}
 
-	if (b_pollRequest) {
+	if (s_updateRequest.poll) {
 		adv.poll();
-		b_pollRequest = false;
+		applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + "...\n").c_str());
+		s_updateRequest.poll = false;
 	}
 
-	if (b_newVirtualDeviceRequest) {
+	if (s_updateRequest.newVirtualDevice) {
 		adv.addVirtualDevice(virtualImportOptions);
-		b_newVirtualDeviceRequest = false;
+		applog.AddLog("[INFO] Created new Virtual Device.\n");
+		s_updateRequest.newVirtualDevice = false;
 	}
 
-	if (b_pasteToNewVirtualDevice) {
+	if (s_updateRequest.pasteToNewVirtualDevice) {
 		adv.pasteToNewVirtualDevice();
-		applog.AddLog("[INFO] Pasted data into new virtual device\n");
-		b_pasteToNewVirtualDevice = false;
+		applog.AddLog("[INFO] Pasted data into new virtual device.\n");
+		s_updateRequest.pasteToNewVirtualDevice = false;
 	}
 
-	if (b_clearVirtualDevicesRequest) {
+	if (s_updateRequest.clearVirtualDevices) {
 		adv.clearDevices(adv.virtualDevices);
-		b_clearVirtualDevicesRequest = false;
+		s_updateRequest.clearVirtualDevices = false;
+		applog.AddLog("[INFO] Cleared all virtual devices.\n");
 	}
 
-	if (iClearVirtualDeviceID >= 0) {
-		adv.virtualDevices.erase(adv.virtualDevices.begin() + iClearVirtualDeviceID);
-		iClearVirtualDeviceID = -1;
+	if (s_updateRequest.clearVirtualDeviceIndex >= 0) {
+		applog.AddLog(("[INFO] Removing Virtual Device " + ipString(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->StaticIP).append(" ").append(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->Nickname).append("\n")).c_str());
+		adv.virtualDevices.erase(adv.virtualDevices.begin() + s_updateRequest.clearVirtualDeviceIndex);
+		s_updateRequest.clearVirtualDeviceIndex = -1;
 	}
 
-	if (b_copyAllConnectedToVirtualRequest) {
+	if (s_updateRequest.connectedDevicesToVirtualDevices) {
+		applog.AddLog("[INFO] Copying Connected Devices to Virtual Devices...");
+		// Show loading bar here?
 		for (auto device : adv.connectedDevices) {
 			boost::property_tree::ptree advatek_device;
 			adv.getJSON(device, advatek_device);
@@ -1237,20 +1196,20 @@ void processUpdateRequests()
 			conImportOptions.init = true;
 			adv.addVirtualDevice(advatek_device, conImportOptions);
 		}
-		b_copyAllConnectedToVirtualRequest = false;
+		s_updateRequest.connectedDevicesToVirtualDevices = false;
 	}
 
-	if (syncConnectedDeviceRequest > -1) {
-		adv.updateConnectedDevice(adv.virtualDevices[syncConnectedDeviceRequest], syncDevice);
-		syncConnectedDeviceRequest = -1;
+	if (s_updateRequest.syncVirtualDeviceIndex > -1) {
+		adv.updateConnectedDevice(adv.virtualDevices[s_updateRequest.syncVirtualDeviceIndex], syncDevice);
+		s_updateRequest.syncVirtualDeviceIndex = -1;
 		adv.removeConnectedDevice(macString(syncDevice->Mac));
 	}
 
-	if (b_syncAllRequest) {
+	if (s_updateRequest.syncVirtualDevices) {
 		for (uint8_t i = 0; i < syncDevices.size(); i++) {
 			adv.updateConnectedDevice(syncDevices[i].first, syncDevices[i].second);
 			adv.removeConnectedDevice(macString(syncDevices[i].second->Mac));
 		}
-		b_syncAllRequest = false;
+		s_updateRequest.syncVirtualDevices = false;
 	}
 }

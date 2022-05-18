@@ -9,12 +9,12 @@
 namespace pt = boost::property_tree;
 std::vector<uint8_t> dataTape;
 
-bool advatek_manager::deviceExist(uint8_t * Mac) {
+bool advatek_manager::deviceExist(std::vector<sAdvatekDevice*>& devices, uint8_t * Mac) {
 
-	for (int d(0); d < connectedDevices.size(); d++) {
+	for (int d(0); d < devices.size(); d++) {
 		bool exist = true;
 		for (int i(0); i < 6; i++) {
-			if (connectedDevices[d]->Mac[i] != Mac[i]) exist = false;
+			if (devices[d]->Mac[i] != Mac[i]) exist = false;
 		}
 		if (exist) return true;
 	}
@@ -476,42 +476,10 @@ void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, int sor
 	}
 }
 
-void advatek_manager::clearDevice(sAdvatekDevice* device) {
-	if (device) {
-		if (device->Model) delete device->Model;
-		if (device->Firmware) delete device->Firmware;
-		if (device->OutputPixels) delete[] device->OutputPixels;
-		if (device->OutputUniv) delete[] device->OutputUniv;
-		if (device->OutputChan) delete[] device->OutputChan;
-		if (device->OutputNull) delete[] device->OutputNull;
-		if (device->OutputZig) delete[] device->OutputZig;
-		if (device->OutputReverse) delete[] device->OutputReverse;
-		if (device->OutputColOrder) delete[] device->OutputColOrder;
-		if (device->OutputGrouping) delete[] device->OutputGrouping;
-		if (device->OutputBrightness) delete[] device->OutputBrightness;
-		if (device->DmxOutOn) delete[] device->DmxOutOn;
-		if (device->TempDmxOutOn) delete[] device->TempDmxOutOn;
-		if (device->DmxOutUniv) delete[] device->DmxOutUniv;
-		if (device->DriverType) delete[] device->DriverType;
-		if (device->DriverSpeed) delete[] device->DriverSpeed;
-		if (device->DriverExpandable) delete[] device->DriverExpandable;
-		if (device->DriverNames)
-		{
-			for (int i = 0; i < device->NumDrivers;i++)
-				delete[] device->DriverNames[i];
-
-			delete[] device->DriverNames;
-
-		}
-		if (device->VoltageBanks) delete[] device->VoltageBanks;
-		if (device) delete device;
-	}
-}
-
 void advatek_manager::clearDevices(std::vector<sAdvatekDevice*> &devices) {
 	for (auto device : devices)
 	{
-		clearDevice(device);
+		if (device) delete device;
 	}
 
 	devices.clear();
@@ -825,10 +793,10 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 
 	addUID(rec_data);
 
-	if (!deviceExist(rec_data->Mac)) {
-		advatek_manager::connectedDevices.emplace_back(rec_data);
+	if (!deviceExist(connectedDevices, rec_data->Mac)) {
+		connectedDevices.emplace_back(rec_data);
 	} else {
-		clearDevice(rec_data);
+		if (rec_data) delete rec_data;
 	}
 }
 
@@ -1250,7 +1218,7 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &
 	}
 }
 
-void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptree &advatek_device) {
+void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptree &JSONdevice) {
 
 	OutputPixels.clear();
 	OutputUniv.clear();
@@ -1269,24 +1237,24 @@ void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptre
 	DriverNames.clear();
 	Gamma.clear();
 
-	advatek_device.put("ProtVer", device->ProtVer);
-	advatek_device.put("CurrentProtVer", device->CurrentProtVer);
-	advatek_device.put("Mac", macString(device->Mac));
-	advatek_device.put("DHCP", device->DHCP);
-	advatek_device.put("StaticIP", ipString(device->StaticIP));
-	advatek_device.put("StaticSM", ipString(device->StaticSM));
-	advatek_device.put("CurrentIP", ipString(device->CurrentIP));
-	advatek_device.put("CurrentSM", ipString(device->CurrentSM));
+	JSONdevice.put("ProtVer", device->ProtVer);
+	JSONdevice.put("CurrentProtVer", device->CurrentProtVer);
+	JSONdevice.put("Mac", macString(device->Mac));
+	JSONdevice.put("DHCP", device->DHCP);
+	JSONdevice.put("StaticIP", ipString(device->StaticIP));
+	JSONdevice.put("StaticSM", ipString(device->StaticSM));
+	JSONdevice.put("CurrentIP", ipString(device->CurrentIP));
+	JSONdevice.put("CurrentSM", ipString(device->CurrentSM));
 
-	advatek_device.put("ModelLength", device->ModelLength);
-	advatek_device.put("Model", device->Model);
-	advatek_device.put("Brand", device->Brand);
+	JSONdevice.put("ModelLength", device->ModelLength);
+	JSONdevice.put("Model", device->Model);
+	JSONdevice.put("Brand", device->Brand);
 
-	advatek_device.put("Protocol", device->Protocol);
-	advatek_device.put("HoldLastFrame", device->HoldLastFrame);
-	advatek_device.put("SimpleConfig", device->SimpleConfig);
-	advatek_device.put("MaxPixPerOutput", device->MaxPixPerOutput);
-	advatek_device.put("NumOutputs", device->NumOutputs);
+	JSONdevice.put("Protocol", device->Protocol);
+	JSONdevice.put("HoldLastFrame", device->HoldLastFrame);
+	JSONdevice.put("SimpleConfig", device->SimpleConfig);
+	JSONdevice.put("MaxPixPerOutput", device->MaxPixPerOutput);
+	JSONdevice.put("NumOutputs", device->NumOutputs);
 
 	for (int output = 0; output < device->NumOutputs; output++)
 	{
@@ -1301,18 +1269,18 @@ void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptre
 		OutputBrightness.put(std::to_string(output), std::to_string(device->OutputBrightness[output]));
 	}
 
-	advatek_device.add_child("OutputPixels", OutputPixels);
-	advatek_device.add_child("OutputUniv", OutputUniv);
-	advatek_device.add_child("OutputChan", OutputChan);
-	advatek_device.add_child("OutputNull", OutputNull);
-	advatek_device.add_child("OutputZig", OutputZig);
-	advatek_device.add_child("OutputReverse", OutputReverse);
-	advatek_device.add_child("OutputColOrder", OutputColOrder);
-	advatek_device.add_child("OutputGrouping", OutputGrouping);
-	advatek_device.add_child("OutputBrightness", OutputBrightness);
+	JSONdevice.add_child("OutputPixels", OutputPixels);
+	JSONdevice.add_child("OutputUniv", OutputUniv);
+	JSONdevice.add_child("OutputChan", OutputChan);
+	JSONdevice.add_child("OutputNull", OutputNull);
+	JSONdevice.add_child("OutputZig", OutputZig);
+	JSONdevice.add_child("OutputReverse", OutputReverse);
+	JSONdevice.add_child("OutputColOrder", OutputColOrder);
+	JSONdevice.add_child("OutputGrouping", OutputGrouping);
+	JSONdevice.add_child("OutputBrightness", OutputBrightness);
 
-	advatek_device.put("NumDMXOutputs", device->NumDMXOutputs);
-	advatek_device.put("ProtocolsOnDmxOut", device->ProtocolsOnDmxOut);
+	JSONdevice.put("NumDMXOutputs", device->NumDMXOutputs);
+	JSONdevice.put("ProtocolsOnDmxOut", device->ProtocolsOnDmxOut);
 
 	for (int output = 0; output < device->NumDMXOutputs; output++)
 	{
@@ -1320,11 +1288,11 @@ void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptre
 		DmxOutUniv.put(std::to_string(output), std::to_string(device->DmxOutUniv[output]));
 	}
 
-	advatek_device.add_child("DmxOutOn", DmxOutOn);
-	advatek_device.add_child("DmxOutUniv", DmxOutUniv);
+	JSONdevice.add_child("DmxOutOn", DmxOutOn);
+	JSONdevice.add_child("DmxOutUniv", DmxOutUniv);
 
-	advatek_device.put("NumDrivers", device->NumDrivers);
-	advatek_device.put("DriverNameLength", device->DriverNameLength);
+	JSONdevice.put("NumDrivers", device->NumDrivers);
+	JSONdevice.put("DriverNameLength", device->DriverNameLength);
 
 	for (int output = 0; output < device->NumDrivers; output++)
 	{
@@ -1334,26 +1302,26 @@ void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptre
 		DriverNames.put(std::to_string(output), (device->DriverNames[output]));
 	}
 
-	advatek_device.add_child("DriverType", DriverType);
-	advatek_device.add_child("DriverSpeed", DriverSpeed);
-	advatek_device.add_child("DriverExpandable", DriverExpandable);
-	advatek_device.add_child("DriverNames", DriverNames);
+	JSONdevice.add_child("DriverType", DriverType);
+	JSONdevice.add_child("DriverSpeed", DriverSpeed);
+	JSONdevice.add_child("DriverExpandable", DriverExpandable);
+	JSONdevice.add_child("DriverNames", DriverNames);
 
-	advatek_device.put("CurrentDriver", device->CurrentDriver);
-	advatek_device.put("CurrentDriverType", device->CurrentDriverType);
-	advatek_device.put("CurrentDriverSpeed", device->CurrentDriverSpeed);
-	advatek_device.put("CurrentDriverExpanded", device->CurrentDriverExpanded);
+	JSONdevice.put("CurrentDriver", device->CurrentDriver);
+	JSONdevice.put("CurrentDriverType", device->CurrentDriverType);
+	JSONdevice.put("CurrentDriverSpeed", device->CurrentDriverSpeed);
+	JSONdevice.put("CurrentDriverExpanded", device->CurrentDriverExpanded);
 
 	for (int c = 0; c < 4; c++)
 	{
 		Gamma.put(std::to_string(c), std::to_string(device->Gamma[c]));
 	}
 
-	advatek_device.add_child("Gamma", Gamma);
+	JSONdevice.add_child("Gamma", Gamma);
 
-	advatek_device.put("Nickname", device->Nickname);
-	advatek_device.put("MaxTargetTemp", device->MaxTargetTemp);
-	advatek_device.put("NumBanks", device->NumBanks);
+	JSONdevice.put("Nickname", device->Nickname);
+	JSONdevice.put("MaxTargetTemp", device->MaxTargetTemp);
+	JSONdevice.put("NumBanks", device->NumBanks);
 }
 
 pt::ptree tree_getJSON;

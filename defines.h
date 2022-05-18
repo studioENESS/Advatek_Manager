@@ -54,7 +54,7 @@ extern const char* TestModes[9];
 
 class IClient;
 
-typedef struct tAdvatekDevice {
+typedef struct sAdvatekDevice {
 	/*tAdvatekDevice(){
 		constructor?
 	}*/
@@ -126,9 +126,38 @@ typedef struct tAdvatekDevice {
 	bool testModeCyclePixels = false;
 	bool testModeEnessColourOuputs = false;
 	size_t uid;
-} sAdvatekDevice;
 
-typedef struct tImportOptions {
+	~sAdvatekDevice() {
+		if (Model) delete Model;
+		if (Firmware) delete Firmware;
+		if (OutputPixels) delete[] OutputPixels;
+		if (OutputUniv) delete[] OutputUniv;
+		if (OutputChan) delete[] OutputChan;
+		if (OutputNull) delete[] OutputNull;
+		if (OutputZig) delete[] OutputZig;
+		if (OutputReverse) delete[] OutputReverse;
+		if (OutputColOrder) delete[] OutputColOrder;
+		if (OutputGrouping) delete[] OutputGrouping;
+		if (OutputBrightness) delete[] OutputBrightness;
+		if (DmxOutOn) delete[] DmxOutOn;
+		if (TempDmxOutOn) delete[] TempDmxOutOn;
+		if (DmxOutUniv) delete[] DmxOutUniv;
+		if (DriverType) delete[] DriverType;
+		if (DriverSpeed) delete[] DriverSpeed;
+		if (DriverExpandable) delete[] DriverExpandable;
+		if (DriverNames)
+		{
+			for (int i = 0; i < NumDrivers; i++)
+				delete[] DriverNames[i];
+
+			delete[] DriverNames;
+
+		}
+		if (VoltageBanks) delete[] VoltageBanks;
+	}
+};
+
+typedef struct sImportOptions {
 	bool userSet = false;
 	std::string json = "";
 	bool init = false;
@@ -139,7 +168,7 @@ typedef struct tImportOptions {
 	bool nickname = true;
 	bool fan_on_temp = true;
 	bool returnResult = true;
-} sImportOptions;
+};
 
 std::string macString(uint8_t * address);
 std::string ipString(uint8_t * address);

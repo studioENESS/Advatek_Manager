@@ -6,6 +6,7 @@ namespace pt = boost::property_tree;
 
 class advatek_manager {
 public:
+	uint8_t ProtVer = 8;
 
 	pt::ptree OutputPixels;
 	pt::ptree OutputUniv;
@@ -24,8 +25,7 @@ public:
 	pt::ptree DriverNames;
 	pt::ptree Gamma;
 
-	uint8_t ProtVer = 8;
-	bool deviceExist(uint8_t * Mac);
+	bool deviceExist(std::vector<sAdvatekDevice*>& devices, uint8_t * Mac);
 	bool ipInRange(std::string ip, sAdvatekDevice* device);
 	bool sameNetworkSettings(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
 	bool deviceCompatible(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
@@ -49,7 +49,6 @@ public:
 	void removeConnectedDevice(std::string mac);
 	void sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType);
 	void clearDevices(std::vector<sAdvatekDevice*> &devices);
-	void clearDevice(sAdvatekDevice* device);
 	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice, bool initialise);
 	void copyToMemoryDevice(sAdvatekDevice* fromDevice);
 	void pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice);
@@ -84,7 +83,7 @@ public:
 	void setCurrentAdaptor(int adaptorIndex);
 	
 	void getJSON(sAdvatekDevice *fromDevice, sImportOptions &importOptions);
-	void getJSON(sAdvatekDevice *device, boost::property_tree::ptree &root);
+	void getJSON(sAdvatekDevice *device, boost::property_tree::ptree &JSONdevice);
 	std::string importJSON(sAdvatekDevice *device, sImportOptions &importOptions);
 	std::string importJSON(sAdvatekDevice *device, boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
 	void exportJSON(sAdvatekDevice *device, std::string path);

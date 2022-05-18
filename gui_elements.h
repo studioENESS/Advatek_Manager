@@ -16,7 +16,6 @@
 #include "portable-file-dialogs.h"
 
 namespace pt = boost::property_tree;
-extern pt::ptree pt_json_device;
 
 extern uint32_t COL_GREY, COL_LIGHTGREY, COL_GREEN, COL_RED;
 
@@ -27,12 +26,6 @@ extern sAdvatekDevice* syncDevice;
 extern advatek_manager adv;
 extern sImportOptions userImportOptions, virtualImportOptions;
 
-extern double currTime, lastPoll, lastSoftPoll, lastTime;
-extern float rePollTime, testCycleSpeed, scale;
-extern int b_testPixelsReady, b_pollRequest, b_refreshAdaptorsRequest, b_newVirtualDeviceRequest, b_pasteToNewVirtualDevice,
-b_clearVirtualDevicesRequest, b_copyAllConnectedToVirtualRequest, iClearVirtualDeviceID, syncConnectedDeviceRequest, b_vDevicePath, current_json_device, current_sync_type, b_syncAllRequest;
-extern bool logOpen, testAll;
-
 extern float eness_colourcode_ouptput[16][4];
 
 extern std::string adaptor_string, json_device_string, vDeviceString, result, vDeviceData;
@@ -40,6 +33,39 @@ extern std::string adaptor_string, json_device_string, vDeviceString, result, vD
 bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
 
 bool SliderInt16(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+
+struct updateRequest {
+	int poll = 0;
+	int refreshAdaptors = 0;
+	int newVirtualDevice = 0;
+	int pasteToNewVirtualDevice = 0;
+	int clearVirtualDevices = 0;
+	int connectedDevicesToVirtualDevices = 0;
+	int clearVirtualDeviceIndex = -1;
+	int syncVirtualDeviceIndex = -1;
+	int syncVirtualDevices = 0;
+};
+
+struct loopVar {
+	int window_w, window_h;
+
+	double currTime = 0;
+	double lastTime = 0;
+	double lastPoll = 0;
+
+	float rePollTime = 3;
+	float testCycleSpeed = 0.5;
+	float scale = 1;
+
+	bool logOpen = true;
+
+	int selectedNewImportIndex = -1;
+	int current_sync_type = 0;
+	int b_testPixelsReady = true;
+
+	pt::ptree pt_json_device;
+};
+extern loopVar s_loopVar;
 
 struct AppLog {
 	ImGuiTextBuffer     Buf;
@@ -69,7 +95,7 @@ struct AppLog {
 				LineOffsets.push_back(old_size + 1);
 	}
 
-	void Draw(const char* title, bool* p_open = NULL, float scale = 1) {
+	void Draw(const char* title, bool* p_open = NULL) {
 		if (!ImGui::Begin(title, p_open))
 		{
 			ImGui::End();
@@ -90,17 +116,17 @@ struct AppLog {
 
 		ImGui::Spacing();
 
-		//bool clear = ImGui::Button("Clear", ImVec2(50 * scale,0));
+		//bool clear = ImGui::Button("Clear", ImVec2(50 * s_loopVar.scale,0));
 		//ImGui::SameLine();
-		bool copy = ImGui::Button("Copy", ImVec2(50 * scale, 0));
+		bool copy = ImGui::Button("Copy", ImVec2(50 * s_loopVar.scale, 0));
 		ImGui::SameLine();
-		ImGui::PushItemWidth(130 * scale);
+		ImGui::PushItemWidth(130 * s_loopVar.scale);
 		Filter.Draw("Filter");
 		ImGui::PopItemWidth();
 
 		//ImGui::Separator();
 		ImGui::Spacing();
-		ImGui::BeginChild("scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+		ImGui::BeginChild("scrolling", ImVec2(0, 50 * s_loopVar.scale), false, ImGuiWindowFlags_HorizontalScrollbar);
 
 		//if (clear)
 		//	Clear();
@@ -115,10 +141,6 @@ struct AppLog {
 		const char* buf_end = Buf.end();
 		if (Filter.IsActive())
 		{
-			// In this example we don't use the clipper when Filter is enabled.
-			// This is because we don't have a random access on the result on our filter.
-			// A real application processing logs with ten of thousands of entries may want to store the result of
-			// search/filter.. especially if the filtering function is not trivial (e.g. reg-exp).
 			for (int line_no = 0; line_no < LineOffsets.Size; line_no++)
 			{
 				const char* line_start = buf + LineOffsets[line_no];
@@ -129,19 +151,6 @@ struct AppLog {
 		}
 		else
 		{
-			// The simplest and easy way to display the entire buffer:
-			//   ImGui::TextUnformatted(buf_begin, buf_end);
-			// And it'll just work. TextUnformatted() has specialization for large blob of text and will fast-forward
-			// to skip non-visible lines. Here we instead demonstrate using the clipper to only process lines that are
-			// within the visible area.
-			// If you have tens of thousands of items and their processing cost is non-negligible, coarse clipping them
-			// on your side is recommended. Using ImGuiListClipper requires
-			// - A) random access into your data
-			// - B) items all being the  same height,
-			// both of which we can handle since we an array pointing to the beginning of each line of text.
-			// When using the filter (in the block of code above) we don't have random access into the data to display
-			// anymore, which is why we don't use the clipper. Storing or skimming through the search result would make
-			// it possible (and would be recommended if you want to search through tens of thousands of entries).
 			ImGuiListClipper clipper;
 			clipper.Begin(LineOffsets.Size);
 			while (clipper.Step())
@@ -159,35 +168,33 @@ struct AppLog {
 		ImGui::PopStyleColor();
 		ImGui::PopStyleVar();
 
-
 		if (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-			ImGui::SetScrollHereY(1.0f);
+			ImGui::SetScrollHereY(1.0);
 
 		ImGui::EndChild();
 		ImGui::End();
 	}
 };
-
 extern AppLog applog;
 
-void setupWindow(GLFWwindow*& window, int& window_w, int& window_h, float& scale);
+void setupWindow(GLFWwindow*& window);
 
-void scaleToScreenDPI(float& scale, ImGuiIO& io);
+void scaleToScreenDPI(ImGuiIO& io);
 
-void showResult(std::string& result, float scale);
+void showResult(std::string& result);
 
 void button_update_controller_settings(int i);
 
 void colouredText(const char* txt, uint32_t color);
 
-void importUI(sAdvatekDevice* device, sImportOptions& importOptions, float scale);
+void importUI(sAdvatekDevice* device, sImportOptions& importOptions);
 
 void button_import_export_JSON(sAdvatekDevice* device);
 
 void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected);
 
-void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll, float scale);
+void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll);
 
-void showWindow(GLFWwindow*& window, float scale);
+void showWindow(GLFWwindow*& window);
 
 void processUpdateRequests();
