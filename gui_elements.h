@@ -42,7 +42,7 @@ struct updateRequest {
 	int clearVirtualDevices = 0;
 	int connectedDevicesToVirtualDevices = 0;
 	int clearVirtualDeviceIndex = -1;
-	int syncVirtualDeviceIndex = -1;
+	int syncDevice = 0;
 	int syncVirtualDevices = 0;
 };
 
@@ -99,7 +99,7 @@ void button_import_export_JSON(sAdvatekDevice* device);
 
 void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected);
 
-void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll);
+void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll);
 
 void showWindow(GLFWwindow*& window);
 

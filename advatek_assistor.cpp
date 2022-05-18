@@ -226,7 +226,6 @@ void advatek_manager::copyToNewVirtualDevice(sAdvatekDevice* fromDevice) {
 	importJSON(device, tree_virt_device, importOptions);
 	addUID(device);
 	virtualDevices.emplace_back(device);
-	sortDevices(virtualDevices, sortTypeVirtual);
 }
 
 void advatek_manager::addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions) {
@@ -234,7 +233,6 @@ void advatek_manager::addVirtualDevice(boost::property_tree::ptree advatek_devic
 	importJSON(device, advatek_device, importOptions);
 	addUID(device);
 	virtualDevices.emplace_back(device);
-	sortDevices(virtualDevices, sortTypeVirtual);
 }
 
 std::stringstream ss_json;
@@ -303,7 +301,6 @@ void advatek_manager::pasteToNewVirtualDevice() {
 	pasteFromMemoryDeviceTo(device);
 	addUID(device);
 	virtualDevices.emplace_back(device);
-	sortDevices(virtualDevices, sortTypeVirtual);
 }
 
 void advatek_manager::updateDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr) {
@@ -477,6 +474,11 @@ void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, int sor
 	default:
 		break;
 	}
+}
+
+void advatek_manager::sortAllDevices() {
+	sortDevices(connectedDevices, sortTypeConnected);
+	sortDevices(virtualDevices, sortTypeVirtual);
 }
 
 void advatek_manager::clearDevices(std::vector<sAdvatekDevice*> &devices) {
@@ -798,7 +800,6 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 
 	if (!deviceExist(connectedDevices, rec_data->Mac)) {
 		connectedDevices.emplace_back(rec_data);
-		sortDevices(connectedDevices, sortTypeConnected);
 	} else {
 		if (rec_data) delete rec_data;
 	}

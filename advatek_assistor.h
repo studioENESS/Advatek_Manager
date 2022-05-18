@@ -57,6 +57,7 @@ public:
 	void removeConnectedDevice(size_t index);
 	void removeConnectedDevice(std::string mac);
 	void sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType);
+	void sortAllDevices();
 	void clearDevices(std::vector<sAdvatekDevice*> &devices);
 	void copyDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice, bool initialise);
 	void copyToMemoryDevice(sAdvatekDevice* fromDevice);

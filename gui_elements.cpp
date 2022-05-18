@@ -28,6 +28,7 @@ float eness_colourcode_ouptput[16][4] = {
 std::vector<sAdvatekDevice*> foundDevices;
 std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
 sAdvatekDevice* syncDevice;
+sAdvatekDevice* syncDeviceVirt;
 
 advatek_manager adv;
 sImportOptions userImportOptions = sImportOptions();
@@ -795,16 +796,16 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 	}
 }
 
-void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
+void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
 {
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
 	colouredText("(Virtual Device)", COL_GREY);  ImGui::SameLine();
-	ImGui::Text(ipString(adv.virtualDevices[i]->StaticIP).c_str()); ImGui::SameLine();
-	colouredText(adv.virtualDevices[i]->Nickname, COL_LIGHTGREY);
+	ImGui::Text(ipString(vdevice->StaticIP).c_str()); ImGui::SameLine();
+	colouredText(vdevice->Nickname, COL_LIGHTGREY);
 
-	bool deviceInRange = adv.ipInRange(adaptor_string, adv.virtualDevices[i]);
+	bool deviceInRange = adv.ipInRange(adaptor_string, vdevice);
 	if (!deviceInRange) {
 		colouredText("Device IP address settings not compatible with your adaptor settings.", COL_RED);
 		colouredText("Change the IP settings of your adaptor.", COL_RED);
@@ -812,45 +813,44 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 		return;
 	}
 
+	foundDevices.clear();
+
 	switch (s_loopVar.current_sync_type) {
 	case 0: // Match Static IP
-		adv.clearDevices(foundDevices);
-		foundDevices = adv.getDevicesWithStaticIP(adv.connectedDevices, ipString(adv.virtualDevices[i]->StaticIP));
+		foundDevices = adv.getDevicesWithStaticIP(adv.connectedDevices, ipString(vdevice->StaticIP));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
-				colouredText(std::string("Multiple connected devices with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str(), COL_RED);
+				colouredText(std::string("Multiple connected devices with static IP ").append(ipString(vdevice->StaticIP)).c_str(), COL_RED);
 			}
 			else {
-				colouredText(std::string("No connected device with static IP ").append(ipString(adv.virtualDevices[i]->StaticIP)).c_str(), COL_RED);
+				colouredText(std::string("No connected device with static IP ").append(ipString(vdevice->StaticIP)).c_str(), COL_RED);
 			}
 			canSyncAll = false;
 			return;
 		}
 		break;
 	case 1: // Match Nickname
-		adv.clearDevices(foundDevices);
-		foundDevices = adv.getDevicesWithNickname(adv.connectedDevices, std::string(adv.virtualDevices[i]->Nickname));
+		foundDevices = adv.getDevicesWithNickname(adv.connectedDevices, std::string(vdevice->Nickname));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
-				colouredText(std::string("Multiple connected devices with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str(), COL_RED);
+				colouredText(std::string("Multiple connected devices with Nickname ").append(vdevice->Nickname).c_str(), COL_RED);
 			}
 			else {
-				colouredText(std::string("No connected device with Nickname ").append(adv.virtualDevices[i]->Nickname).c_str(), COL_RED);
+				colouredText(std::string("No connected device with Nickname ").append(vdevice->Nickname).c_str(), COL_RED);
 			}
 			canSyncAll = false;
 			return;
 		}
 		break;
 	case 2: // Match MAC
-		adv.clearDevices(foundDevices);
-		foundDevices = adv.getDevicesWithMac(adv.connectedDevices, macString(adv.virtualDevices[i]->Mac));
+		foundDevices = adv.getDevicesWithMac(adv.connectedDevices, macString(vdevice->Mac));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
 				// This should never happen :)
-				colouredText(std::string("Whoah!! Multiple connected devices with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str(), COL_RED);
+				colouredText(std::string("Whoah!! Multiple connected devices with MAC address ").append(macString(vdevice->Mac)).c_str(), COL_RED);
 			}
 			else {
-				colouredText(std::string("No connected device with MAC address ").append(macString(adv.virtualDevices[i]->Mac)).c_str(), COL_RED);
+				colouredText(std::string("No connected device with MAC address ").append(macString(vdevice->Mac)).c_str(), COL_RED);
 			}
 			canSyncAll = false;
 			return;
@@ -861,17 +861,20 @@ void showSyncDevice(const uint8_t& i, bool& canSyncAll, bool& inSyncAll)
 		break;
 	}
 
-	if (adv.deviceCompatible(adv.virtualDevices[i], foundDevices[0])) {
-		if (adv.devicesInSync(adv.virtualDevices[i], foundDevices[0])) {
+	if (adv.deviceCompatible(vdevice, foundDevices[0])) {
+		if (adv.devicesInSync(vdevice, foundDevices[0])) {
 			colouredText("Device in sync ...", COL_GREEN);
 		}
 		else {
 			inSyncAll = false;
-			syncDevices.emplace_back(adv.virtualDevices[i], foundDevices[0]);
+			syncDevices.emplace_back(vdevice, foundDevices[0]);
 			if (ImGui::Button("Update Connected Device"))
 			{
+				if (syncDevice) delete[] syncDevice;
+				if (syncDeviceVirt) delete[] syncDeviceVirt;
 				syncDevice = foundDevices[0];
-				s_updateRequest.syncVirtualDeviceIndex = i;
+				syncDeviceVirt = vdevice;
+				s_updateRequest.syncDevice = true;
 			}
 		}
 		return;
@@ -962,10 +965,7 @@ void showWindow(GLFWwindow*& window)
 
 				if (adv.connectedDevices.size() > 1) {
 					ImGui::SameLine();
-
-					if (ImGui::Combo("###SortConnectedDevices", &adv.sortTypeConnected, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes))) {
-						adv.sortDevices(adv.connectedDevices, adv.sortTypeConnected);
-					}
+					ImGui::Combo("###SortConnectedDevices", &adv.sortTypeConnected, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes));
 				}
 				ImGui::Spacing();
 
@@ -994,7 +994,7 @@ void showWindow(GLFWwindow*& window)
 
 				for (int i = 0; i < adv.virtualDevices.size(); i++) {
 					ImGui::PushID(i);
-					showSyncDevice(i, canSyncAll, inSyncAll);
+					showSyncDevice(adv.virtualDevices[i], canSyncAll, inSyncAll);
 					ImGui::PopID();
 				}
 
@@ -1089,10 +1089,7 @@ void showWindow(GLFWwindow*& window)
 
 				if (adv.virtualDevices.size() > 1) {
 					ImGui::SameLine();
-
-					if (ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes)-1)) {
-						adv.sortDevices(adv.virtualDevices, adv.sortTypeVirtual);
-					}
+					ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes) - 1);
 				}
 
 				ImGui::Spacing();
@@ -1190,10 +1187,10 @@ void processUpdateRequests()
 		s_updateRequest.connectedDevicesToVirtualDevices = false;
 	}
 
-	if (s_updateRequest.syncVirtualDeviceIndex > -1) {
-		adv.updateConnectedDevice(adv.virtualDevices[s_updateRequest.syncVirtualDeviceIndex], syncDevice);
-		s_updateRequest.syncVirtualDeviceIndex = -1;
+	if (s_updateRequest.syncDevice) {
+		adv.updateConnectedDevice(syncDeviceVirt, syncDevice);
 		adv.removeConnectedDevice(macString(syncDevice->Mac));
+		s_updateRequest.syncDevice = false;
 	}
 
 	if (s_updateRequest.syncVirtualDevices) {

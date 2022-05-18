@@ -47,6 +47,7 @@ int main(int, char**)
 		ImGui::SetNextWindowSize(ImVec2(s_loopVar.window_w, s_loopVar.window_h));
 		showWindow(window);
 		processUpdateRequests();
+		adv.sortAllDevices();
     }
 
     // Cleanup
