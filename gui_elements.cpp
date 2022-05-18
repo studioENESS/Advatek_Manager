@@ -334,7 +334,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 	ImGui::Spacing();
 
-	for (uint8_t i = 0; i < devices.size(); i++) {
+	for (int i = 0; i < devices.size(); i++) {
 		bool deviceInRange = adv.ipInRange(adaptor_string, devices[i]);
 		Title.str(std::string());
 		Title.clear();
