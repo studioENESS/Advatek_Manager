@@ -279,7 +279,7 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 	if (ImGui::Button("Import JSON")) {
 		auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
 		if (!path.empty()) {
-			applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
+			applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
 			boost::property_tree::ptree advatek_devices;
 			boost::property_tree::read_json(path.at(0), advatek_devices);
 
@@ -1045,7 +1045,7 @@ void showWindow(GLFWwindow*& window)
 				if (ImGui::Button("Import JSON")) {
 					auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
 					if (!path.empty()) {
-						applog.AddLog("[INFO] Loading JSON file from %s\n", path.at(0).c_str());
+						applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
 						boost::property_tree::ptree advatek_devices;
 						boost::property_tree::read_json(path.at(0), advatek_devices);
 
@@ -1115,9 +1115,7 @@ void showWindow(GLFWwindow*& window)
 		applog.Draw("Advatek Assistor");
 
 		ImGui::Spacing();
-		ImGui::Spacing();
 		ImGui::Separator();
-		ImGui::Spacing();
 		ImGui::Spacing();
 		ImGui::End();
 	}
@@ -1227,22 +1225,13 @@ void AppLog::Draw(const char* title, bool* p_open /*= NULL*/)
 		return;
 	}
 
-	// Options menu
-	//if (ImGui::BeginPopup("Options"))
-	//{
-	//	ImGui::Checkbox("Auto-scroll", &AutoScroll);
-	//	ImGui::EndPopup();
-	//}
-
 	// Main window
-	//if (ImGui::Button("Options"))
-	//	ImGui::OpenPopup("Options");
-	//ImGui::SameLine();
 
 	ImGui::Spacing();
-
-	//bool clear = ImGui::Button("Clear", ImVec2(50 * s_loopVar.scale,0));
-	//ImGui::SameLine();
+	ImGui::Checkbox("Auto-scroll", &AutoScroll);
+	ImGui::SameLine();
+	bool clear = ImGui::Button("Clear", ImVec2(50 * s_loopVar.scale,0));
+	ImGui::SameLine();
 	bool copy = ImGui::Button("Copy", ImVec2(50 * s_loopVar.scale, 0));
 	ImGui::SameLine();
 	ImGui::PushItemWidth(130 * s_loopVar.scale);
@@ -1251,10 +1240,10 @@ void AppLog::Draw(const char* title, bool* p_open /*= NULL*/)
 
 	//ImGui::Separator();
 	ImGui::Spacing();
-	ImGui::BeginChild("scrolling", ImVec2(0, 50 * s_loopVar.scale), false, ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::BeginChild("scrolling", ImVec2(0, 70 * s_loopVar.scale), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-	//if (clear)
-	//	Clear();
+	if (clear)
+		Clear();
 	if (copy)
 		ImGui::LogToClipboard();
 
@@ -1293,7 +1282,7 @@ void AppLog::Draw(const char* title, bool* p_open /*= NULL*/)
 	ImGui::PopStyleColor();
 	ImGui::PopStyleVar();
 
-	if (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+	if (AutoScroll)
 		ImGui::SetScrollHereY(1.0);
 
 	ImGui::EndChild();
