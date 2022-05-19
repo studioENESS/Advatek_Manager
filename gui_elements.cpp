@@ -336,9 +336,13 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 	for (int i = 0; i < devices.size(); i++) {
 		bool deviceInRange = adv.ipInRange(adaptor_string, devices[i]);
+		std::string modelName((char*)devices[i]->Model);
+		modelName.append("          ").resize(19);
+		modelName.append(" ");
+
 		Title.str(std::string());
 		Title.clear();
-		Title << " " << devices[i]->Model << "	" << devices[i]->Firmware << "	";
+		Title << " " << modelName.c_str() << devices[i]->Firmware << "	";
 		if (isConnected) {
 			Title << ipString(devices[i]->CurrentIP);
 		}
@@ -1095,7 +1099,7 @@ void showWindow(GLFWwindow*& window)
 
 				if (adv.virtualDevices.size() > 1) {
 					ImGui::SameLine();
-					ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes) - 1);
+					ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes) - 2);
 				}
 
 				ImGui::Spacing();

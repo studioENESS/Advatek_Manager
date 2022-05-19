@@ -445,6 +445,16 @@ void advatek_manager::setTest(int d) {
 	}
 }
 
+bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	return (std::string(device1->Nickname).compare(std::string(device2->Nickname)) < 0);
+}
+
+bool compareModel(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	return (std::string((char*)device1->Model).compare(std::string((char*)device2->Model)) < 0);
+}
+
 bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
     return (device1->CurrentIP[3] < device2->CurrentIP[3]);
@@ -455,9 +465,9 @@ bool compareStaticIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
 	return (device1->StaticIP[3] < device2->StaticIP[3]);
 }
 
-bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
+bool compareTemperature(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
-	return (std::string(device1->Nickname).compare(std::string(device2->Nickname)) < 0);
+	return (device1->Temperature < device2->Temperature);
 }
 
 void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType){
@@ -466,10 +476,16 @@ void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, int sor
 		sort(devices.begin(), devices.end(), compareNickname);
 		break;
 	case 1:
-		sort(devices.begin(), devices.end(), compareStaticIP);
+		sort(devices.begin(), devices.end(), compareModel);
 		break;
 	case 2:
+		sort(devices.begin(), devices.end(), compareStaticIP);
+		break;
+	case 3:
 		sort(devices.begin(), devices.end(), compareCurrentIP);
+		break;
+	case 4:
+		sort(devices.begin(), devices.end(), compareTemperature);
 		break;
 	default:
 		break;
