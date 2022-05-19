@@ -27,7 +27,6 @@ float eness_colourcode_ouptput[16][4] = {
 
 std::vector<sAdvatekDevice*> foundDevices;
 std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
-sAdvatekDevice* syncDevice;
 sAdvatekDevice* syncDeviceVirt;
 
 advatek_manager adv;
@@ -879,11 +878,7 @@ void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
 			syncDevices.emplace_back(vdevice, foundDevices[0]);
 			if (ImGui::Button("Update Connected Device"))
 			{
-				if (syncDevice) delete[] syncDevice;
-				if (syncDeviceVirt) delete[] syncDeviceVirt;
-				syncDevice = foundDevices[0];
-				syncDeviceVirt = vdevice;
-				s_updateRequest.syncDevice = true;
+				adv.updateConnectedDevice(vdevice, foundDevices[0]);
 			}
 		}
 		return;
@@ -1014,7 +1009,9 @@ void showWindow(GLFWwindow*& window)
 					ImGui::Spacing();
 					if (ImGui::Button("Update All"))
 					{
-						s_updateRequest.syncVirtualDevices = true;
+						for (int i = 0; i < syncDevices.size(); i++) {
+							adv.updateConnectedDevice(syncDevices[i].first, syncDevices[i].second);
+						}
 					}
 					ImGui::Spacing();
 				}
@@ -1194,20 +1191,6 @@ void processUpdateRequests()
 			adv.addVirtualDevice(advatek_device, conImportOptions);
 		}
 		s_updateRequest.connectedDevicesToVirtualDevices = false;
-	}
-
-	if (s_updateRequest.syncDevice) {
-		adv.updateConnectedDevice(syncDeviceVirt, syncDevice);
-		adv.removeConnectedDevice(adv.getConnectedDevice(macString(syncDevice->Mac)));
-		s_updateRequest.syncDevice = false;
-	}
-
-	if (s_updateRequest.syncVirtualDevices) {
-		for (int i = 0; i < syncDevices.size(); i++) {
-			adv.updateConnectedDevice(syncDevices[i].first, syncDevices[i].second);
-			adv.removeConnectedDevice(adv.getConnectedDevice(macString(syncDevices[i].second->Mac)));
-		}
-		s_updateRequest.syncVirtualDevices = false;
 	}
 }
 

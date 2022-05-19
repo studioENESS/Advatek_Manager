@@ -51,6 +51,7 @@ sAdvatekDevice* advatek_manager::getConnectedDevice(std::string mac) {
 }
 
 void advatek_manager::removeConnectedDevice(sAdvatekDevice* device) {
+	if (device == NULL) return;
 	int deviceIndex = getConnectedDeviceIndex(macString(device->Mac));
 	if (deviceIndex < 0) return;
 	if (device) delete device;
@@ -282,7 +283,8 @@ void advatek_manager::pasteToNewVirtualDevice() {
 	virtualDevices.emplace_back(device);
 }
 
-void advatek_manager::updateConnectedDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr) {
+void advatek_manager::updateConnectedDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* connectedDevice) {
+
 	dataTape.clear();
 	dataTape.resize(12);
 	dataTape[0] = 'A';
@@ -299,45 +301,45 @@ void advatek_manager::updateConnectedDeviceWithMac(sAdvatekDevice* device, uint8
 	dataTape[11] = 0x08;  // ProtVer
 
 	// Set Mac Address
-	dataTape.insert(dataTape.end(), Mac, Mac + 6);
+	dataTape.insert(dataTape.end(), connectedDevice->Mac, connectedDevice->Mac + 6);
 
-	dataTape.push_back(device->DHCP);
+	dataTape.push_back(fromDevice->DHCP);
 
-	dataTape.insert(dataTape.end(), device->StaticIP, device->StaticIP + 4);
-	dataTape.insert(dataTape.end(), device->StaticSM, device->StaticSM + 4);
+	dataTape.insert(dataTape.end(), fromDevice->StaticIP, fromDevice->StaticIP + 4);
+	dataTape.insert(dataTape.end(), fromDevice->StaticSM, fromDevice->StaticSM + 4);
 
-	dataTape.push_back(device->Protocol);
-	dataTape.push_back(device->HoldLastFrame);
-	dataTape.push_back(device->SimpleConfig);
+	dataTape.push_back(fromDevice->Protocol);
+	dataTape.push_back(fromDevice->HoldLastFrame);
+	dataTape.push_back(fromDevice->SimpleConfig);
 
-	insertSwapped16(dataTape, device->OutputPixels, device->NumOutputs);
-	insertSwapped16(dataTape, device->OutputUniv, device->NumOutputs);
-	insertSwapped16(dataTape, device->OutputChan, device->NumOutputs);
+	insertSwapped16(dataTape, fromDevice->OutputPixels, fromDevice->NumOutputs);
+	insertSwapped16(dataTape, fromDevice->OutputUniv, fromDevice->NumOutputs);
+	insertSwapped16(dataTape, fromDevice->OutputChan, fromDevice->NumOutputs);
 
-	dataTape.insert(dataTape.end(), device->OutputNull, device->OutputNull + device->NumOutputs);
-	insertSwapped16(dataTape, device->OutputZig, device->NumOutputs);
+	dataTape.insert(dataTape.end(), fromDevice->OutputNull, fromDevice->OutputNull + fromDevice->NumOutputs);
+	insertSwapped16(dataTape, fromDevice->OutputZig, fromDevice->NumOutputs);
 
-	dataTape.insert(dataTape.end(), device->OutputReverse, device->OutputReverse + device->NumOutputs);
-	dataTape.insert(dataTape.end(), device->OutputColOrder, device->OutputColOrder + device->NumOutputs);
-	insertSwapped16(dataTape, device->OutputGrouping, device->NumOutputs);
+	dataTape.insert(dataTape.end(), fromDevice->OutputReverse, fromDevice->OutputReverse + fromDevice->NumOutputs);
+	dataTape.insert(dataTape.end(), fromDevice->OutputColOrder, fromDevice->OutputColOrder + fromDevice->NumOutputs);
+	insertSwapped16(dataTape, fromDevice->OutputGrouping, fromDevice->NumOutputs);
 
-	dataTape.insert(dataTape.end(), device->OutputBrightness, device->OutputBrightness + device->NumOutputs);
-	dataTape.insert(dataTape.end(), device->DmxOutOn, device->DmxOutOn + device->NumDMXOutputs);
-	insertSwapped16(dataTape, device->DmxOutUniv, device->NumDMXOutputs);
+	dataTape.insert(dataTape.end(), fromDevice->OutputBrightness, fromDevice->OutputBrightness + fromDevice->NumOutputs);
+	dataTape.insert(dataTape.end(), fromDevice->DmxOutOn, fromDevice->DmxOutOn + fromDevice->NumDMXOutputs);
+	insertSwapped16(dataTape, fromDevice->DmxOutUniv, fromDevice->NumDMXOutputs);
 
-	dataTape.push_back(device->CurrentDriver);
-	dataTape.push_back(device->CurrentDriverType);
+	dataTape.push_back(fromDevice->CurrentDriver);
+	dataTape.push_back(fromDevice->CurrentDriverType);
 
-	dataTape.push_back(device->CurrentDriverSpeed);
-	dataTape.push_back(device->CurrentDriverExpanded);
+	dataTape.push_back(fromDevice->CurrentDriverSpeed);
+	dataTape.push_back(fromDevice->CurrentDriverExpanded);
 
-	dataTape.insert(dataTape.end(), device->Gamma, device->Gamma + 4);
-	dataTape.insert(dataTape.end(), device->Nickname, device->Nickname + 40);
+	dataTape.insert(dataTape.end(), fromDevice->Gamma, fromDevice->Gamma + 4);
+	dataTape.insert(dataTape.end(), fromDevice->Nickname, fromDevice->Nickname + 40);
 
-	dataTape.push_back(device->MaxTargetTemp);
+	dataTape.push_back(fromDevice->MaxTargetTemp);
 
-	removeConnectedDevice(device);
-	unicast_udp_message(ipStr, dataTape);
+	unicast_udp_message(ipString(connectedDevice->CurrentIP), dataTape);
+	removeConnectedDevice(connectedDevice);
 }
 
 void advatek_manager::updateConnectedDevice(sAdvatekDevice* device) {
@@ -346,11 +348,7 @@ void advatek_manager::updateConnectedDevice(sAdvatekDevice* device) {
 		advatek_manager::process_simple_config(device);
 	}
 
-	updateConnectedDeviceWithMac(device, device->Mac, ipString(device->CurrentIP));
-}
-
-void advatek_manager::updateConnectedDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* connectedDevice) {
-	updateConnectedDeviceWithMac(fromDevice, connectedDevice->Mac, ipString(connectedDevice->CurrentIP));
+	updateConnectedDevice(device, device);
 }
 
 std::vector<uint8_t> testTape;

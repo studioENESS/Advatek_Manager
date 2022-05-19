@@ -69,7 +69,6 @@ public:
 	void addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
 	void addVirtualDevice(sImportOptions &importOptions);
 	void pasteToNewVirtualDevice();
-	void updateConnectedDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr);
 	void updateConnectedDevice(sAdvatekDevice* device);
 	void updateConnectedDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* connectedDevice);
 	void identifyDevice(int d, uint8_t duration);

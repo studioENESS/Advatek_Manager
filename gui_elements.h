@@ -21,7 +21,6 @@ extern uint32_t COL_GREY, COL_LIGHTGREY, COL_GREEN, COL_RED;
 
 extern std::vector<sAdvatekDevice*> foundDevices;
 extern std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
-extern sAdvatekDevice* syncDevice;
 
 extern advatek_manager adv;
 extern sImportOptions userImportOptions, virtualImportOptions;
@@ -42,8 +41,6 @@ struct updateRequest {
 	int clearVirtualDevices = 0;
 	int connectedDevicesToVirtualDevices = 0;
 	int clearVirtualDeviceIndex = -1;
-	int syncDevice = 0;
-	int syncVirtualDevices = 0;
 };
 
 struct loopVar {
