@@ -15,6 +15,8 @@
 #include "advatek_assistor.h"
 #include "portable-file-dialogs.h"
 
+#define Version "1.3.1"
+
 namespace pt = boost::property_tree;
 
 extern uint32_t COL_GREY, COL_LIGHTGREY, COL_GREEN, COL_RED;
@@ -45,6 +47,7 @@ struct updateRequest {
 
 struct loopVar {
 	int window_w, window_h;
+	int open_action = -1;
 
 	double currTime = 0;
 	double lastTime = 0;
@@ -87,6 +90,7 @@ void scaleToScreenDPI(ImGuiIO& io);
 void showResult(std::string& result);
 
 void button_update_controller_settings(sAdvatekDevice* device);
+void button_open_close_all();
 
 void colouredText(const char* txt, uint32_t color);
 

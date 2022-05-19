@@ -174,6 +174,14 @@ void button_update_controller_settings(sAdvatekDevice* device) {
 	}
 }
 
+void button_open_close_all() {
+	if (ImGui::Button("Open All"))
+		s_loopVar.open_action = 1;
+	ImGui::SameLine();
+	if (ImGui::Button("Close All"))
+		s_loopVar.open_action = 0;
+}
+
 void colouredText(const char* txt, uint32_t color) {
 	ImGui::PushStyleColor(ImGuiCol_Text, color);
 	ImGui::TextWrapped(txt);
@@ -351,6 +359,9 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 		Title.precision(2);
 		Title << "	" << "Temp: " << (float)devices[i]->Temperature * 0.1 << "	" << devices[i]->Nickname;
 		Title << "###" << devices[i]->uid;
+
+		if (s_loopVar.open_action != -1)
+			ImGui::SetNextItemOpen(s_loopVar.open_action != 0);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.f * s_loopVar.scale, 8.f * s_loopVar.scale));
 		bool node_open = ImGui::TreeNodeEx(Title.str().c_str(), ImGuiSelectableFlags_SpanAllColumns);
@@ -802,6 +813,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 			ImGui::TreePop();
 		}
 	}
+	s_loopVar.open_action = -1;
 }
 
 void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
@@ -907,13 +919,13 @@ void showWindow(GLFWwindow*& window)
 
 		showResult(result);
 
-		if (ImGui::Button("Refresh Adaptors"))
+		if (ImGui::Button("Search"))
 		{
-			s_updateRequest.refreshAdaptors = true;
-		} ImGui::SameLine();
+			s_updateRequest.poll = true;
+		}
 
+		ImGui::SameLine();
 		ImGui::PushItemWidth(130 * s_loopVar.scale);
-
 		if (ImGui::BeginCombo("###Adaptor", adaptor_string.c_str(), 0))
 		{
 			for (int n = 0; n < adv.networkAdaptors.size(); n++)
@@ -929,6 +941,13 @@ void showWindow(GLFWwindow*& window)
 			}
 			ImGui::EndCombo();
 		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Refresh Adaptors"))
+		{
+			s_updateRequest.refreshAdaptors = true;
+		}
+
 		ImGui::Spacing();
 
 		if (ImGui::BeginTabBar("Devices")) {
@@ -948,12 +967,11 @@ void showWindow(GLFWwindow*& window)
 			if (ImGui::BeginTabItem(tabTitleConnected.str().c_str()))
 			{
 				ImGui::Spacing();
-				if (ImGui::Button("Search"))
-				{
-					s_updateRequest.poll = true;
-				}
 
 				if (adv.connectedDevices.size() >= 1) {
+
+					button_open_close_all();
+
 					ImGui::SameLine();
 					if (ImGui::Button("Export All")) {
 						auto path = pfd::save_file("Select a file", "controllerPack.json").result();
@@ -965,12 +983,11 @@ void showWindow(GLFWwindow*& window)
 					if (ImGui::Button("Copy All to Virtual Devices")) {
 						s_updateRequest.connectedDevicesToVirtualDevices = true;
 					}
-				}
 
-				if (adv.connectedDevices.size() > 1) {
 					ImGui::SameLine();
 					ImGui::Combo("###SortConnectedDevices", &adv.sortTypeConnected, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes));
 				}
+
 				ImGui::Spacing();
 
 				showDevices(adv.connectedDevices, true);
@@ -1024,9 +1041,28 @@ void showWindow(GLFWwindow*& window)
 			{
 				ImGui::Spacing();
 
+				if (adv.virtualDevices.size() >= 1) {
+
+					button_open_close_all();
+
+					ImGui::SameLine();
+					if (ImGui::Button("Export All")) {
+						auto path = pfd::save_file("Select a file", "controllerPack.json").result();
+						if (!path.empty()) {
+							adv.exportJSON(adv.virtualDevices, path);
+						}
+					}
+
+					ImGui::SameLine();
+					if (ImGui::Button("Clear All"))
+					{
+						s_updateRequest.clearVirtualDevices = true;
+					}
+					ImGui::SameLine();
+				}
+
 				if (ImGui::BeginCombo("###NewVirtualDevice", vDeviceString.c_str(), 0))
 				{
-
 					for (const auto& jsonData : JSONControllers)
 					{
 						const bool is_selected = (vDeviceString.c_str() == jsonData[0].c_str());
@@ -1067,29 +1103,11 @@ void showWindow(GLFWwindow*& window)
 					}
 				}
 
-				if (adv.virtualDevices.size() > 0) {
-					ImGui::SameLine();
-					if (ImGui::Button("Export All")) {
-						auto path = pfd::save_file("Select a file", "controllerPack.json").result();
-						if (!path.empty()) {
-							adv.exportJSON(adv.virtualDevices, path);
-						}
-					}
-				}
-
 				if (adv.memoryDevices.size() == 1) {
 					ImGui::SameLine();
 					if (ImGui::Button("Paste"))
 					{
 						s_updateRequest.pasteToNewVirtualDevice = true;
-					}
-				}
-
-				if (adv.virtualDevices.size() >= 1) {
-					ImGui::SameLine();
-					if (ImGui::Button("Clear"))
-					{
-						s_updateRequest.clearVirtualDevices = true;
 					}
 				}
 
@@ -1203,6 +1221,7 @@ void AppLog::Clear()
 	Buf.clear();
 	LineOffsets.clear();
 	LineOffsets.push_back(0);
+	AddLog("[INFO] Advatek Assistor v%s\n", Version);
 }
 
 void AppLog::AddLog(const char* fmt, ...) IM_FMTARGS(2)
@@ -1240,7 +1259,7 @@ void AppLog::Draw(const char* title, bool* p_open /*= NULL*/)
 
 	//ImGui::Separator();
 	ImGui::Spacing();
-	ImGui::BeginChild("scrolling", ImVec2(0, 70 * s_loopVar.scale), false, ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::BeginChild("scrolling", ImVec2(0, 79 * s_loopVar.scale), false, ImGuiWindowFlags_HorizontalScrollbar);
 
 	if (clear)
 		Clear();
