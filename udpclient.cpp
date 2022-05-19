@@ -43,14 +43,21 @@ bool UdpClient::HasMessages()
 
 void UdpClient::Send(const std::vector<uint8_t>& message, std::string& s_adr, bool b_broadcast)
 {
-    boost::asio::ip::multicast::outbound_interface option(boost::asio::ip::address_v4::from_string(m_ipAddress.c_str()));
-    socket.set_option(option);
+    try {
+        boost::asio::ip::multicast::outbound_interface option(boost::asio::ip::address_v4::from_string(m_ipAddress.c_str()));
+        socket.set_option(option);
 
-    socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
+        socket.set_option(boost::asio::socket_base::broadcast(b_broadcast));
  
-    boost::asio::ip::udp::endpoint sendpoint(boost::asio::ip::address::from_string(s_adr.c_str()), m_serverport);
+        boost::asio::ip::udp::endpoint sendpoint(boost::asio::ip::address::from_string(s_adr.c_str()), m_serverport);
 
-    socket.send_to(boost::asio::buffer(message), sendpoint);
+        socket.send_to(boost::asio::buffer(message), sendpoint);
+    }
+    catch (const boost::system::system_error& ex)
+    {
+        std::cout << "Failed to send from socket ... " << std::endl;
+        std::cout << ex.what() << std::endl;
+    }
 }
 
 std::vector<uint8_t> UdpClient::PopMessage()

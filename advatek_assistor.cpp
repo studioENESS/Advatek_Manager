@@ -43,39 +43,18 @@ size_t advatek_manager::getConnectedDeviceIndex(std::string mac) {
 	return -1;
 }
 
-void advatek_manager::removeConnectedDevice(std::string mac) {
-	size_t index = getConnectedDeviceIndex(mac);
-	removeConnectedDevice(index);
+sAdvatekDevice* advatek_manager::getConnectedDevice(std::string mac) {
+	for (size_t index = 0; index < connectedDevices.size(); ++index) {
+		if (macString(connectedDevices[index]->Mac) == mac) return connectedDevices[index];
+	}
+	return NULL;
 }
 
-void advatek_manager::removeConnectedDevice(size_t index) {
-	if (index < 0 || index > connectedDevices.size()-1) return;
-
-	auto device = connectedDevices[index];
-
-	if (device) {
-		if (device->Model) delete device->Model;
-		if (device->Firmware) delete device->Firmware;
-		if (device->OutputPixels) delete[] device->OutputPixels;
-		if (device->OutputUniv) delete[] device->OutputUniv;
-		if (device->OutputChan) delete[] device->OutputChan;
-		if (device->OutputNull) delete[] device->OutputNull;
-		if (device->OutputZig) delete[] device->OutputZig;
-		if (device->OutputReverse) delete[] device->OutputReverse;
-		if (device->OutputColOrder) delete[] device->OutputColOrder;
-		if (device->OutputGrouping) delete[] device->OutputGrouping;
-		if (device->OutputBrightness) delete[] device->OutputBrightness;
-		if (device->DmxOutOn) delete[] device->DmxOutOn;
-		if (device->TempDmxOutOn) delete[] device->TempDmxOutOn;
-		if (device->DmxOutUniv) delete[] device->DmxOutUniv;
-		if (device->DriverType) delete[] device->DriverType;
-		if (device->DriverSpeed) delete[] device->DriverSpeed;
-		if (device->DriverExpandable) delete[] device->DriverExpandable;
-		if (device->DriverNames) delete[] device->DriverNames;
-		if (device->VoltageBanks) delete[] device->VoltageBanks;
-		if (device) delete device;
-	}
-	connectedDevices.erase(connectedDevices.begin() + index);
+void advatek_manager::removeConnectedDevice(sAdvatekDevice* device) {
+	int deviceIndex = getConnectedDeviceIndex(macString(device->Mac));
+	if (deviceIndex < 0) return;
+	if (device) delete device;
+	connectedDevices.erase(connectedDevices.begin() + deviceIndex);
 }
 
 bool advatek_manager::sameNetworkSettings(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice) {
@@ -303,7 +282,7 @@ void advatek_manager::pasteToNewVirtualDevice() {
 	virtualDevices.emplace_back(device);
 }
 
-void advatek_manager::updateDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr) {
+void advatek_manager::updateConnectedDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr) {
 	dataTape.clear();
 	dataTape.resize(12);
 	dataTape[0] = 'A';
@@ -357,28 +336,26 @@ void advatek_manager::updateDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, 
 
 	dataTape.push_back(device->MaxTargetTemp);
 
+	removeConnectedDevice(device);
 	unicast_udp_message(ipStr, dataTape);
 }
 
-void advatek_manager::updateDevice(int d) {
-
-	auto device = advatek_manager::connectedDevices[d];
+void advatek_manager::updateConnectedDevice(sAdvatekDevice* device) {
 
 	if ((bool)device->SimpleConfig) {
-		advatek_manager::process_simple_config(d);
+		advatek_manager::process_simple_config(device);
 	}
 
-	updateDeviceWithMac(device, device->Mac, ipString(device->CurrentIP));
+	updateConnectedDeviceWithMac(device, device->Mac, ipString(device->CurrentIP));
 }
 
 void advatek_manager::updateConnectedDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* connectedDevice) {
-	updateDeviceWithMac(fromDevice, connectedDevice->Mac, ipString(connectedDevice->CurrentIP));
+	updateConnectedDeviceWithMac(fromDevice, connectedDevice->Mac, ipString(connectedDevice->CurrentIP));
 }
 
 std::vector<uint8_t> testTape;
-void advatek_manager::setTest(int d) {
+void advatek_manager::setTest(sAdvatekDevice* device) {
 
-	auto device = connectedDevices[d];
 	if (bTestAll) {
 		testTape.clear();
 		testTape.resize(12);
@@ -508,11 +485,6 @@ void advatek_manager::clearDevices(std::vector<sAdvatekDevice*> &devices) {
 
 void advatek_manager::clearConnectedDevices() {
 	clearDevices(connectedDevices);
-}
-
-void advatek_manager::bc_networkConfig(int d) {
-	auto device = connectedDevices[d];
-	bc_networkConfig(device);
 }
 
 void advatek_manager::bc_networkConfig(sAdvatekDevice* device) {
@@ -896,8 +868,7 @@ void advatek_manager::process_udp_message(uint8_t * data) {
 	}
 }
 
-void advatek_manager::auto_sequence_channels(int d) {
-	auto device = advatek_manager::connectedDevices[d];
+void advatek_manager::auto_sequence_channels(sAdvatekDevice* device) {
 
 	uint16_t startOutputUniv   = device->OutputUniv[0];
 	uint16_t startOutputChan   = device->OutputChan[0];
@@ -921,13 +892,11 @@ void advatek_manager::auto_sequence_channels(int d) {
 		startOutputChan   = device->OutputChan[output];
 		startOutputPixels = device->OutputPixels[output];
 		setEndUniverseChannel(startOutputUniv, startOutputChan, startOutputPixels, device->OutputGrouping[output], startEndUniverse, startEndChannel);
-
 	}
 	return;
 }
 
-void advatek_manager::process_simple_config(int d) {
-	auto device = connectedDevices[d];
+void advatek_manager::process_simple_config(sAdvatekDevice* device) {
 
 	device->OutputNull[0] = 0;
 	device->OutputZig[0] = 0;
@@ -935,17 +904,18 @@ void advatek_manager::process_simple_config(int d) {
 	device->OutputBrightness[0] = 100;
 	device->OutputReverse[0] = 0;
 
-	for (int output = 1; output < device->NumOutputs*0.5; output++) {
+	for (int output = 1; output < device->NumOutputs * 0.5; output++) {
 		device->OutputNull[output] = device->OutputNull[0];
 		device->OutputZig[output] = device->OutputZig[0];
 		device->OutputGrouping[output] = device->OutputGrouping[0];
 		device->OutputBrightness[output] = device->OutputBrightness[0];
 		device->OutputReverse[output] = device->OutputReverse[0];
-
-		device->OutputPixels[output]   = device->OutputPixels[0];
+		device->OutputPixels[output] = device->OutputPixels[0];
 		device->OutputGrouping[output] = device->OutputGrouping[0];
 	}
-	auto_sequence_channels(d);
+
+	auto_sequence_channels(device);
+
 	return;
 }
 

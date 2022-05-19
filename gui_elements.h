@@ -89,7 +89,7 @@ void scaleToScreenDPI(ImGuiIO& io);
 
 void showResult(std::string& result);
 
-void button_update_controller_settings(int i);
+void button_update_controller_settings(sAdvatekDevice* device);
 
 void colouredText(const char* txt, uint32_t color);
 

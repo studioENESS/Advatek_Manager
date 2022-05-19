@@ -48,6 +48,7 @@ public:
 	std::vector <std::string> networkAdaptors;
 	int currentAdaptor = -1;
 	size_t getConnectedDeviceIndex(std::string mac);
+	sAdvatekDevice* getConnectedDevice(std::string mac);
 
 	std::vector<sAdvatekDevice*> connectedDevices;
 	std::vector<sAdvatekDevice*> virtualDevices;
@@ -56,8 +57,7 @@ public:
 	std::vector<sAdvatekDevice*> getDevicesWithNickname(std::vector<sAdvatekDevice*>& devices, std::string nickname);
 	std::vector<sAdvatekDevice*> getDevicesWithMac(std::vector<sAdvatekDevice*>& devices, std::string mac);
 
-	void removeConnectedDevice(size_t index);
-	void removeConnectedDevice(std::string mac);
+	void removeConnectedDevice(sAdvatekDevice* device);
 	void sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType);
 	void sortAllDevices();
 	void clearDevices(std::vector<sAdvatekDevice*> &devices);
@@ -69,13 +69,12 @@ public:
 	void addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
 	void addVirtualDevice(sImportOptions &importOptions);
 	void pasteToNewVirtualDevice();
-	void updateDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr);
-	void updateDevice(int d);
+	void updateConnectedDeviceWithMac(sAdvatekDevice* device, uint8_t* Mac, std::string ipStr);
+	void updateConnectedDevice(sAdvatekDevice* device);
 	void updateConnectedDevice(sAdvatekDevice* fromDevice, sAdvatekDevice* connectedDevice);
 	void identifyDevice(int d, uint8_t duration);
-	void setTest(int d);
+	void setTest(sAdvatekDevice* device);
 	void clearConnectedDevices();
-	void bc_networkConfig(int d);
 	void bc_networkConfig(sAdvatekDevice* device);
 	void poll();
 	void softPoll();
@@ -86,8 +85,8 @@ public:
 	void send_udp_message(std::string ip_address, int port, bool b_broadcast, std::vector<uint8_t> message);
 	void unicast_udp_message(std::string ip_address, std::vector<uint8_t> message);
 	void broadcast_udp_message(std::vector<uint8_t> message);
-	void auto_sequence_channels(int d);
-	void process_simple_config(int d);
+	void auto_sequence_channels(sAdvatekDevice* device);
+	void process_simple_config(sAdvatekDevice* device);
 
 	void addUID(sAdvatekDevice* device);
 

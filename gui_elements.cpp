@@ -168,11 +168,10 @@ void showResult(std::string& result) {
 	}
 }
 
-void button_update_controller_settings(int i) {
+void button_update_controller_settings(sAdvatekDevice* device) {
 	if (ImGui::Button("Update Settings"))
 	{
-		adv.updateDevice(i);
-		s_updateRequest.poll = true;
+		adv.updateConnectedDevice(device);
 	}
 }
 
@@ -498,7 +497,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 						ImGui::Checkbox("Automatic Sequence Channels", &autoChannels);
 
 						if (autoChannels) {
-							adv.auto_sequence_channels(i);
+							adv.auto_sequence_channels(devices[i]);
 						}
 
 						bool* tempReversed = new bool[devices[i]->NumOutputs];
@@ -728,7 +727,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 							}
 						}
 
-						if (b_setTest) adv.setTest(i);
+						if (b_setTest) adv.setTest(devices[i]);
 
 						ImGui::PopItemWidth();
 						ImGui::EndTabItem();
@@ -791,12 +790,12 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 			if (isConnected && !deviceInRange) {
 				if (ImGui::Button("Update Network"))
 				{
-					adv.bc_networkConfig(i);
+					adv.bc_networkConfig(devices[i]);
 					s_updateRequest.poll = true;
 				}
 			}
 			else if (isConnected) {
-				button_update_controller_settings(i);
+				button_update_controller_settings(devices[i]);
 			}
 
 			ImGui::Spacing();
@@ -1199,14 +1198,14 @@ void processUpdateRequests()
 
 	if (s_updateRequest.syncDevice) {
 		adv.updateConnectedDevice(syncDeviceVirt, syncDevice);
-		adv.removeConnectedDevice(macString(syncDevice->Mac));
+		adv.removeConnectedDevice(adv.getConnectedDevice(macString(syncDevice->Mac)));
 		s_updateRequest.syncDevice = false;
 	}
 
 	if (s_updateRequest.syncVirtualDevices) {
 		for (int i = 0; i < syncDevices.size(); i++) {
 			adv.updateConnectedDevice(syncDevices[i].first, syncDevices[i].second);
-			adv.removeConnectedDevice(macString(syncDevices[i].second->Mac));
+			adv.removeConnectedDevice(adv.getConnectedDevice(macString(syncDevices[i].second->Mac)));
 		}
 		s_updateRequest.syncVirtualDevices = false;
 	}
