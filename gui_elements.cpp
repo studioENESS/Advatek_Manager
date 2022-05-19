@@ -551,6 +551,12 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					} // End Else/If Simple Config
 
 					ImGui::PopItemWidth();
+
+					ImGui::Spacing();
+					ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
+					ImGui::Text("Note: Specified Maximum Pixels Per Output is %i", devices[i]->MaxPixPerOutput);
+					ImGui::PopStyleColor();
+
 					ImGui::EndTabItem();
 				}
 				if (ImGui::BeginTabItem("DMX512 Outputs"))
