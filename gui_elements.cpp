@@ -577,28 +577,30 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 					ImGui::EndTabItem();
 				}
-				if (ImGui::BeginTabItem("DMX512 Outputs"))
-				{
-					ImGui::PushItemWidth(50 * s_loopVar.scale);
+				if (devices[i]->NumDMXOutputs > 0) {
+					if (ImGui::BeginTabItem("DMX512 Outputs"))
+					{
+						ImGui::PushItemWidth(50 * s_loopVar.scale);
 
-					for (int DMXoutput = 0; DMXoutput < devices[i]->NumDMXOutputs; DMXoutput++) {
-						ImGui::PushID(DMXoutput);
-						devices[i]->TempDmxOutOn[DMXoutput] = (bool)devices[i]->DmxOutOn[DMXoutput];
+						for (int DMXoutput = 0; DMXoutput < devices[i]->NumDMXOutputs; DMXoutput++) {
+							ImGui::PushID(DMXoutput);
+							devices[i]->TempDmxOutOn[DMXoutput] = (bool)devices[i]->DmxOutOn[DMXoutput];
 
-						ImGui::Text("Output %i", DMXoutput + 1);
-						ImGui::SameLine();
+							ImGui::Text("Output %i", DMXoutput + 1);
+							ImGui::SameLine();
 
-						if (ImGui::Checkbox("Enabled", &devices[i]->TempDmxOutOn[DMXoutput])) {
-							devices[i]->DmxOutOn[DMXoutput] = (uint8_t)devices[i]->TempDmxOutOn[DMXoutput];
+							if (ImGui::Checkbox("Enabled", &devices[i]->TempDmxOutOn[DMXoutput])) {
+								devices[i]->DmxOutOn[DMXoutput] = (uint8_t)devices[i]->TempDmxOutOn[DMXoutput];
+							}
+
+							ImGui::SameLine();
+							ImGui::InputScalar("Universe", ImGuiDataType_U16, &devices[i]->DmxOutUniv[DMXoutput], 0, 0, 0);
+							ImGui::PopID();
 						}
 
-						ImGui::SameLine();
-						ImGui::InputScalar("Universe", ImGuiDataType_U16, &devices[i]->DmxOutUniv[DMXoutput], 0, 0, 0);
-						ImGui::PopID();
+						ImGui::PopItemWidth();
+						ImGui::EndTabItem();
 					}
-
-					ImGui::PopItemWidth();
-					ImGui::EndTabItem();
 				}
 
 				if (ImGui::BeginTabItem("LEDs"))
