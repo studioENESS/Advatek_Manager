@@ -35,7 +35,7 @@ sImportOptions virtualImportOptions = sImportOptions();
 
 std::string adaptor_string = "None";
 std::string json_device_string = "Select Device";
-std::string vDeviceString = "New ...";
+std::string vDeviceString = "Import ...";
 std::string result = "";
 std::string vDeviceData = "";
 
@@ -50,6 +50,16 @@ bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* for
 }
 
 bool SliderInt16(const char* label, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+{
+	return ImGui::SliderScalar(label, ImGuiDataType_U16, v, &v_min, &v_max, format, flags);
+}
+
+bool SliderInt8(const char* label, uint8_t* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
+{
+	return ImGui::SliderScalar(label, ImGuiDataType_U8, v, &v_min, &v_max, format, flags);
+}
+
+bool SliderInt16(const char* label, uint16_t* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
 	return ImGui::SliderScalar(label, ImGuiDataType_U16, v, &v_min, &v_max, format, flags);
 }
@@ -417,8 +427,10 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 				ImGui::PopItemWidth();
 			}
 
+			ImGui::Spacing();
 			ImGui::Separator();
 			ImGui::Spacing();
+
 
 			ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_None);
 
@@ -672,10 +684,16 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 						}
 
 						ImGui::SameLine();
-
-						// testAll
 						if (ImGui::Checkbox("Test All", &adv.bTestAll)) {
 							b_setTest = true;
+						}
+
+						if (devices[i]->TestMode == 6) {
+							ImGui::SameLine();
+							testModeEnessColourOuputs = devices[i]->testModeEnessColourOuputs;
+							if (ImGui::Checkbox("ENESS Output Test", &testModeEnessColourOuputs)) {
+								devices[i]->testModeEnessColourOuputs = (bool)testModeEnessColourOuputs;
+							}
 						}
 
 						if (devices[i]->ProtVer < 8 && devices[i]->TestMode == 8) {
@@ -684,11 +702,6 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 						}
 
 						if ((devices[i]->TestMode == 6) || (devices[i]->TestMode == 8)) {
-
-							testModeEnessColourOuputs = devices[i]->testModeEnessColourOuputs;
-							if (ImGui::Checkbox("ENESS Output Test", &testModeEnessColourOuputs)) {
-								devices[i]->testModeEnessColourOuputs = (bool)testModeEnessColourOuputs;
-							}
 
 							if (devices[i]->testModeEnessColourOuputs) {
 								// Cycle colours
@@ -718,7 +731,12 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 								if (devices[i]->testModeCycleOuputs || devices[i]->testModeCyclePixels) {
 
 									if (s_loopVar.currTime - s_loopVar.lastTime > s_loopVar.testCycleSpeed) {
-										if (devices[i]->TestMode == 8) {
+										
+										if (devices[i]->testModeCycleOuputs && s_loopVar.b_testPixelsReady) {
+											devices[i]->TestOutputNum = (devices[i]->TestOutputNum) % ((int)(devices[i]->NumOutputs * 0.5)) + 1;
+										}
+
+										if (devices[i]->TestMode == 8 && devices[i]->testModeCyclePixels) {
 											// Set Pixel
 											devices[i]->TestPixelNum = (devices[i]->TestPixelNum) % ((int)(devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1])) + 1;
 
@@ -729,16 +747,20 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 												s_loopVar.b_testPixelsReady = false;
 											}
 										}
-										if (devices[i]->testModeCycleOuputs && s_loopVar.b_testPixelsReady) {
-											devices[i]->TestOutputNum = (devices[i]->TestOutputNum) % ((int)(devices[i]->NumOutputs * 0.5)) + 1;
+										else {
+											s_loopVar.b_testPixelsReady = true;
 										}
+
 										s_loopVar.lastTime = s_loopVar.currTime;
 										b_setTest = true;
 									}
 								}
 
-								ImGui::Checkbox("Cycle Outputs", &devices[i]->testModeCycleOuputs);
-								ImGui::Checkbox("Cycle Pixels", &devices[i]->testModeCyclePixels);
+								ImGui::Checkbox("Cycle Outputs###CycleOut", &devices[i]->testModeCycleOuputs);
+								if (devices[i]->TestMode == 8) {
+									ImGui::SameLine();
+									ImGui::Checkbox("Cycle Pixels###CyclePix", &devices[i]->testModeCyclePixels);
+								}
 								ImGui::SliderFloat("Speed", &s_loopVar.testCycleSpeed, 5.0, 0.01, "%.01f");
 
 							}
@@ -747,12 +769,12 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 						if (devices[i]->ProtVer > 7) {
 
-							if (SliderInt8("Output (All 0)", (int*)&devices[i]->TestOutputNum, 0, (devices[i]->NumOutputs * 0.5))) {
+							if (SliderInt8("Output (All 0)", &devices[i]->TestOutputNum, 0, (devices[i]->NumOutputs * 0.5))) {
 								b_setTest = true;
 							}
 
 							if (devices[i]->TestMode == 8) {
-								if (SliderInt16("Pixels (All 0)", (int*)&devices[i]->TestPixelNum, 0, (devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1]))) {
+								if (SliderInt16("Pixels (All 0)", &devices[i]->TestPixelNum, 0, (devices[i]->OutputPixels[(int)devices[i]->TestOutputNum - 1]))) {
 									b_setTest = true;
 								}
 							}
@@ -833,12 +855,13 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					adv.bc_networkConfig(devices[i]);
 					s_updateRequest.poll = true;
 				}
+				ImGui::SameLine();
 			}
 			else if (isConnected) {
 				button_update_controller_settings(devices[i]);
+				ImGui::SameLine();
 			}
 
-			ImGui::SameLine();
 			if (ImGui::Button("Open All###Tabs"))
 			{
 				s_loopVar.open_action = 1;
@@ -1028,10 +1051,13 @@ void showWindow(GLFWwindow*& window)
 				if (adv.connectedDevices.size() >= 1) {
 
 					button_open_close_all();
+					
 					ImGui::SameLine();
+					ImGui::Combo("###SortConnectedDevices", &adv.sortTypeConnected, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes));
 
 					std::string path;
 					int selected_export = 0;
+					ImGui::SameLine();
 					if (ImGui::Combo("###ExportTypes", &selected_export, ExportAllTypes, IM_ARRAYSIZE(ExportAllTypes))) {
 						switch (selected_export) {
 						case 1: //JSON
@@ -1051,9 +1077,6 @@ void showWindow(GLFWwindow*& window)
 							break;
 						}
 					}
-
-					ImGui::SameLine();
-					ImGui::Combo("###SortConnectedDevices", &adv.sortTypeConnected, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes));
 				}
 
 				ImGui::Spacing();
@@ -1112,10 +1135,15 @@ void showWindow(GLFWwindow*& window)
 				if (adv.virtualDevices.size() >= 1) {
 
 					button_open_close_all();
-					ImGui::SameLine();
+					
+					if (adv.virtualDevices.size() > 1) {
+						ImGui::SameLine();
+						ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes) - 2);
+					}
 
 					std::string path;
 					int selected_export = 0;
+					ImGui::SameLine();
 					if (ImGui::Combo("###ExportTypes", &selected_export, ExportAllTypes, IM_ARRAYSIZE(ExportAllTypes)-2)) {
 						switch (selected_export) {
 						case 1: //JSON
@@ -1128,21 +1156,70 @@ void showWindow(GLFWwindow*& window)
 							break;
 						}
 					}
-
-					ImGui::SameLine();
-					if (ImGui::Button("Clear All"))
-					{
-						s_updateRequest.clearVirtualDevices = true;
-					}
 					ImGui::SameLine();
 				}
 
 				if (ImGui::BeginCombo("###NewVirtualDevice", vDeviceString.c_str(), 0))
 				{
+					const bool jsonAdd_selected = (vDeviceString.c_str() == "JSON (Add)");
+					if (ImGui::Selectable("JSON (add)", jsonAdd_selected))
+					{
+						auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
+						if (!path.empty()) {
+							applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
+							boost::property_tree::ptree advatek_devices;
+							boost::property_tree::read_json(path.at(0), advatek_devices);
+
+							std::string result = adv.validateJSON(advatek_devices);
+
+							if (!result.empty()) {
+								applog.AddLog("[ERROR] Not a valid JSON file.\n");
+							}
+							else {
+								std::stringstream jsonStringStream;
+								write_json(jsonStringStream, advatek_devices);
+
+								virtualImportOptions = sImportOptions();
+								virtualImportOptions.json = jsonStringStream.str();
+								virtualImportOptions.init = true;
+
+								s_updateRequest.newVirtualDevice = true;
+							}
+						}
+					}
+
+					const bool jsonClean_selected = (vDeviceString.c_str() == "JSON (clean)");
+					if (ImGui::Selectable("JSON (clean)", jsonClean_selected))
+					{
+						s_updateRequest.clearVirtualDevices = true;
+						auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
+						if (!path.empty()) {
+							applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
+							boost::property_tree::ptree advatek_devices;
+							boost::property_tree::read_json(path.at(0), advatek_devices);
+
+							std::string result = adv.validateJSON(advatek_devices);
+
+							if (!result.empty()) {
+								applog.AddLog("[ERROR] Not a valid JSON file.\n");
+							}
+							else {
+								std::stringstream jsonStringStream;
+								write_json(jsonStringStream, advatek_devices);
+
+								virtualImportOptions = sImportOptions();
+								virtualImportOptions.json = jsonStringStream.str();
+								virtualImportOptions.init = true;
+
+								s_updateRequest.newVirtualDevice = true;
+							}
+						}
+					}
+
 					for (const auto& jsonData : JSONControllers)
 					{
-						const bool is_selected = (vDeviceString.c_str() == jsonData[0].c_str());
-						if (ImGui::Selectable(jsonData[0].c_str(), is_selected))
+						const bool jsonController_selected = (vDeviceString.c_str() == jsonData[0].c_str());
+						if (ImGui::Selectable(jsonData[0].c_str(), jsonController_selected))
 						{
 							virtualImportOptions = sImportOptions();
 							virtualImportOptions.json = jsonData[1];
@@ -1154,29 +1231,9 @@ void showWindow(GLFWwindow*& window)
 				}
 
 				ImGui::SameLine();
-				if (ImGui::Button("Import JSON")) {
-					auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
-					if (!path.empty()) {
-						applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
-						boost::property_tree::ptree advatek_devices;
-						boost::property_tree::read_json(path.at(0), advatek_devices);
-
-						std::string result = adv.validateJSON(advatek_devices);
-
-						if (!result.empty()) {
-							applog.AddLog("[ERROR] Not a valid JSON file.\n");
-						}
-						else {
-							std::stringstream jsonStringStream;
-							write_json(jsonStringStream, advatek_devices);
-
-							virtualImportOptions = sImportOptions();
-							virtualImportOptions.json = jsonStringStream.str();
-							virtualImportOptions.init = true;
-
-							s_updateRequest.newVirtualDevice = true;
-						}
-					}
+				if (ImGui::Button("Clear All"))
+				{
+					s_updateRequest.clearVirtualDevices = true;
 				}
 
 				if (adv.memoryDevices.size() == 1) {
@@ -1185,11 +1242,6 @@ void showWindow(GLFWwindow*& window)
 					{
 						s_updateRequest.pasteToNewVirtualDevice = true;
 					}
-				}
-
-				if (adv.virtualDevices.size() > 1) {
-					ImGui::SameLine();
-					ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes) - 2);
 				}
 
 				ImGui::Spacing();
@@ -1248,18 +1300,6 @@ void processUpdateRequests()
 		s_updateRequest.poll = false;
 	}
 
-	if (s_updateRequest.newVirtualDevice) {
-		adv.addVirtualDevice(virtualImportOptions);
-		applog.AddLog("[INFO] Created new Virtual Device.\n");
-		s_updateRequest.newVirtualDevice = false;
-	}
-
-	if (s_updateRequest.pasteToNewVirtualDevice) {
-		adv.pasteToNewVirtualDevice();
-		applog.AddLog("[INFO] Pasted data into new virtual device.\n");
-		s_updateRequest.pasteToNewVirtualDevice = false;
-	}
-
 	if (s_updateRequest.clearVirtualDevices) {
 		adv.clearDevices(adv.virtualDevices);
 		s_updateRequest.clearVirtualDevices = false;
@@ -1270,6 +1310,18 @@ void processUpdateRequests()
 		applog.AddLog(("[INFO] Removing Virtual Device " + ipString(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->StaticIP).append(" ").append(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->Nickname).append("\n")).c_str());
 		adv.virtualDevices.erase(adv.virtualDevices.begin() + s_updateRequest.clearVirtualDeviceIndex);
 		s_updateRequest.clearVirtualDeviceIndex = -1;
+	}
+
+	if (s_updateRequest.newVirtualDevice) {
+		adv.addVirtualDevice(virtualImportOptions);
+		applog.AddLog("[INFO] Created new Virtual Device.\n");
+		s_updateRequest.newVirtualDevice = false;
+	}
+
+	if (s_updateRequest.pasteToNewVirtualDevice) {
+		adv.pasteToNewVirtualDevice();
+		applog.AddLog("[INFO] Pasted data into new virtual device.\n");
+		s_updateRequest.pasteToNewVirtualDevice = false;
 	}
 
 	if (s_updateRequest.connectedDevicesToVirtualDevices) {

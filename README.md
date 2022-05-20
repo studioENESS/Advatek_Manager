@@ -1,6 +1,6 @@
 # Advatek Assisitor
 
-![preview](img/preview4.png)
+![preview](img/preview5.png)
 
 ## About
 

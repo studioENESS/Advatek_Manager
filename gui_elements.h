@@ -35,6 +35,10 @@ bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* for
 
 bool SliderInt16(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
 
+bool SliderInt8(const char* label, uint8_t* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+
+bool SliderInt16(const char* label, uint16_t* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
+
 struct updateRequest {
 	int poll = 0;
 	int refreshAdaptors = 0;

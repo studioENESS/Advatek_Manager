@@ -26,11 +26,11 @@ public:
 	pt::ptree Gamma;
 
 	const char* advatek_manager::SortTypes[5] = {
-		"Nickname",
-		"Model",
-		"Static IP",
-		"Current IP",
-		"Temperature"
+		"Sort Nickname",
+		"Sort Model",
+		"Sort Static IP",
+		"Sort Current IP",
+		"Sort Temperature"
 	};
 
 	int sortTypeConnected = 0;
