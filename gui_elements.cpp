@@ -777,10 +777,16 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					}
 					ImGui::PopItemWidth();
 
-					ImGui::PushItemWidth(30 * s_loopVar.scale);
-
-					ImGui::InputScalar("Fan Control On Temp", ImGuiDataType_U8, &devices[i]->MaxTargetTemp, 0, 0, 0);
-					ImGui::PopItemWidth();
+					if (devices[i]->MaxTargetTemp != 255) {
+						// Device is equiped with fan controller
+						ImGui::PushItemWidth(30 * s_loopVar.scale);
+						uint8_t tempMaxTargetTemp = devices[i]->MaxTargetTemp;
+						if (ImGui::InputScalar("Fan Control On Temp", ImGuiDataType_U8, &tempMaxTargetTemp, 0, 0, 0)) {
+							if (tempMaxTargetTemp == 255) tempMaxTargetTemp = 0;
+							devices[i]->MaxTargetTemp = tempMaxTargetTemp;
+						}
+						ImGui::PopItemWidth();
+					}
 
 					if (isConnected) {
 						int* tempVoltage = new int[devices[i]->NumBanks];
@@ -1262,6 +1268,8 @@ void AppLog::AddLog(const char* fmt, ...) IM_FMTARGS(2)
 
 void AppLog::Draw(const char* title, bool* p_open /*= NULL*/)
 {
+	ImGui::PushAllowKeyboardFocus(false);
+
 	if (!ImGui::Begin(title, p_open))
 	{
 		ImGui::End();
@@ -1330,4 +1338,6 @@ void AppLog::Draw(const char* title, bool* p_open /*= NULL*/)
 
 	ImGui::EndChild();
 	ImGui::End();
+
+	ImGui::PopAllowKeyboardFocus();
 }
