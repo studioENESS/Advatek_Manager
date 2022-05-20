@@ -493,13 +493,18 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					if (ImGui::Checkbox("Simple Config", &tempSimpleConfig)) {
 						devices[i]->SimpleConfig = tempSimpleConfig;
 					}
-
+					
 					ImGui::PushItemWidth(50 * s_loopVar.scale);
-
 					if ((bool)devices[i]->SimpleConfig) {
-						ImGui::InputScalar("Start Universe", ImGuiDataType_U16, &devices[i]->OutputUniv[0], 0, 0, 0);
-						ImGui::InputScalar("Start Channel ", ImGuiDataType_U16, &devices[i]->OutputChan[0], 0, 0, 0);
-						ImGui::InputScalar("Pixels Per Output", ImGuiDataType_U16, &devices[i]->OutputPixels[0], 0, 0, 0);
+						if (ImGui::InputScalar("Start Universe", ImGuiDataType_U16, &devices[i]->OutputUniv[0], 0, 0, 0)) {
+							adv.process_simple_config(devices[i]);
+						}
+						if (ImGui::InputScalar("Start Channel ", ImGuiDataType_U16, &devices[i]->OutputChan[0], 0, 0, 0)) {
+							adv.process_simple_config(devices[i]);
+						}
+						if (ImGui::InputScalar("Pixels Per Output", ImGuiDataType_U16, &devices[i]->OutputPixels[0], 0, 0, 0)) {
+							adv.process_simple_config(devices[i]);
+						}
 					}
 					else {
 						bool autoChannels = false;
