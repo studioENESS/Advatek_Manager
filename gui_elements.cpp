@@ -971,17 +971,28 @@ void showWindow(GLFWwindow*& window)
 				if (adv.connectedDevices.size() >= 1) {
 
 					button_open_close_all();
+					ImGui::SameLine();
 
-					ImGui::SameLine();
-					if (ImGui::Button("Export All")) {
-						auto path = pfd::save_file("Select a file", "controllerPack.json").result();
-						if (!path.empty()) {
-							adv.exportJSON(adv.connectedDevices, path);
+					std::string path;
+					int selected_export = 0;
+					if (ImGui::Combo("###ExportTypes", &selected_export, ExportAllTypes, IM_ARRAYSIZE(ExportAllTypes))) {
+						switch (selected_export) {
+						case 1: //JSON
+							path = pfd::save_file("Select a file", "controllerPack.json").result();
+							if (!path.empty()) {
+								adv.exportJSON(adv.connectedDevices, path);
+							}
+							break;
+						case 2: // Virtual Devices Add
+							s_updateRequest.connectedDevicesToVirtualDevices = true;
+							break;
+						case 3: // Virtual Devices Clean
+							adv.clearDevices(adv.virtualDevices);
+							s_updateRequest.connectedDevicesToVirtualDevices = true;
+							break;
+						default:
+							break;
 						}
-					}
-					ImGui::SameLine();
-					if (ImGui::Button("Copy All to Virtual Devices")) {
-						s_updateRequest.connectedDevicesToVirtualDevices = true;
 					}
 
 					ImGui::SameLine();
@@ -1044,12 +1055,20 @@ void showWindow(GLFWwindow*& window)
 				if (adv.virtualDevices.size() >= 1) {
 
 					button_open_close_all();
-
 					ImGui::SameLine();
-					if (ImGui::Button("Export All")) {
-						auto path = pfd::save_file("Select a file", "controllerPack.json").result();
-						if (!path.empty()) {
-							adv.exportJSON(adv.virtualDevices, path);
+
+					std::string path;
+					int selected_export = 0;
+					if (ImGui::Combo("###ExportTypes", &selected_export, ExportAllTypes, IM_ARRAYSIZE(ExportAllTypes)-2)) {
+						switch (selected_export) {
+						case 1: //JSON
+							path = pfd::save_file("Select a file", "controllerPack.json").result();
+							if (!path.empty()) {
+								adv.exportJSON(adv.connectedDevices, path);
+							}
+							break;
+						default:
+							break;
 						}
 					}
 
