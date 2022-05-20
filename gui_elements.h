@@ -45,6 +45,25 @@ struct updateRequest {
 	int clearVirtualDeviceIndex = -1;
 };
 
+struct myTabBarFlags {
+	ImGuiTabItemFlags network  = ImGuiTabItemFlags_None;
+	ImGuiTabItemFlags ethernet = ImGuiTabItemFlags_None;
+	ImGuiTabItemFlags dmx512   = ImGuiTabItemFlags_None;
+	ImGuiTabItemFlags leds     = ImGuiTabItemFlags_None;
+	ImGuiTabItemFlags test     = ImGuiTabItemFlags_None;
+	ImGuiTabItemFlags misc     = ImGuiTabItemFlags_None;
+
+	void select_network();
+	void select_ethernet();
+	void select_dmx512();
+	void select_leds();
+	void select_test();
+	void select_misc();
+
+	void Clear();
+};
+extern myTabBarFlags s_myTabBarFlags;
+
 struct loopVar {
 	int window_w, window_h;
 	int open_action = -1;

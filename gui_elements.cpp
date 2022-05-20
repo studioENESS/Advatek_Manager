@@ -40,6 +40,7 @@ std::string result = "";
 std::string vDeviceData = "";
 
 loopVar s_loopVar;
+myTabBarFlags s_myTabBarFlags;
 updateRequest s_updateRequest;
 AppLog applog;
 
@@ -339,7 +340,7 @@ bool b_setTest, testModeEnessColourOuputs = NULL;
 void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 	ImGui::Spacing();
-
+	
 	for (int i = 0; i < devices.size(); i++) {
 		bool deviceInRange = adv.ipInRange(adaptor_string, devices[i]);
 		std::string modelName((char*)devices[i]->Model);
@@ -420,8 +421,11 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 			ImGui::Spacing();
 
 			ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_None);
-			if (ImGui::BeginTabItem("Network"))
+
+			if (ImGui::BeginTabItem("Network", 0, s_myTabBarFlags.network))
 			{
+				devices[i]->openTab = 1;
+
 				if (isConnected && !deviceInRange) {
 					ImGui::Spacing();
 					ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
@@ -469,13 +473,15 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 				if (ImGui::RadioButton("Static", &tempDHCP, 0)) {
 					devices[i]->DHCP = 0;
 				}
-
+				
 				ImGui::EndTabItem();
 			}
 
 			if (!isConnected || isConnected && deviceInRange) {
-				if (ImGui::BeginTabItem("Ethernet Control"))
+				if (ImGui::BeginTabItem("Ethernet Control", 0, s_myTabBarFlags.ethernet))
 				{
+					devices[i]->openTab = 2;
+
 					int tempProtocol = (int)devices[i]->Protocol;
 					if (ImGui::RadioButton("ArtNet", &tempProtocol, 1)) {
 						devices[i]->Protocol = 1;
@@ -578,8 +584,10 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					ImGui::EndTabItem();
 				}
 				if (devices[i]->NumDMXOutputs > 0) {
-					if (ImGui::BeginTabItem("DMX512 Outputs"))
+					if (ImGui::BeginTabItem("DMX512 Outputs", 0, s_myTabBarFlags.dmx512))
 					{
+						devices[i]->openTab = 3;
+
 						ImGui::PushItemWidth(50 * s_loopVar.scale);
 
 						for (int DMXoutput = 0; DMXoutput < devices[i]->NumDMXOutputs; DMXoutput++) {
@@ -603,8 +611,10 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					}
 				}
 
-				if (ImGui::BeginTabItem("LEDs"))
+				if (ImGui::BeginTabItem("LEDs", 0, s_myTabBarFlags.leds))
 				{
+					devices[i]->openTab = 4;
+
 					ImGui::PushItemWidth(120 * s_loopVar.scale);
 					ImGui::Combo("Pixel IC", &devices[i]->CurrentDriver, devices[i]->DriverNames, devices[i]->NumDrivers);
 					ImGui::Combo("Clock Speed", &devices[i]->CurrentDriverSpeed, DriverSpeedsMhz, 12);
@@ -635,12 +645,16 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					if (ImGui::SliderFloat("White", &devices[i]->Gammaf[3], 1.0, 3.0, "%.01f")) {
 						devices[i]->Gamma[3] = (int)(devices[i]->Gammaf[3] * 10);
 					};
+					
 					ImGui::PopItemWidth();
 					ImGui::EndTabItem();
 				}
+
 				if (isConnected) {
-					if (ImGui::BeginTabItem("Test"))
+					if (ImGui::BeginTabItem("Test", 0, s_myTabBarFlags.test))
 					{
+						devices[i]->openTab = 5;
+
 						ImGui::Spacing();
 						ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
 						ImGui::Text("Prior to running test mode all other setings should be saved to controller. (Press 'Update Settings')");
@@ -748,11 +762,14 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 						ImGui::PopItemWidth();
 						ImGui::EndTabItem();
+
 					} // End Test Tab
 				}
 
-				if (ImGui::BeginTabItem("Misc"))
+				if (ImGui::BeginTabItem("Misc", 0, s_myTabBarFlags.misc))
 				{
+					devices[i]->openTab = 6;
+
 					if (isConnected) {
 						ImGui::Text("MAC: %s", macString(devices[i]->Mac).c_str());
 					}
@@ -821,12 +838,39 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 				button_update_controller_settings(devices[i]);
 			}
 
+			ImGui::SameLine();
+			if (ImGui::Button("Open All###Tabs"))
+			{
+				s_loopVar.open_action = 1;
+				switch (devices[i]->openTab) {
+				case 1:
+					s_myTabBarFlags.select_network();
+					break;
+				case 2:
+					s_myTabBarFlags.select_ethernet();
+					break;
+				case 3:
+					s_myTabBarFlags.select_dmx512();
+					break;
+				case 4:
+					s_myTabBarFlags.select_leds();
+					break;
+				case 5:
+					s_myTabBarFlags.select_test();
+					break;
+				case 6:
+					s_myTabBarFlags.select_misc();
+					break;
+				default:
+					break;
+				}
+			}
+
 			ImGui::Spacing();
 			ImGui::Spacing();
 			ImGui::TreePop();
 		}
 	}
-	s_loopVar.open_action = -1;
 }
 
 void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
@@ -1342,4 +1386,38 @@ void AppLog::Draw(const char* title, bool* p_open /*= NULL*/)
 	ImGui::End();
 
 	ImGui::PopAllowKeyboardFocus();
+}
+
+void myTabBarFlags::Clear() {
+	network = ImGuiTabItemFlags_None;
+	ethernet = ImGuiTabItemFlags_None;
+	dmx512 = ImGuiTabItemFlags_None;
+	leds = ImGuiTabItemFlags_None;
+	test = ImGuiTabItemFlags_None;
+	misc = ImGuiTabItemFlags_None;
+}
+
+void myTabBarFlags::select_network() {
+	Clear();
+	network = ImGuiTabItemFlags_SetSelected;
+}
+void myTabBarFlags::select_ethernet() {
+	Clear();
+	ethernet = ImGuiTabItemFlags_SetSelected;
+}
+void myTabBarFlags::select_dmx512() {
+	Clear();
+	dmx512 = ImGuiTabItemFlags_SetSelected;
+}
+void myTabBarFlags::select_leds() {
+	Clear();
+	leds = ImGuiTabItemFlags_SetSelected;
+}
+void myTabBarFlags::select_test() {
+	Clear();
+	test = ImGuiTabItemFlags_SetSelected;
+}
+void myTabBarFlags::select_misc() {
+	Clear();
+	misc = ImGuiTabItemFlags_SetSelected;
 }

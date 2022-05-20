@@ -126,6 +126,7 @@ typedef struct sAdvatekDevice {
 	bool testModeCyclePixels = false;
 	bool testModeEnessColourOuputs = false;
 	size_t uid;
+	int openTab = 0;
 
 	~sAdvatekDevice() {
 		if (Model) delete Model;
