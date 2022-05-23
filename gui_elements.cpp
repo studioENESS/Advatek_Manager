@@ -6,6 +6,8 @@ uint32_t COL_LIGHTGREY = IM_COL32(180, 180, 180, 255);
 uint32_t COL_GREEN = IM_COL32(0, 180, 0, 255);
 uint32_t COL_RED = IM_COL32(180, 0, 0, 255);
 
+bool gammaSliderLock = false;
+
 float eness_colourcode_ouptput[16][4] = {
 	{0,255,0,255},
 	{255,255,0,255},
@@ -628,8 +630,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					devices[i]->openTab = 4;
 
 					ImGui::PushItemWidth(120 * s_loopVar.scale);
-					//ImGui::Combo("Pixel IC", &devices[i]->CurrentDriver, devices[i]->DriverNames, devices[i]->NumDrivers);
-
+					
 					std::string driver_string = devices[i]->DriverNames[devices[i]->CurrentDriver];
 					int currentDriver = adv.getDriverSortedIndex(devices[i]);
 					if (ImGui::BeginCombo("Pixel IC", driver_string.c_str(), 0))
@@ -660,21 +661,59 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					}
 
 					ImGui::Separator();
-					ImGui::Text("Gamma Correction only applied to chips that are higher then 8bit:");
+					ImGui::Text("Gamma Correction");
+					ImGui::SameLine();
+					ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
+					ImGui::Text("(Only applied to chips that are higher then 8bit...)");
+					ImGui::PopStyleColor();
+					ImGui::Spacing();
 
-					if (ImGui::SliderFloat("Red", &devices[i]->Gammaf[0], 1.0, 3.0, "%.01f")) {
+					ImGui::PushItemWidth(60 * s_loopVar.scale);
+					if (ImGui::SliderFloat("R", &devices[i]->Gammaf[0], 1.0, 3.0, "%.01f")) {
 						devices[i]->Gamma[0] = (int)(devices[i]->Gammaf[0] * 10);
+						if (gammaSliderLock) {
+							devices[i]->Gamma[1] = devices[i]->Gamma[0];
+							devices[i]->Gamma[2] = devices[i]->Gamma[0];
+							devices[i]->Gamma[3] = devices[i]->Gamma[0];
+						}
 					};
-					if (ImGui::SliderFloat("Green", &devices[i]->Gammaf[1], 1.0, 3.0, "%.01f")) {
+					ImGui::SameLine();
+					if (ImGui::SliderFloat("G", &devices[i]->Gammaf[1], 1.0, 3.0, "%.01f")) {
 						devices[i]->Gamma[1] = (int)(devices[i]->Gammaf[1] * 10);
+						if (gammaSliderLock) {
+							devices[i]->Gamma[0] = devices[i]->Gamma[1];
+							devices[i]->Gamma[2] = devices[i]->Gamma[1];
+							devices[i]->Gamma[3] = devices[i]->Gamma[1];
+						}
 					};
-					if (ImGui::SliderFloat("Blue", &devices[i]->Gammaf[2], 1.0, 3.0, "%.01f")) {
+					ImGui::SameLine();
+					if (ImGui::SliderFloat("B", &devices[i]->Gammaf[2], 1.0, 3.0, "%.01f")) {
 						devices[i]->Gamma[2] = (int)(devices[i]->Gammaf[2] * 10);
+						if (gammaSliderLock) {
+							devices[i]->Gamma[0] = devices[i]->Gamma[2];
+							devices[i]->Gamma[1] = devices[i]->Gamma[2];
+							devices[i]->Gamma[3] = devices[i]->Gamma[2];
+						}
 					};
-					if (ImGui::SliderFloat("White", &devices[i]->Gammaf[3], 1.0, 3.0, "%.01f")) {
+					ImGui::SameLine();
+					if (ImGui::SliderFloat("W", &devices[i]->Gammaf[3], 1.0, 3.0, "%.01f")) {
 						devices[i]->Gamma[3] = (int)(devices[i]->Gammaf[3] * 10);
+						if (gammaSliderLock) {
+							devices[i]->Gamma[0] = devices[i]->Gamma[3];
+							devices[i]->Gamma[1] = devices[i]->Gamma[3];
+							devices[i]->Gamma[2] = devices[i]->Gamma[3];
+						}
 					};
-					
+
+					devices[i]->Gammaf[0] = (float)devices[i]->Gamma[0] * 0.1;
+					devices[i]->Gammaf[1] = (float)devices[i]->Gamma[1] * 0.1;
+					devices[i]->Gammaf[2] = (float)devices[i]->Gamma[2] * 0.1;
+					devices[i]->Gammaf[3] = (float)devices[i]->Gamma[3] * 0.1;
+
+					ImGui::PopItemWidth();
+
+					ImGui::Checkbox("Lock Sliders", &gammaSliderLock);
+
 					ImGui::PopItemWidth();
 					ImGui::EndTabItem();
 				}
