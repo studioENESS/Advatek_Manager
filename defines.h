@@ -103,6 +103,7 @@ typedef struct sAdvatekDevice {
 	uint8_t* DriverSpeed;//[NumDrivers]; // 0 = N/A, 1 = slow only, 2 = fast only, 3 = either, 4 = adjustable clock 0.4 - 2.9MHz(12 step)
 	uint8_t* DriverExpandable;// [NumDrivers]; // 0 = Normal mode only, 1 = capable of expanded mode
 	char** DriverNames;// [NumDrivers][LENGTH_DRIVER_STRINGS]; // Null terminated strings of driver types
+	std::vector<std::pair<int, char*>> DriversSorted;
 
 	int CurrentDriver; // Current pixel protocol selection (index)
 	uint8_t CurrentDriverType; // RGB = 0, RGBW = 1

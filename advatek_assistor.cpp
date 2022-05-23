@@ -9,6 +9,36 @@
 namespace pt = boost::property_tree;
 std::vector<uint8_t> dataTape;
 
+bool compareDriverNames(std::pair<int, char*> Driver1, std::pair<int, char*> Driver2)
+{
+	return (std::string(Driver1.second).compare(std::string(Driver2.second)) < 0);
+}
+
+bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	return (std::string(device1->Nickname).compare(std::string(device2->Nickname)) < 0);
+}
+
+bool compareModel(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	return (std::string((char*)device1->Model).compare(std::string((char*)device2->Model)) < 0);
+}
+
+bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	return (device1->CurrentIP[3] < device2->CurrentIP[3]);
+}
+
+bool compareStaticIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	return (device1->StaticIP[3] < device2->StaticIP[3]);
+}
+
+bool compareTemperature(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	return (device1->Temperature < device2->Temperature);
+}
+
 bool advatek_manager::deviceExist(std::vector<sAdvatekDevice*>& devices, uint8_t * Mac) {
 
 	for (int d(0); d < devices.size(); d++) {
@@ -39,6 +69,13 @@ bool advatek_manager::ipInRange(std::string ipStr, sAdvatekDevice* device) {
 size_t advatek_manager::getConnectedDeviceIndex(std::string mac) {
 	for (size_t index = 0; index < connectedDevices.size(); ++index) {
 		if (macString(connectedDevices[index]->Mac) == mac) return index;
+	}
+	return -1;
+}
+
+int advatek_manager::getDriverSortedIndex(sAdvatekDevice* device) {
+	for (int index = 0; index < device->DriversSorted.size(); ++index) {
+		if (device->DriversSorted[index].first == device->CurrentDriver) return index;
 	}
 	return -1;
 }
@@ -240,6 +277,14 @@ void advatek_manager::addUID(sAdvatekDevice* device) {
 	device->uid = hasher(macString(device->Mac).append(std::to_string(rand())));
 }
 
+void advatek_manager::sortDriversSorted(sAdvatekDevice* device) {
+	for (int i = 0; i < device->NumDrivers; i++) {
+		device->DriversSorted.emplace_back(i, device->DriverNames[i]);
+	}
+
+	sort(device->DriversSorted.begin(), device->DriversSorted.end(), compareDriverNames);
+}
+
 std::vector<sAdvatekDevice*> advatek_manager::getDevicesWithStaticIP(std::vector<sAdvatekDevice*>& devices, std::string ipstr) {
 	std::vector<sAdvatekDevice*> matchedDevices;
 
@@ -418,31 +463,6 @@ void advatek_manager::setTest(sAdvatekDevice* device) {
 
 		unicast_udp_message(ipString(device->CurrentIP), testTape);
 	}
-}
-
-bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
-{
-	return (std::string(device1->Nickname).compare(std::string(device2->Nickname)) < 0);
-}
-
-bool compareModel(sAdvatekDevice* device1, sAdvatekDevice* device2)
-{
-	return (std::string((char*)device1->Model).compare(std::string((char*)device2->Model)) < 0);
-}
-
-bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
-{
-    return (device1->CurrentIP[3] < device2->CurrentIP[3]);
-}
-
-bool compareStaticIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
-{
-	return (device1->StaticIP[3] < device2->StaticIP[3]);
-}
-
-bool compareTemperature(sAdvatekDevice* device1, sAdvatekDevice* device2)
-{
-	return (device1->Temperature < device2->Temperature);
 }
 
 void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType){
@@ -783,6 +803,7 @@ void advatek_manager::process_opPollReply(uint8_t * data) {
 	rec_data->tempTestCols[3] = (float)rec_data->TestCols[3] / 255;
 
 	addUID(rec_data);
+	sortDriversSorted(rec_data);
 
 	if (!deviceExist(connectedDevices, rec_data->Mac)) {
 		connectedDevices.emplace_back(rec_data);

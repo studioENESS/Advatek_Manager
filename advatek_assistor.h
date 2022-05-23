@@ -48,6 +48,8 @@ public:
 	std::vector <std::string> networkAdaptors;
 	int currentAdaptor = -1;
 	size_t getConnectedDeviceIndex(std::string mac);
+	int getDriverSortedIndex(sAdvatekDevice* device);
+
 	sAdvatekDevice* getConnectedDevice(std::string mac);
 
 	std::vector<sAdvatekDevice*> connectedDevices;
@@ -88,6 +90,7 @@ public:
 	void process_simple_config(sAdvatekDevice* device);
 
 	void addUID(sAdvatekDevice* device);
+	void sortDriversSorted(sAdvatekDevice* device);
 
 	void refreshAdaptors();
 	void setCurrentAdaptor(int adaptorIndex);

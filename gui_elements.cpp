@@ -628,7 +628,24 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					devices[i]->openTab = 4;
 
 					ImGui::PushItemWidth(120 * s_loopVar.scale);
-					ImGui::Combo("Pixel IC", &devices[i]->CurrentDriver, devices[i]->DriverNames, devices[i]->NumDrivers);
+					//ImGui::Combo("Pixel IC", &devices[i]->CurrentDriver, devices[i]->DriverNames, devices[i]->NumDrivers);
+
+					std::string driver_string = devices[i]->DriverNames[devices[i]->CurrentDriver];
+					int currentDriver = adv.getDriverSortedIndex(devices[i]);
+					if (ImGui::BeginCombo("Pixel IC", driver_string.c_str(), 0))
+					{
+						for (int n = 0; n < devices[i]->NumDrivers; n++)
+						{
+							const bool driver_selected = (currentDriver == n);
+							if (ImGui::Selectable(devices[i]->DriversSorted[n].second, driver_selected))
+							{
+								driver_string = devices[i]->DriversSorted[n].second;
+								devices[i]->CurrentDriver = devices[i]->DriversSorted[n].first;
+							}
+						}
+						ImGui::EndCombo();
+					}
+
 					ImGui::Combo("Clock Speed", &devices[i]->CurrentDriverSpeed, DriverSpeedsMhz, 12);
 					bool tempExpanded = (bool)devices[i]->CurrentDriverExpanded;
 					if (ImGui::Checkbox("Expanded Mode", &tempExpanded)) {
@@ -986,6 +1003,31 @@ std::stringstream tabTitleConnected;
 std::stringstream tabTitleVirtual;
 bool canSyncAll, inSyncAll = NULL;
 
+void guiLoadJSON() {
+	auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
+	if (!path.empty()) {
+		applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
+		boost::property_tree::ptree advatek_devices;
+		boost::property_tree::read_json(path.at(0), advatek_devices);
+
+		std::string result = adv.validateJSON(advatek_devices);
+
+		if (!result.empty()) {
+			applog.AddLog("[ERROR] Not a valid JSON file.\n");
+		}
+		else {
+			std::stringstream jsonStringStream;
+			write_json(jsonStringStream, advatek_devices);
+
+			virtualImportOptions = sImportOptions();
+			virtualImportOptions.json = jsonStringStream.str();
+			virtualImportOptions.init = true;
+
+			s_updateRequest.newVirtualDevice = true;
+		}
+	}
+}
+
 void showWindow(GLFWwindow*& window)
 {
 	{
@@ -1164,56 +1206,13 @@ void showWindow(GLFWwindow*& window)
 					const bool jsonAdd_selected = (vDeviceString.c_str() == "JSON (Add)");
 					if (ImGui::Selectable("JSON (add)", jsonAdd_selected))
 					{
-						auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
-						if (!path.empty()) {
-							applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
-							boost::property_tree::ptree advatek_devices;
-							boost::property_tree::read_json(path.at(0), advatek_devices);
-
-							std::string result = adv.validateJSON(advatek_devices);
-
-							if (!result.empty()) {
-								applog.AddLog("[ERROR] Not a valid JSON file.\n");
-							}
-							else {
-								std::stringstream jsonStringStream;
-								write_json(jsonStringStream, advatek_devices);
-
-								virtualImportOptions = sImportOptions();
-								virtualImportOptions.json = jsonStringStream.str();
-								virtualImportOptions.init = true;
-
-								s_updateRequest.newVirtualDevice = true;
-							}
-						}
+						guiLoadJSON();
 					}
 
 					const bool jsonClean_selected = (vDeviceString.c_str() == "JSON (clean)");
-					if (ImGui::Selectable("JSON (clean)", jsonClean_selected))
-					{
+					if (ImGui::Selectable("JSON (clean)", jsonClean_selected)) {
 						s_updateRequest.clearVirtualDevices = true;
-						auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
-						if (!path.empty()) {
-							applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
-							boost::property_tree::ptree advatek_devices;
-							boost::property_tree::read_json(path.at(0), advatek_devices);
-
-							std::string result = adv.validateJSON(advatek_devices);
-
-							if (!result.empty()) {
-								applog.AddLog("[ERROR] Not a valid JSON file.\n");
-							}
-							else {
-								std::stringstream jsonStringStream;
-								write_json(jsonStringStream, advatek_devices);
-
-								virtualImportOptions = sImportOptions();
-								virtualImportOptions.json = jsonStringStream.str();
-								virtualImportOptions.init = true;
-
-								s_updateRequest.newVirtualDevice = true;
-							}
-						}
+						guiLoadJSON();
 					}
 
 					for (const auto& jsonData : JSONControllers)
