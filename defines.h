@@ -120,6 +120,7 @@ typedef struct sAdvatekDevice {
 	int TestMode; // Current test mode program (0 = off/live data)
 	int TestCols[4] = { 0 };
 	float tempTestCols[4] = { 0 };
+	float idCol[3] = { 0.6f, 0.6f, 0.6f };
 	uint8_t TestOutputNum;
 	uint16_t TestPixelNum;
 	int* TestCycleCols; //[NumOutputs]

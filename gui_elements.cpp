@@ -7,6 +7,7 @@ uint32_t COL_GREEN = IM_COL32(0, 180, 0, 255);
 uint32_t COL_RED = IM_COL32(180, 0, 0, 255);
 
 bool gammaSliderLock = false;
+float initHue = 0.5;
 
 float eness_colourcode_ouptput[16][4] = {
 	{0,255,0,255},
@@ -114,7 +115,6 @@ void setupWindow(GLFWwindow*& window)
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1); // Enable vsync
 
-
 						 // Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -136,6 +136,42 @@ void scaleToScreenDPI(ImGuiIO& io)
 	fc.OversampleH = fc.OversampleV = s_loopVar.scale;
 	fc.SizePixels = 13.f * s_loopVar.scale;
 	io.Fonts->AddFontDefault(&fc);
+}
+
+void pushStyleColours17(float h) {
+	while (h > 1) h = h - 1;
+	float offset = 0.45;
+	float o = h + offset;
+	while (o > 1) o = o - 1;
+	//float v = 0.7;
+	float v = 0;
+	float grey = 0.2;
+	float vOffset = 0.1;
+	//float s = 0.5;
+	float s = 0;
+
+	ImGui::PushStyleColor(ImGuiCol_CheckMark,          (ImVec4)ImColor::HSV(h, s, 1));
+	
+	ImGui::PushStyleColor(ImGuiCol_SliderGrab,         (ImVec4)ImColor::HSV(h, s, v));
+	ImGui::PushStyleColor(ImGuiCol_SliderGrabActive,   (ImVec4)ImColor::HSV(h, s, v));
+
+	ImGui::PushStyleColor(ImGuiCol_Button,             (ImVec4)ImColor::HSV(h, s, 0.2));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive,       (ImVec4)ImColor::HSV(h, s, 0.2));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered,      (ImVec4)ImColor::HSV(h, 0.5, 0.7));
+
+	ImGui::PushStyleColor(ImGuiCol_Header,             (ImVec4)ImColor::HSV(h, s, v));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive,       (ImVec4)ImColor::HSV(h, s, v));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered,      (ImVec4)ImColor::HSV(h, 0.5, 0.7));
+
+	ImGui::PushStyleColor(ImGuiCol_FrameBg,            (ImVec4)ImColor::HSV(h, s, grey));
+	ImGui::PushStyleColor(ImGuiCol_FrameBgActive,      (ImVec4)ImColor::HSV(h, s, grey));
+	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,     (ImVec4)ImColor::HSV(h, 0.5, 0.7));
+
+	ImGui::PushStyleColor(ImGuiCol_Tab,                (ImVec4)ImColor::HSV(h, s, v));
+	ImGui::PushStyleColor(ImGuiCol_TabActive,          (ImVec4)ImColor::HSV(h, 0.5, 0.7));
+	ImGui::PushStyleColor(ImGuiCol_TabHovered,         (ImVec4)ImColor::HSV(h, s, grey));
+	ImGui::PushStyleColor(ImGuiCol_TabUnfocused,       (ImVec4)ImColor::HSV(h, s, v));
+	ImGui::PushStyleColor(ImGuiCol_TabUnfocusedActive, (ImVec4)ImColor::HSV(h, s, v));
 }
 
 void showResult(std::string& result) {
@@ -354,6 +390,8 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 	ImGui::Spacing();
 	
 	for (int i = 0; i < devices.size(); i++) {
+		pushStyleColours17(devices[i]->idCol[0]);
+
 		bool deviceInRange = adv.ipInRange(adaptor_string, devices[i]);
 		std::string modelName((char*)devices[i]->Model);
 		modelName.append("          ").resize(19);
@@ -516,6 +554,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					
 					ImGui::PushItemWidth(50 * s_loopVar.scale);
 					if ((bool)devices[i]->SimpleConfig) {
+						ImGui::Spacing();
 						if (ImGui::InputScalar("Start Universe", ImGuiDataType_U16, &devices[i]->OutputUniv[0], 0, 0, 0)) {
 							adv.process_simple_config(devices[i]);
 						}
@@ -949,6 +988,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 			ImGui::Spacing();
 			ImGui::TreePop();
 		}
+		ImGui::PopStyleColor(17);;
 	}
 }
 
@@ -1078,6 +1118,11 @@ void showWindow(GLFWwindow*& window)
 
 		ImGui::Begin("Advatek Assistor", NULL, window_flags);
 
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
+
+		pushStyleColours17(initHue);
+
 		showResult(result);
 
 		if (ImGui::Button("Search"))
@@ -1111,6 +1156,11 @@ void showWindow(GLFWwindow*& window)
 
 		ImGui::Spacing();
 
+		ImGui::PopStyleVar();
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(32, 16));
+		ImGui::PopStyleColor(17);;
+		pushStyleColours17(initHue);
+
 		if (ImGui::BeginTabBar("Devices")) {
 			tabTitleConnected.str(std::string());
 			tabTitleVirtual.str(std::string());
@@ -1127,6 +1177,7 @@ void showWindow(GLFWwindow*& window)
 
 			if (ImGui::BeginTabItem(tabTitleConnected.str().c_str()))
 			{
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
 				ImGui::Spacing();
 
 				if (adv.connectedDevices.size() >= 1) {
@@ -1165,12 +1216,14 @@ void showWindow(GLFWwindow*& window)
 				showDevices(adv.connectedDevices, true);
 
 				// END Connected Devices
+				ImGui::PopStyleVar();
 				ImGui::EndTabItem();
 			}
-
+			
 			// -------------------------------------- START SYNC
 			if (ImGui::BeginTabItem("<-"))
 			{
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
 				ImGui::Spacing();
 				ImGui::PushItemWidth(182 * s_loopVar.scale);
 				ImGui::Combo("###SyncTypes", &s_loopVar.current_sync_type, SyncTypes, IM_ARRAYSIZE(SyncTypes));
@@ -1204,13 +1257,14 @@ void showWindow(GLFWwindow*& window)
 					}
 					ImGui::Spacing();
 				}
-
+				ImGui::PopStyleVar();
 				ImGui::EndTabItem();
 			}
 			// -------------------------------------- END SYNC
 
 			if (ImGui::BeginTabItem(tabTitleVirtual.str().c_str()))
 			{
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
 				ImGui::Spacing();
 
 				if (adv.virtualDevices.size() >= 1) {
@@ -1283,21 +1337,25 @@ void showWindow(GLFWwindow*& window)
 				}
 
 				ImGui::Spacing();
-
+				
 				showDevices(adv.virtualDevices, false);
-
+				ImGui::PopStyleVar();
 				ImGui::EndTabItem();
 			}
-
+			
 			ImGui::EndTabBar();
 		}
 
 		ImGui::Spacing();
 		ImGui::Spacing();
 		ImGui::Separator();
-
+		
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(17);
+		pushStyleColours17(initHue);
 		applog.Draw("Advatek Assistor");
-
+		ImGui::PopStyleColor(17);
+		ImGui::PopStyleVar();
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();

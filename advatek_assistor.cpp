@@ -274,7 +274,10 @@ void advatek_manager::addVirtualDevice(sImportOptions &importOptions) {
 
 void advatek_manager::addUID(sAdvatekDevice* device) {
 	std::hash<std::string> hasher;
+	float LO = 0.399;
+	float HI = 0.999;
 	device->uid = hasher(macString(device->Mac).append(std::to_string(rand())));
+	device->idCol[0] = LO + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (HI - LO)));
 }
 
 void advatek_manager::sortDriversSorted(sAdvatekDevice* device) {
