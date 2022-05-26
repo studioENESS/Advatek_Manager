@@ -16,6 +16,7 @@ add_executable(advatek_assistor main.cpp
 	defines.cpp
 	advatek_assistor.cpp
 	udpclient.cpp
+	gui_elements.cpp
 	${IMGUI_ROOT}/imgui.cpp
 	${IMGUI_ROOT}/imgui_draw.cpp
 	${IMGUI_ROOT}/imgui_widgets.cpp
