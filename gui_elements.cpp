@@ -565,11 +565,10 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 						}
 					}
 					else {
-						bool autoChannels = false;
 						ImGui::SameLine();
-						ImGui::Checkbox("Automatic Sequence Channels", &autoChannels);
+						ImGui::Checkbox("Automatic Sequence Channels", &devices[i]->autoChannels);
 
-						if (autoChannels) {
+						if (devices[i]->autoChannels) {
 							adv.auto_sequence_channels(devices[i]);
 						}
 
@@ -1117,8 +1116,8 @@ void showWindow(GLFWwindow*& window)
 
 		ImGui::Begin("Advatek Assistor", NULL, window_flags);
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6);
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3 * s_loopVar.scale);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8 * s_loopVar.scale, 8 * s_loopVar.scale));
 
 		pushStyleColours17(initHue);
 
@@ -1156,7 +1155,7 @@ void showWindow(GLFWwindow*& window)
 		ImGui::Spacing();
 
 		ImGui::PopStyleVar();
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(32, 16));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(32 * s_loopVar.scale, 16 * s_loopVar.scale));
 		ImGui::PopStyleColor(17);;
 		pushStyleColours17(initHue);
 
@@ -1176,7 +1175,7 @@ void showWindow(GLFWwindow*& window)
 
 			if (ImGui::BeginTabItem(tabTitleConnected.str().c_str()))
 			{
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8 * s_loopVar.scale, 8 * s_loopVar.scale));
 				ImGui::Spacing();
 
 				if (adv.connectedDevices.size() >= 1) {
@@ -1222,7 +1221,7 @@ void showWindow(GLFWwindow*& window)
 			// -------------------------------------- START SYNC
 			if (ImGui::BeginTabItem("<-"))
 			{
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8 * s_loopVar.scale, 8 * s_loopVar.scale));
 				ImGui::Spacing();
 				ImGui::PushItemWidth(182 * s_loopVar.scale);
 				ImGui::Combo("###SyncTypes", &s_loopVar.current_sync_type, SyncTypes, IM_ARRAYSIZE(SyncTypes));
@@ -1263,7 +1262,7 @@ void showWindow(GLFWwindow*& window)
 
 			if (ImGui::BeginTabItem(tabTitleVirtual.str().c_str()))
 			{
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8 * s_loopVar.scale, 8 * s_loopVar.scale));
 				ImGui::Spacing();
 
 				if (adv.virtualDevices.size() >= 1) {
@@ -1447,7 +1446,7 @@ void AppLog::Clear()
 	AddLog("[INFO] Advatek Assistor v%s\n", Version);
 }
 
-void AppLog::AddLog(const char* fmt, ...) IM_FMTARGS(2)
+void AppLog::AddLog(const char* fmt, ...)
 {
 	int old_size = Buf.size();
 	va_list args;

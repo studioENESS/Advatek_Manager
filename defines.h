@@ -129,7 +129,7 @@ typedef struct sAdvatekDevice {
 	bool testModeEnessColourOuputs = false;
 	size_t uid;
 	int openTab = 0;
-
+	bool autoChannels = false;
 	~sAdvatekDevice() {
 		if (Model) delete Model;
 		if (Firmware) delete Firmware;

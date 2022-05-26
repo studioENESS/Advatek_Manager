@@ -85,7 +85,7 @@ struct AppLog {
 
 	void Clear();
 
-	void AddLog(const char* fmt, ...) IM_FMTARGS(2);
+	void AddLog(const char* fmt, ...);
 
 	void Draw(const char* title, bool* p_open = NULL);
 };
