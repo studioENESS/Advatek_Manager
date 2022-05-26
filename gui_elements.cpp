@@ -66,6 +66,19 @@ bool SliderInt16(const char* label, uint16_t* v, int v_min, int v_max, const cha
 	return ImGui::SliderScalar(label, ImGuiDataType_U16, v, &v_min, &v_max, format, flags);
 }
 
+void pushStandardButtonStyleVar() {
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6 * s_loopVar.scale, 6 * s_loopVar.scale));
+}
+
+void pushStandardTabStyleVar() {
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(3 * s_loopVar.scale, 3 * s_loopVar.scale));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2 * s_loopVar.scale, 6 * s_loopVar.scale));
+}
+
+void pushControllerButtonStyleVar() {
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8 * s_loopVar.scale, 4 * s_loopVar.scale));
+}
+
 void setupWindow(GLFWwindow*& window)
 {
 	if (!glfwInit()) exit(0);
@@ -137,7 +150,7 @@ void scaleToScreenDPI(ImGuiIO& io)
 	io.Fonts->AddFontDefault(&fc);
 }
 
-void pushStyleColours17(float h) {
+void pushStyleColours18(float h) {
 	while (h > 1) h = h - 1;
 	float offset = 0.45;
 	float o = h + offset;
@@ -171,6 +184,7 @@ void pushStyleColours17(float h) {
 	ImGui::PushStyleColor(ImGuiCol_TabHovered,         (ImVec4)ImColor::HSV(h, s, grey));
 	ImGui::PushStyleColor(ImGuiCol_TabUnfocused,       (ImVec4)ImColor::HSV(h, s, v));
 	ImGui::PushStyleColor(ImGuiCol_TabUnfocusedActive, (ImVec4)ImColor::HSV(h, s, v));
+	ImGui::PushStyleColor(ImGuiCol_Separator,          (ImVec4)ImColor::HSV(h, 0.5, 0.7));
 }
 
 void showResult(std::string& result) {
@@ -389,7 +403,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 	ImGui::Spacing();
 	
 	for (int i = 0; i < devices.size(); i++) {
-		pushStyleColours17(devices[i]->idCol[0]);
+		pushStyleColours18(devices[i]->idCol[0]);
 
 		bool deviceInRange = adv.ipInRange(adaptor_string, devices[i]);
 		std::string modelName((char*)devices[i]->Model);
@@ -419,7 +433,8 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 		if (node_open)
 		{
-			ImGui::Spacing();
+			pushControllerButtonStyleVar();
+			//ImGui::Spacing();
 
 			if (isConnected) {
 				if (devices[i]->ProtVer >= 8) {
@@ -466,25 +481,27 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 				ImGui::PopItemWidth();
 			}
 
+			ImGui::PopStyleVar(); // ControllerButtons Top
+			//ImGui::Spacing();
+			//ImGui::Separator();
 			ImGui::Spacing();
-			ImGui::Separator();
-			ImGui::Spacing();
-
 
 			ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_None);
 
 			if (ImGui::BeginTabItem("Network", 0, s_myTabBarFlags.network))
 			{
+				pushStandardTabStyleVar();
 				devices[i]->openTab = 1;
+				ImGui::Spacing();
 
 				if (isConnected && !deviceInRange) {
-					ImGui::Spacing();
 					ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
 					ImGui::Text("The IP address settings are not compatible with your adaptor settings.\nChange the IP settings on the device to access all settings.");
 					ImGui::PopStyleColor();
 					ImGui::Spacing();
 				}
 
+				ImGui::AlignTextToFramePadding();
 				ImGui::Text("Static IP Address:");
 
 				ImGui::PushItemWidth(30 * s_loopVar.scale);
@@ -516,38 +533,43 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 				ImGui::PopItemWidth();
 
+				ImGui::Spacing();
+				ImGui::AlignTextToFramePadding();
 				ImGui::Text("IP Type: "); ImGui::SameLine();
 				int tempDHCP = (int)devices[i]->DHCP;
-				if (ImGui::RadioButton("DHCP", &tempDHCP, 1)) {
+				if (ImGui::RadioButton("DHCP ", &tempDHCP, 1)) {
 					devices[i]->DHCP = 1;
 				} ImGui::SameLine();
-				if (ImGui::RadioButton("Static", &tempDHCP, 0)) {
+				if (ImGui::RadioButton("Static ", &tempDHCP, 0)) {
 					devices[i]->DHCP = 0;
 				}
 				
+				ImGui::PopStyleVar(2); // Tab
 				ImGui::EndTabItem();
 			}
 
 			if (!isConnected || isConnected && deviceInRange) {
 				if (ImGui::BeginTabItem("Ethernet Control", 0, s_myTabBarFlags.ethernet))
 				{
+					pushStandardTabStyleVar();
 					devices[i]->openTab = 2;
+					ImGui::Spacing();
 
 					int tempProtocol = (int)devices[i]->Protocol;
-					if (ImGui::RadioButton("ArtNet", &tempProtocol, 1)) {
+					if (ImGui::RadioButton("ArtNet ", &tempProtocol, 1)) {
 						devices[i]->Protocol = 1;
 					} ImGui::SameLine();
-					if (ImGui::RadioButton("sACN (E1.31)", &tempProtocol, 0)) {
+					if (ImGui::RadioButton("sACN (E1.31) ", &tempProtocol, 0)) {
 						devices[i]->Protocol = 0;
 					}
 					ImGui::SameLine();
 					bool tempHoldLastFrame = (bool)devices[i]->HoldLastFrame;
-					if (ImGui::Checkbox("Hold LastFrame", &tempHoldLastFrame)) {
+					if (ImGui::Checkbox("Hold LastFrame ", &tempHoldLastFrame)) {
 						devices[i]->HoldLastFrame = tempHoldLastFrame;
 					}
 
 					bool tempSimpleConfig = (bool)devices[i]->SimpleConfig;
-					if (ImGui::Checkbox("Simple Config", &tempSimpleConfig)) {
+					if (ImGui::Checkbox("Simple Config ", &tempSimpleConfig)) {
 						devices[i]->SimpleConfig = tempSimpleConfig;
 					}
 					
@@ -566,7 +588,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					}
 					else {
 						ImGui::SameLine();
-						ImGui::Checkbox("Automatic Sequence Channels", &devices[i]->autoChannels);
+						ImGui::Checkbox("Automatic Sequence Channels ", &devices[i]->autoChannels);
 
 						if (devices[i]->autoChannels) {
 							adv.auto_sequence_channels(devices[i]);
@@ -599,6 +621,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 								ImGui::PushID(output);
 
 								ImGui::TableNextColumn();
+								ImGui::AlignTextToFramePadding();
 								ImGui::Text("Output %i", output + 1); ImGui::TableNextColumn();
 								ImGui::InputScalar("##StartUniv", ImGuiDataType_U16, &devices[i]->OutputUniv[output], 0, 0, 0); ImGui::TableNextColumn();
 								ImGui::InputScalar("##StartChan", ImGuiDataType_U16, &devices[i]->OutputChan[output], 0, 0, 0); ImGui::TableNextColumn();
@@ -631,13 +654,15 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
 					ImGui::Text("Note: Specified Maximum Pixels Per Output is %i", devices[i]->MaxPixPerOutput);
 					ImGui::PopStyleColor();
-
+					ImGui::PopStyleVar(2); // TabStyle
 					ImGui::EndTabItem();
 				}
 				if (devices[i]->NumDMXOutputs > 0) {
 					if (ImGui::BeginTabItem("DMX512 Outputs", 0, s_myTabBarFlags.dmx512))
 					{
+						pushStandardTabStyleVar();
 						devices[i]->openTab = 3;
+						ImGui::Spacing();
 
 						ImGui::PushItemWidth(50 * s_loopVar.scale);
 
@@ -645,26 +670,30 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 							ImGui::PushID(DMXoutput);
 							devices[i]->TempDmxOutOn[DMXoutput] = (bool)devices[i]->DmxOutOn[DMXoutput];
 
-							ImGui::Text("Output %i", DMXoutput + 1);
+							ImGui::AlignTextToFramePadding();
+							ImGui::Text("Output %i ", DMXoutput + 1);
 							ImGui::SameLine();
 
-							if (ImGui::Checkbox("Enabled", &devices[i]->TempDmxOutOn[DMXoutput])) {
+							if (ImGui::Checkbox("Enabled ", &devices[i]->TempDmxOutOn[DMXoutput])) {
 								devices[i]->DmxOutOn[DMXoutput] = (uint8_t)devices[i]->TempDmxOutOn[DMXoutput];
 							}
 
 							ImGui::SameLine();
-							ImGui::InputScalar("Universe", ImGuiDataType_U16, &devices[i]->DmxOutUniv[DMXoutput], 0, 0, 0);
+							ImGui::InputScalar("Universe ", ImGuiDataType_U16, &devices[i]->DmxOutUniv[DMXoutput], 0, 0, 0);
 							ImGui::PopID();
 						}
 
 						ImGui::PopItemWidth();
+						ImGui::PopStyleVar(2); // TabStyle
 						ImGui::EndTabItem();
 					}
 				}
 
 				if (ImGui::BeginTabItem("LEDs", 0, s_myTabBarFlags.leds))
 				{
+					pushStandardTabStyleVar();
 					devices[i]->openTab = 4;
+					ImGui::Spacing();
 
 					ImGui::PushItemWidth(120 * s_loopVar.scale);
 					
@@ -685,10 +714,6 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					}
 
 					ImGui::Combo("Clock Speed", &devices[i]->CurrentDriverSpeed, DriverSpeedsMhz, 12);
-					bool tempExpanded = (bool)devices[i]->CurrentDriverExpanded;
-					if (ImGui::Checkbox("Expanded Mode", &tempExpanded)) {
-						devices[i]->CurrentDriverExpanded = (uint8_t)tempExpanded;
-					}
 
 					int tempAllColOrder = devices[i]->OutputColOrder[0];
 					if (ImGui::Combo("RGB Order ##all", &tempAllColOrder, RGBW_Order, 24)) {
@@ -697,7 +722,15 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 						}
 					}
 
-					ImGui::Separator();
+					bool tempExpanded = (bool)devices[i]->CurrentDriverExpanded;
+					if (ImGui::Checkbox("Expanded Mode", &tempExpanded)) {
+						devices[i]->CurrentDriverExpanded = (uint8_t)tempExpanded;
+					}
+
+					ImGui::Spacing();
+					ImGui::Separator(); // Move to new column?
+					ImGui::Spacing();
+
 					ImGui::Text("Gamma Correction");
 					ImGui::SameLine();
 					ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
@@ -706,7 +739,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					ImGui::Spacing();
 
 					ImGui::PushItemWidth(60 * s_loopVar.scale);
-					if (ImGui::SliderFloat("R", &devices[i]->Gammaf[0], 1.0, 3.0, "%.01f")) {
+					if (ImGui::SliderFloat("R ", &devices[i]->Gammaf[0], 1.0, 3.0, "%.01f")) {
 						devices[i]->Gamma[0] = (int)(devices[i]->Gammaf[0] * 10);
 						if (gammaSliderLock) {
 							devices[i]->Gamma[1] = devices[i]->Gamma[0];
@@ -715,7 +748,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 						}
 					};
 					ImGui::SameLine();
-					if (ImGui::SliderFloat("G", &devices[i]->Gammaf[1], 1.0, 3.0, "%.01f")) {
+					if (ImGui::SliderFloat("G ", &devices[i]->Gammaf[1], 1.0, 3.0, "%.01f")) {
 						devices[i]->Gamma[1] = (int)(devices[i]->Gammaf[1] * 10);
 						if (gammaSliderLock) {
 							devices[i]->Gamma[0] = devices[i]->Gamma[1];
@@ -724,7 +757,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 						}
 					};
 					ImGui::SameLine();
-					if (ImGui::SliderFloat("B", &devices[i]->Gammaf[2], 1.0, 3.0, "%.01f")) {
+					if (ImGui::SliderFloat("B ", &devices[i]->Gammaf[2], 1.0, 3.0, "%.01f")) {
 						devices[i]->Gamma[2] = (int)(devices[i]->Gammaf[2] * 10);
 						if (gammaSliderLock) {
 							devices[i]->Gamma[0] = devices[i]->Gamma[2];
@@ -733,7 +766,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 						}
 					};
 					ImGui::SameLine();
-					if (ImGui::SliderFloat("W", &devices[i]->Gammaf[3], 1.0, 3.0, "%.01f")) {
+					if (ImGui::SliderFloat("W ", &devices[i]->Gammaf[3], 1.0, 3.0, "%.01f")) {
 						devices[i]->Gamma[3] = (int)(devices[i]->Gammaf[3] * 10);
 						if (gammaSliderLock) {
 							devices[i]->Gamma[0] = devices[i]->Gamma[3];
@@ -748,16 +781,18 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					devices[i]->Gammaf[3] = (float)devices[i]->Gamma[3] * 0.1;
 
 					ImGui::PopItemWidth();
-
-					ImGui::Checkbox("Lock Sliders", &gammaSliderLock);
+					ImGui::SameLine();
+					ImGui::Checkbox("Lock Sliders ", &gammaSliderLock);
 
 					ImGui::PopItemWidth();
+					ImGui::PopStyleVar(2); // TabStyle
 					ImGui::EndTabItem();
 				}
 
 				if (isConnected) {
 					if (ImGui::BeginTabItem("Test", 0, s_myTabBarFlags.test))
 					{
+						pushStandardTabStyleVar();
 						devices[i]->openTab = 5;
 
 						ImGui::Spacing();
@@ -770,21 +805,21 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 						ImGui::PushItemWidth(200 * s_loopVar.scale);
 
-						if (ImGui::Combo("Set Test", &devices[i]->TestMode, TestModes, sizeof(TestModes) / sizeof(TestModes[0]))) {
+						if (ImGui::Combo("Set Test ", &devices[i]->TestMode, TestModes, sizeof(TestModes) / sizeof(TestModes[0]))) {
 							devices[i]->TestPixelNum = 0;
 							s_loopVar.b_testPixelsReady = true;
 							b_setTest = true;
 						}
 
 						ImGui::SameLine();
-						if (ImGui::Checkbox("Test All", &adv.bTestAll)) {
+						if (ImGui::Checkbox("Test All ", &adv.bTestAll)) {
 							b_setTest = true;
 						}
 
 						if (devices[i]->TestMode == 6) {
 							ImGui::SameLine();
 							testModeEnessColourOuputs = devices[i]->testModeEnessColourOuputs;
-							if (ImGui::Checkbox("ENESS Output Test", &testModeEnessColourOuputs)) {
+							if (ImGui::Checkbox("ENESS Output Test ", &testModeEnessColourOuputs)) {
 								devices[i]->testModeEnessColourOuputs = (bool)testModeEnessColourOuputs;
 							}
 						}
@@ -876,6 +911,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 						if (b_setTest) adv.setTest(devices[i]);
 
 						ImGui::PopItemWidth();
+						ImGui::PopStyleVar(2); // TabStyle
 						ImGui::EndTabItem();
 
 					} // End Test Tab
@@ -883,12 +919,15 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 				if (ImGui::BeginTabItem("Misc", 0, s_myTabBarFlags.misc))
 				{
+					pushStandardTabStyleVar();
 					devices[i]->openTab = 6;
+					ImGui::Spacing();
 
 					if (isConnected) {
 						ImGui::Text("MAC: %s", macString(devices[i]->Mac).c_str());
 					}
 					else {
+						ImGui::AlignTextToFramePadding();
 						ImGui::Text("MAC: ");
 						ImGui::PushItemWidth(25 * s_loopVar.scale);
 						ImGui::SameLine(); ImGui::InputScalar("###Mac01", ImGuiDataType_U8, &devices[i]->Mac[0], 0, 0, "%02X");
@@ -931,7 +970,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 							ImGui::PopID();
 						}
 					}
-
+					ImGui::PopStyleVar(2); // TabStyle
 					ImGui::EndTabItem();
 
 				}
@@ -942,6 +981,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 			ImGui::Spacing();
 			ImGui::Spacing();
 
+			pushControllerButtonStyleVar();
 			if (isConnected && !deviceInRange) {
 				if (ImGui::Button("Update Network"))
 				{
@@ -961,38 +1001,42 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 				}
 			}
 
-			if (ImGui::Button("Open All###Tabs"))
-			{
-				s_loopVar.open_action = 1;
-				switch (devices[i]->openTab) {
-				case 1:
-					s_myTabBarFlags.select_network();
-					break;
-				case 2:
-					s_myTabBarFlags.select_ethernet();
-					break;
-				case 3:
-					s_myTabBarFlags.select_dmx512();
-					break;
-				case 4:
-					s_myTabBarFlags.select_leds();
-					break;
-				case 5:
-					s_myTabBarFlags.select_test();
-					break;
-				case 6:
-					s_myTabBarFlags.select_misc();
-					break;
-				default:
-					break;
+			if (devices.size() > 1) {
+				ImGui::SameLine();
+				if (ImGui::Button("Open All###Tabs"))
+				{
+					s_loopVar.open_action = 1;
+					switch (devices[i]->openTab) {
+					case 1:
+						s_myTabBarFlags.select_network();
+						break;
+					case 2:
+						s_myTabBarFlags.select_ethernet();
+						break;
+					case 3:
+						s_myTabBarFlags.select_dmx512();
+						break;
+					case 4:
+						s_myTabBarFlags.select_leds();
+						break;
+					case 5:
+						s_myTabBarFlags.select_test();
+						break;
+					case 6:
+						s_myTabBarFlags.select_misc();
+						break;
+					default:
+						break;
+					}
 				}
 			}
 
+			ImGui::PopStyleVar(); // ControllerButtons Bottom
 			ImGui::Spacing();
 			ImGui::Spacing();
 			ImGui::TreePop();
 		}
-		ImGui::PopStyleColor(17);;
+		ImGui::PopStyleColor(18);
 	}
 }
 
@@ -1123,9 +1167,9 @@ void showWindow(GLFWwindow*& window)
 		ImGui::Begin("Advatek Assistor", NULL, window_flags);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3 * s_loopVar.scale);
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8 * s_loopVar.scale, 8 * s_loopVar.scale));
+		pushStandardButtonStyleVar();
 
-		pushStyleColours17(initHue);
+		pushStyleColours18(initHue);
 
 		showResult(result);
 
@@ -1161,9 +1205,9 @@ void showWindow(GLFWwindow*& window)
 		ImGui::Spacing();
 
 		ImGui::PopStyleVar();
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(32 * s_loopVar.scale, 16 * s_loopVar.scale));
-		ImGui::PopStyleColor(17);;
-		pushStyleColours17(initHue);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(16 * s_loopVar.scale, 8 * s_loopVar.scale));
+		ImGui::PopStyleColor(18);;
+		pushStyleColours18(initHue);
 
 		if (ImGui::BeginTabBar("Devices")) {
 			tabTitleConnected.str(std::string());
@@ -1181,7 +1225,7 @@ void showWindow(GLFWwindow*& window)
 
 			if (ImGui::BeginTabItem(tabTitleConnected.str().c_str()))
 			{
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8 * s_loopVar.scale, 8 * s_loopVar.scale));
+				pushStandardButtonStyleVar();
 				ImGui::Spacing();
 
 				if (adv.connectedDevices.size() >= 1) {
@@ -1215,19 +1259,19 @@ void showWindow(GLFWwindow*& window)
 					}
 				}
 
+				ImGui::PopStyleVar(); // Buttons
 				ImGui::Spacing();
 
 				showDevices(adv.connectedDevices, true);
 
 				// END Connected Devices
-				ImGui::PopStyleVar();
 				ImGui::EndTabItem();
 			}
 			
 			// -------------------------------------- START SYNC
 			if (ImGui::BeginTabItem("<-"))
 			{
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8 * s_loopVar.scale, 8 * s_loopVar.scale));
+				pushStandardTabStyleVar();
 				ImGui::Spacing();
 				ImGui::PushItemWidth(182 * s_loopVar.scale);
 				ImGui::Combo("###SyncTypes", &s_loopVar.current_sync_type, SyncTypes, IM_ARRAYSIZE(SyncTypes));
@@ -1261,14 +1305,14 @@ void showWindow(GLFWwindow*& window)
 					}
 					ImGui::Spacing();
 				}
-				ImGui::PopStyleVar();
+				ImGui::PopStyleVar(2); // TabStyle
 				ImGui::EndTabItem();
 			}
 			// -------------------------------------- END SYNC
 
 			if (ImGui::BeginTabItem(tabTitleVirtual.str().c_str()))
 			{
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8 * s_loopVar.scale, 8 * s_loopVar.scale));
+				pushStandardButtonStyleVar();
 				ImGui::Spacing();
 
 				if (adv.virtualDevices.size() >= 1) {
@@ -1339,11 +1383,11 @@ void showWindow(GLFWwindow*& window)
 						s_updateRequest.pasteToNewVirtualDevice = true;
 					}
 				}
+				ImGui::PopStyleVar(); // Buttons
 
 				ImGui::Spacing();
-				
 				showDevices(adv.virtualDevices, false);
-				ImGui::PopStyleVar();
+				
 				ImGui::EndTabItem();
 			}
 			
@@ -1355,10 +1399,10 @@ void showWindow(GLFWwindow*& window)
 		ImGui::Separator();
 		
 		ImGui::PopStyleVar();
-		ImGui::PopStyleColor(17);
-		pushStyleColours17(initHue);
+		ImGui::PopStyleColor(18);
+		pushStyleColours18(initHue);
 		applog.Draw("Advatek Assistor");
-		ImGui::PopStyleColor(17);
+		ImGui::PopStyleColor(18);
 		ImGui::PopStyleVar();
 		ImGui::Spacing();
 		ImGui::Separator();
@@ -1493,7 +1537,6 @@ void AppLog::Draw(const char* title, bool* p_open /*= NULL*/)
 	Filter.Draw("Filter");
 	ImGui::PopItemWidth();
 
-	//ImGui::Separator();
 	ImGui::Spacing();
 	ImGui::BeginChild("scrolling", ImVec2(0, 79 * s_loopVar.scale), false, ImGuiWindowFlags_HorizontalScrollbar);
 
