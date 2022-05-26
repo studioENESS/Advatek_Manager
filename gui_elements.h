@@ -35,6 +35,7 @@ struct updateRequest {
 	int clearVirtualDevices = 0;
 	int connectedDevicesToVirtualDevices = 0;
 	int clearVirtualDeviceIndex = -1;
+	int clearConnectedDeviceIndex = -1;
 };
 
 struct myTabBarFlags {

@@ -955,6 +955,12 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 				ImGui::SameLine();
 			}
 
+			if (isConnected) {
+				if (ImGui::Button("Cancel###ClearDevice")) {
+					s_updateRequest.clearConnectedDeviceIndex = i;
+				}
+			}
+
 			if (ImGui::Button("Open All###Tabs"))
 			{
 				s_loopVar.open_action = 1;
@@ -1404,6 +1410,12 @@ void processUpdateRequests()
 		applog.AddLog(("[INFO] Removing Virtual Device " + ipString(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->StaticIP).append(" ").append(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->Nickname).append("\n")).c_str());
 		adv.virtualDevices.erase(adv.virtualDevices.begin() + s_updateRequest.clearVirtualDeviceIndex);
 		s_updateRequest.clearVirtualDeviceIndex = -1;
+	}
+
+	if (s_updateRequest.clearConnectedDeviceIndex >= 0) {
+		applog.AddLog(("[INFO] Removing Connected Device " + ipString(adv.connectedDevices[s_updateRequest.clearConnectedDeviceIndex]->StaticIP).append(" ").append(adv.connectedDevices[s_updateRequest.clearConnectedDeviceIndex]->Nickname).append("\n")).c_str());
+		adv.connectedDevices.erase(adv.connectedDevices.begin() + s_updateRequest.clearConnectedDeviceIndex);
+		s_updateRequest.clearConnectedDeviceIndex = -1;
 	}
 
 	if (s_updateRequest.newVirtualDevice) {
