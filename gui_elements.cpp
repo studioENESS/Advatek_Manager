@@ -32,7 +32,6 @@ std::vector<sAdvatekDevice*> foundDevices;
 std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
 sAdvatekDevice* syncDeviceVirt;
 
-advatek_manager adv;
 sImportOptions userImportOptions = sImportOptions();
 sImportOptions virtualImportOptions = sImportOptions();
 
@@ -152,8 +151,8 @@ void pushStyleColours17(float h) {
 
 	ImGui::PushStyleColor(ImGuiCol_CheckMark,          (ImVec4)ImColor::HSV(h, s, 1));
 	
-	ImGui::PushStyleColor(ImGuiCol_SliderGrab,         (ImVec4)ImColor::HSV(h, s, v));
-	ImGui::PushStyleColor(ImGuiCol_SliderGrabActive,   (ImVec4)ImColor::HSV(h, s, v));
+	ImGui::PushStyleColor(ImGuiCol_SliderGrab,         (ImVec4)ImColor::HSV(h, s, 0.35));
+	ImGui::PushStyleColor(ImGuiCol_SliderGrabActive,   (ImVec4)ImColor::HSV(h, s, 0.35));
 
 	ImGui::PushStyleColor(ImGuiCol_Button,             (ImVec4)ImColor::HSV(h, s, 0.2));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive,       (ImVec4)ImColor::HSV(h, s, 0.2));
@@ -408,7 +407,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 		}
 		Title.setf(std::ios::fixed, std::ios::floatfield);
 		Title.precision(2);
-		Title << "	" << "Temp: " << (float)devices[i]->Temperature * 0.1 << "	" << devices[i]->Nickname;
+		Title << "	" << (float)devices[i]->Temperature * 0.1 << " °C" << "	" << devices[i]->Nickname;
 		Title << "###" << devices[i]->uid;
 
 		if (s_loopVar.open_action != -1)

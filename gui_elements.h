@@ -19,18 +19,6 @@
 
 namespace pt = boost::property_tree;
 
-extern uint32_t COL_GREY, COL_LIGHTGREY, COL_GREEN, COL_RED;
-
-extern std::vector<sAdvatekDevice*> foundDevices;
-extern std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
-
-extern advatek_manager adv;
-extern sImportOptions userImportOptions, virtualImportOptions;
-
-extern float eness_colourcode_ouptput[16][4];
-
-extern std::string adaptor_string, json_device_string, vDeviceString, result, vDeviceData;
-
 bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
 
 bool SliderInt16(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
@@ -66,11 +54,15 @@ struct myTabBarFlags {
 
 	void Clear();
 };
-extern myTabBarFlags s_myTabBarFlags;
 
 struct loopVar {
+	bool logOpen = true;
+	bool b_testPixelsReady = true;
+
 	int window_w, window_h;
 	int open_action = -1;
+	int selectedNewImportIndex = -1;
+	int current_sync_type = 0;
 
 	double currTime = 0;
 	double lastTime = 0;
@@ -80,15 +72,8 @@ struct loopVar {
 	float testCycleSpeed = 0.5;
 	float scale = 1;
 
-	bool logOpen = true;
-
-	int selectedNewImportIndex = -1;
-	int current_sync_type = 0;
-	int b_testPixelsReady = true;
-
 	pt::ptree pt_json_device;
 };
-extern loopVar s_loopVar;
 
 struct AppLog {
 	ImGuiTextBuffer     Buf;
@@ -104,7 +89,22 @@ struct AppLog {
 
 	void Draw(const char* title, bool* p_open = NULL);
 };
+
+extern myTabBarFlags s_myTabBarFlags;
+extern loopVar s_loopVar;
 extern AppLog applog;
+
+extern float eness_colourcode_ouptput[16][4];
+
+extern uint32_t COL_GREY, COL_LIGHTGREY, COL_GREEN, COL_RED;
+
+extern std::string adaptor_string, json_device_string, vDeviceString, result, vDeviceData;
+
+extern std::vector<sAdvatekDevice*> foundDevices;
+extern std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
+extern advatek_manager adv;
+
+extern sImportOptions userImportOptions, virtualImportOptions;
 
 void setupWindow(GLFWwindow*& window);
 

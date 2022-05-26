@@ -4,6 +4,8 @@
 #pragma comment(linker, "/SUBSYSTEM:Windows /ENTRY:mainCRTStartup")
 #endif
 
+advatek_manager adv;
+
 int main(int, char**)
 {	
 	GLFWwindow* window;

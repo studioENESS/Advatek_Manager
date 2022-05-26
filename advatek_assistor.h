@@ -25,7 +25,7 @@ public:
 	pt::ptree DriverNames;
 	pt::ptree Gamma;
 
-	const char* advatek_manager::SortTypes[5] = {
+	const char* SortTypes[5] = {
 		"Sort Nickname",
 		"Sort Model",
 		"Sort Static IP",
