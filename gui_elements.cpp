@@ -29,6 +29,7 @@ float eness_colourcode_ouptput[16][4] = {
 };
 
 std::vector<sAdvatekDevice*> foundDevices;
+std::vector<sAdvatekDevice*> flirtDevices;
 std::vector<std::pair<sAdvatekDevice*, sAdvatekDevice*>> syncDevices;
 sAdvatekDevice* syncDeviceVirt;
 
@@ -1058,9 +1059,16 @@ void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
 	}
 
 	foundDevices.clear();
+	flirtDevices.clear();
 
 	switch (s_loopVar.current_sync_type) {
 	case 0: // Match Static IP
+		flirtDevices = adv.getDevicesWithStaticIP(adv.virtualDevices, ipString(vdevice->StaticIP));
+		if (flirtDevices.size() > 1) {
+			colouredText(std::string("Multiple virtual devices with static IP ").append(ipString(vdevice->StaticIP)).c_str(), COL_RED);
+			canSyncAll = false;
+			return;
+		}
 		foundDevices = adv.getDevicesWithStaticIP(adv.connectedDevices, ipString(vdevice->StaticIP));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
@@ -1074,6 +1082,12 @@ void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
 		}
 		break;
 	case 1: // Match Nickname
+		flirtDevices = adv.getDevicesWithNickname(adv.virtualDevices, std::string(vdevice->Nickname));
+		if (flirtDevices.size() > 1) {
+			colouredText(std::string("Multiple virtual devices with Nickname ").append(vdevice->Nickname).c_str(), COL_RED);
+			canSyncAll = false;
+			return;
+		}
 		foundDevices = adv.getDevicesWithNickname(adv.connectedDevices, std::string(vdevice->Nickname));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
@@ -1087,6 +1101,12 @@ void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
 		}
 		break;
 	case 2: // Match MAC
+		flirtDevices = adv.getDevicesWithMac(adv.virtualDevices, macString(vdevice->Mac));
+		if (flirtDevices.size() > 1) {
+			colouredText(std::string("Multiple vuirtual devices with MAC address ").append(macString(vdevice->Mac)).c_str(), COL_RED);
+			canSyncAll = false;
+			return;
+		}
 		foundDevices = adv.getDevicesWithMac(adv.connectedDevices, macString(vdevice->Mac));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
