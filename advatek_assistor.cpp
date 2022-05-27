@@ -14,29 +14,43 @@ bool compareDriverNames(std::pair<int, char*> Driver1, std::pair<int, char*> Dri
 	return (std::string(Driver1.second).compare(std::string(Driver2.second)) < 0);
 }
 
-bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
+bool compareID(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
-	return (std::string(device1->Nickname).compare(std::string(device2->Nickname)) < 0);
-}
-
-bool compareModel(sAdvatekDevice* device1, sAdvatekDevice* device2)
-{
-	return (std::string((char*)device1->Model).compare(std::string((char*)device2->Model)) < 0);
-}
-
-bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
-{
-	return (device1->CurrentIP[3] < device2->CurrentIP[3]);
-}
-
-bool compareStaticIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
-{
-	return (device1->StaticIP[3] < device2->StaticIP[3]);
+	return (device1->uid < device2->uid);
 }
 
 bool compareTemperature(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
+	if (device1->Temperature == device2->Temperature) return compareID(device1, device2);
 	return (device1->Temperature < device2->Temperature);
+}
+
+bool compareModel(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	int result = std::string((char*)device1->Model).compare(std::string((char*)device2->Model));
+	if (result == 0) return compareTemperature(device1, device2);
+	return (result < 0);
+}
+
+bool compareStaticIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	int result = ipString(device1->StaticIP).compare(ipString(device2->StaticIP));
+	if (result == 0) return compareModel(device1, device2);
+	return (result < 0);
+}
+
+bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	int result = ipString(device1->CurrentIP).compare(ipString(device2->CurrentIP));
+	if (result == 0) return compareStaticIP(device1, device2);
+	return (result < 0);
+}
+
+bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
+{
+	int result = std::string(device1->Nickname).compare(std::string(device2->Nickname));
+	if (result == 0) return compareCurrentIP(device1, device2);
+	return (result < 0);
 }
 
 bool advatek_manager::deviceExist(std::vector<sAdvatekDevice*>& devices, uint8_t * Mac) {
@@ -469,6 +483,7 @@ void advatek_manager::setTest(sAdvatekDevice* device) {
 }
 
 void advatek_manager::sortDevices(std::vector<sAdvatekDevice*> &devices, int sortType){
+
 	switch (sortType) {
 	case 0:
 		sort(devices.begin(), devices.end(), compareNickname);
