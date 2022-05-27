@@ -15,7 +15,7 @@
 #include "advatek_assistor.h"
 #include "portable-file-dialogs.h"
 
-#define Version "1.3.1"
+#define Version "1.4.0"
 
 namespace pt = boost::property_tree;
 
@@ -72,6 +72,9 @@ struct loopVar {
 	float rePollTime = 3;
 	float testCycleSpeed = 0.5;
 	float scale = 1;
+
+	float xscale;
+	float yscale;
 
 	pt::ptree pt_json_device;
 };

@@ -68,7 +68,7 @@ public:
 	void pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice);
 
 	void copyToNewVirtualDevice(sAdvatekDevice* fromDevice);
-	void addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
+	void addVirtualDevice(boost::property_tree::ptree json_device, sImportOptions &importOptions);
 	void addVirtualDevice(sImportOptions &importOptions);
 	void pasteToNewVirtualDevice();
 	void updateConnectedDevice(sAdvatekDevice* device);
@@ -98,7 +98,7 @@ public:
 	void getJSON(sAdvatekDevice *fromDevice, sImportOptions &importOptions);
 	void getJSON(sAdvatekDevice *device, boost::property_tree::ptree &JSONdevice);
 	std::string importJSON(sAdvatekDevice *device, sImportOptions &importOptions);
-	std::string importJSON(sAdvatekDevice *device, boost::property_tree::ptree advatek_device, sImportOptions &importOptions);
+	std::string importJSON(sAdvatekDevice *device, boost::property_tree::ptree json_device, sImportOptions &importOptions);
 	void exportJSON(sAdvatekDevice *device, std::string path);
 	void exportJSON(std::vector<sAdvatekDevice*> &devices, std::string path);
 	std::string validateJSON(boost::property_tree::ptree advatek_devices);

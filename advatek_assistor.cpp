@@ -88,6 +88,7 @@ size_t advatek_manager::getConnectedDeviceIndex(std::string mac) {
 }
 
 int advatek_manager::getDriverSortedIndex(sAdvatekDevice* device) {
+	sortDriversSorted(device);
 	for (int index = 0; index < device->DriversSorted.size(); ++index) {
 		if (device->DriversSorted[index].first == device->CurrentDriver) return index;
 	}
@@ -259,9 +260,9 @@ void advatek_manager::copyToNewVirtualDevice(sAdvatekDevice* fromDevice) {
 	virtualDevices.emplace_back(device);
 }
 
-void advatek_manager::addVirtualDevice(boost::property_tree::ptree advatek_device, sImportOptions &importOptions) {
+void advatek_manager::addVirtualDevice(boost::property_tree::ptree json_device, sImportOptions &importOptions) {
 	sAdvatekDevice * device = new sAdvatekDevice();
-	importJSON(device, advatek_device, importOptions);
+	importJSON(device, json_device, importOptions);
 	addUID(device);
 	virtualDevices.emplace_back(device);
 }
@@ -281,7 +282,7 @@ void advatek_manager::addVirtualDevice(sImportOptions &importOptions) {
 		{
 			addVirtualDevice(device.second, importOptions);
 		}
-	} else { // Single device
+	} else { // Single device backwards compatable
 		addVirtualDevice(tree_add_virt_device, importOptions);
 	}
 }
@@ -295,6 +296,7 @@ void advatek_manager::addUID(sAdvatekDevice* device) {
 }
 
 void advatek_manager::sortDriversSorted(sAdvatekDevice* device) {
+	device->DriversSorted.clear();
 	for (int i = 0; i < device->NumDrivers; i++) {
 		device->DriversSorted.emplace_back(i, device->DriverNames[i]);
 	}
@@ -1040,7 +1042,7 @@ void advatek_manager::setCurrentAdaptor(int adaptorIndex ) {
 	}
 }
 
-std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_tree::ptree advatek_device, sImportOptions &importOptions) {
+std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_tree::ptree json_device, sImportOptions &importOptions) {
 	std::string s_hold;
 	std::stringstream report;
 
@@ -1053,17 +1055,17 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 		if (device->Model) delete[] device->Model;
 		device->Model = new uint8_t[device->ModelLength + 1];
 		memset(device->Model, 0x00, sizeof(uint8_t) * (device->ModelLength + 1));
-		memcpy(device->Model, advatek_device.get<std::string>("Model").c_str(), sizeof(uint8_t) * device->ModelLength);
-		s_hold = advatek_device.get<std::string>("Mac");
+		memcpy(device->Model, json_device.get<std::string>("Model").c_str(), sizeof(uint8_t) * device->ModelLength);
+		s_hold = json_device.get<std::string>("Mac");
 		load_macStr(s_hold, device->Mac);
 	}
 
-	if (advatek_device.get<std::string>("Model").compare(std::string((char *)device->Model)) == 0) {
+	if (json_device.get<std::string>("Model").compare(std::string((char *)device->Model)) == 0) {
 		report << "Done!\n";
 	}
 	else {
 		report << "Beware: Loaded data from ";
-		report << advatek_device.get<std::string>("Model");
+		report << json_device.get<std::string>("Model");
 		report << " to ";
 		report << device->Model;
 		report << "\n";
@@ -1073,9 +1075,9 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 
 		SetValueFromJson(uint8_t, DHCP);
 
-		s_hold = advatek_device.get<std::string>("StaticIP");
+		s_hold = json_device.get<std::string>("StaticIP");
 		load_ipStr(s_hold, device->StaticIP);
-		s_hold = advatek_device.get<std::string>("StaticSM");
+		s_hold = json_device.get<std::string>("StaticSM");
 		load_ipStr(s_hold, device->StaticSM);
 
 		report << "- Import Network Settings Succesfull.\n";
@@ -1129,7 +1131,7 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 	if (importOptions.dmx_outputs || importOptions.init) {
 		bool go = EqualValueJson(uint8_t, NumDMXOutputs);
 		if ( go || importOptions.init ) {
-			if (advatek_device.get<uint8_t>("NumDMXOutputs") == 0) {
+			if (json_device.get<uint8_t>("NumDMXOutputs") == 0) {
 				report << "- Import DMX Control Failed. (No DMX outputs found)\n";
 			}
 			else {
@@ -1183,7 +1185,7 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 				memset(device->DriverNames[i], 0, sizeof(char) * (device->DriverNameLength + 1));
 			}
 			SetValueFromJson(uint8_t, DriverNameLength);
-			for (pt::ptree::value_type &node : advatek_device.get_child("DriverNames"))
+			for (pt::ptree::value_type &node : json_device.get_child("DriverNames"))
 			{
 				std::string sTempValue = node.second.data();
 				int index = std::stoi(node.first);
@@ -1213,7 +1215,7 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 	}
 
 	if (importOptions.nickname || importOptions.init) {
-		s_hold = advatek_device.get<std::string>("Nickname");
+		s_hold = json_device.get<std::string>("Nickname");
 		strncpy(device->Nickname, s_hold.c_str(), 40);
 		report << "- Import Nickname Succesfull.\n";
 	}
@@ -1431,11 +1433,11 @@ std::string advatek_manager::validateJSON(boost::property_tree::ptree advatek_de
 }
 
 void advatek_manager::copyDevice(sAdvatekDevice *fromDevice, sAdvatekDevice *toDevice, bool initialise) {
-	pt::ptree advatek_device;
-	getJSON(fromDevice, advatek_device);
+	pt::ptree json_device;
+	getJSON(fromDevice, json_device);
 
 	std::stringstream jsonStringStream;
-	write_json(jsonStringStream, advatek_device);
+	write_json(jsonStringStream, json_device);
 
 	sImportOptions importOptions = sImportOptions();
 	importOptions.json = jsonStringStream.str();

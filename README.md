@@ -1,16 +1,15 @@
 # Advatek Assisitor
 
-![preview](img/preview1.png)
+![preview](img/preview5.png)
 
 ## About
 
-This is an Advatek Assistant clone that can run under Linux and adds the following features:
+Advatek Assistor is an [Advatek Assistent](https://www.advateklights.com/downloads/advatek-assistant) clone that allows you to easily configure and save your Advatek control devices. It will automatically list the Advatek devices on your network without knowing their IP address, making it easy to keep track of any size installation. It has the ability to detect devices with an address outside your computers IP range and save config settings of a complete installation to JSON format. This file can then be automatically uploaded onto an installation based on the connected controllers MAC, IP or Nickname.
 
   - Works and tested on Debian variants (Raspberry Pi / Ubuntu)
-  - Saving and Loading of Advatek config settings to and from the controller in JSON format
-  - Cycling of output channels in test mode
-  - Cycling of output pixels in test mode
-
+  - Save all controller settings to JSON format
+  - Bulk Load/Upload Advatek config settings to devices
+  - Cycling of output channels and or pixels in test mode
 
 ## Dependencies
 

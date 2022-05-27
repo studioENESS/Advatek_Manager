@@ -31,20 +31,20 @@
 
 #define bswap_16(x) x=((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 
-#define EqualValueJson(type, atr) (device->atr == advatek_device.get<type>(#atr));
-#define SetValueFromJson(type, atr) device->atr = advatek_device.get<type>(#atr);
+#define EqualValueJson(type, atr) (device->atr == json_device.get<type>(#atr));
+#define SetValueFromJson(type, atr) device->atr = json_device.get<type>(#atr);
 #define SetChildIntValuesFromJson(atr) \
-	for (pt::ptree::value_type &node : advatek_device.get_child(#atr)) { \
+	for (pt::ptree::value_type &node : json_device.get_child(#atr)) { \
 	 device->atr[std::stoi(node.first)] = std::stoi(node.second.data()); }
 #define SetChildFloatValuesFromJson(atr) \
-	for (pt::ptree::value_type &node : advatek_device.get_child(#atr)) { \
+	for (pt::ptree::value_type &node : json_device.get_child(#atr)) { \
 	 device->atr[std::stoi(node.first)] = std::stof(node.second.data()); }
 #define SetChildStringValuesFromJson(atr) \
-	for (pt::ptree::value_type &node : advatek_device.get_child(#atr)) { \
+	for (pt::ptree::value_type &node : json_device.get_child(#atr)) { \
 	std::string sTempValue = node.second.data(); \\
 	 device->atr[std::stoi(node.first)] = sTempValue.c_str(); }
 
-extern const char* ExportAllTypes[4];
+extern const char* ExportAllTypes[3];
 extern const char* SyncTypes[3];
 extern const char* RGBW_Order[24];
 extern const char* DriverTypes[3];

@@ -8,6 +8,7 @@ uint32_t COL_RED = IM_COL32(180, 0, 0, 255);
 
 bool gammaSliderLock = false;
 float initHue = 0.5;
+int stdButtonWidth = 80;
 
 float eness_colourcode_ouptput[16][4] = {
 	{0,255,0,255},
@@ -38,7 +39,7 @@ sImportOptions virtualImportOptions = sImportOptions();
 
 std::string adaptor_string = "None";
 std::string json_device_string = "Select Device";
-std::string vDeviceString = "Import ...";
+std::string vDeviceString = "Import";
 std::string result = "";
 std::string vDeviceData = "";
 
@@ -109,11 +110,11 @@ void setupWindow(GLFWwindow*& window)
 
 	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-	float xscale = mode->width / 1920.f;
-	float yscale = mode->height / 1080.f;
-	s_loopVar.window_w = 800 * xscale;
-	s_loopVar.window_h = 600 * yscale;
-	s_loopVar.scale = std::max(xscale, yscale);
+	s_loopVar.xscale = mode->width / 1920.f;
+	s_loopVar.yscale = mode->height / 1080.f;
+	s_loopVar.window_w = 800 * s_loopVar.xscale;
+	s_loopVar.window_h = 600 * s_loopVar.yscale;
+	s_loopVar.scale = std::max(s_loopVar.xscale, s_loopVar.yscale);
 
 	int center_x = (mode->width / 2) - (s_loopVar.window_w / 2);
 	int center_y = (mode->height / 2) - (s_loopVar.window_h / 2);
@@ -190,14 +191,14 @@ void pushStyleColours18(float h) {
 
 void showResult(std::string& result) {
 	if (result.empty()) return;
-		
-	ImGui::OpenPopup("Result");
+	
+	
+	ImVec2 center = { (195.f * s_loopVar.xscale) + s_loopVar.window_w / 2, (50.f * s_loopVar.yscale) + s_loopVar.window_h / 2 };
 
-	//Always center this window when appearing
-	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f * s_loopVar.scale, 0.5f * s_loopVar.scale));
-	//ImGui::SetNextWindowSize(ImVec2(400, 300));
-	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f * s_loopVar.scale, -1.f * s_loopVar.scale), ImVec2(INFINITY, -1.f * s_loopVar.scale));
+	ImGui::SetNextWindowSize(ImVec2(400 * s_loopVar.xscale, NULL));
+
+	ImGui::OpenPopup("Result");
 
 	if (ImGui::BeginPopupModal("Result", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -216,18 +217,21 @@ void showResult(std::string& result) {
 
 		ImGui::PopStyleVar();
 		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
 
 		ImGui::PushStyleColor(ImGuiCol_Text, COL_GREY);
 		ImGui::TextWrapped("Please click the Update Network or Update Settings to save these changes to the controller.");
 		ImGui::PopStyleColor();
 
 		ImGui::Spacing();
-		if (ImGui::Button("OK", ImVec2(120 * s_loopVar.scale, 0))) {
+		if (ImGui::Button("OK", ImVec2(stdButtonWidth * s_loopVar.scale, 0))) {
 			result = std::string("");
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}
+
 }
 
 void button_update_controller_settings(sAdvatekDevice* device) {
@@ -238,10 +242,10 @@ void button_update_controller_settings(sAdvatekDevice* device) {
 }
 
 void button_open_close_all() {
-	if (ImGui::Button("Open All"))
+	if (ImGui::Button("Open All", ImVec2(stdButtonWidth * s_loopVar.scale, 0)))
 		s_loopVar.open_action = 1;
 	ImGui::SameLine();
-	if (ImGui::Button("Close All"))
+	if (ImGui::Button("Close All", ImVec2(stdButtonWidth * s_loopVar.scale, 0)))
 		s_loopVar.open_action = 0;
 }
 
@@ -252,7 +256,13 @@ void colouredText(const char* txt, uint32_t color) {
 }
 
 void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
-	if (ImGui::BeginPopupModal("Import", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+
+	ImVec2 center = { (145.f *s_loopVar.xscale) + s_loopVar.window_w/2, (50.f * s_loopVar.yscale) + s_loopVar.window_h/2 };
+
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f * s_loopVar.scale, 0.5f * s_loopVar.scale));
+	ImGui::SetNextWindowSize(ImVec2(300 * s_loopVar.xscale, NULL));
+
+	if (ImGui::BeginPopupModal("What needs importing?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		// Read in devices
 		pt::ptree pt_json_devices;
@@ -264,7 +274,6 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 		pt::read_json(ss_json_devices, pt_json_devices);
 
 		if (pt_json_devices.count("advatek_devices") > 0) {
-			// advatek_device = advatek_devices.get_child("advatek_devices").front().second;
 			for (auto& json_device : pt_json_devices.get_child("advatek_devices")) {
 				//	advatek_device = device.second;
 				loadedJsonDevices.emplace_back(json_device.second);
@@ -273,17 +282,15 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 				jsonDeviceNames.emplace_back(std::string(sModelName + " " + sNickName));
 			}
 		}
-		else {
-			s_loopVar.pt_json_device = pt_json_devices;
-		}
 
-		ImGui::Text("What needs importing?");
+		ImGui::Spacing();
 		ImGui::Separator();
+		ImGui::Spacing();
 		ImGui::Spacing();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
-		if (loadedJsonDevices.size() > 0) {
+		if (loadedJsonDevices.size() > 1) {
 			if (ImGui::BeginCombo("###jsondevices", json_device_string.c_str(), 0))
 			{
 				for (int n = 0; n < jsonDeviceNames.size(); n++)
@@ -299,6 +306,9 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 			}
 			ImGui::Spacing();
 		}
+		else {
+			s_loopVar.pt_json_device = loadedJsonDevices[0];
+		}
 
 		ImGui::Checkbox("Network", &importOptions.network);
 		ImGui::Checkbox("Ethernet Control (Mapping)", &importOptions.ethernet_control);
@@ -307,10 +317,13 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 		ImGui::Checkbox("Nickname", &importOptions.nickname);
 		ImGui::Checkbox("Fan On Temp", &importOptions.fan_on_temp);
 
-		ImGui::PopStyleVar();
+		ImGui::Spacing();
+		ImGui::Separator();
 		ImGui::Spacing();
 
-		if (ImGui::Button("Import", ImVec2(120 * s_loopVar.scale, 0))) {
+		ImGui::PopStyleVar();
+
+		if (ImGui::Button("Import", ImVec2(stdButtonWidth * s_loopVar.scale, 0))) {
 			std::stringstream jsonStringStream;
 			write_json(jsonStringStream, s_loopVar.pt_json_device);
 			importOptions.json = jsonStringStream.str();
@@ -322,7 +335,7 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120 * s_loopVar.scale, 0))) { ImGui::CloseCurrentPopup(); }
+		if (ImGui::Button("Cancel", ImVec2(stdButtonWidth * s_loopVar.scale, 0))) { ImGui::CloseCurrentPopup(); }
 		ImGui::EndPopup();
 	}
 }
@@ -341,7 +354,7 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 		if (ImGui::Button("Paste"))
 		{
 			adv.getJSON(adv.memoryDevices[0], userImportOptions);
-			ImGui::OpenPopup("Import");
+			ImGui::OpenPopup("What needs importing?");
 		}
 	}
 
@@ -351,20 +364,20 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 		auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
 		if (!path.empty()) {
 			applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
-			boost::property_tree::ptree advatek_devices;
-			boost::property_tree::read_json(path.at(0), advatek_devices);
+			boost::property_tree::ptree json_devices;
+			boost::property_tree::read_json(path.at(0), json_devices);
 
-			std::string result = adv.validateJSON(advatek_devices);
+			std::string result = adv.validateJSON(json_devices);
 			if (!result.empty()) {
 				applog.AddLog("[ERROR] Not a valid JSON file.\n");
 			}
 			else {
 				std::stringstream jsonStringStream;
-				write_json(jsonStringStream, advatek_devices);
+				write_json(jsonStringStream, json_devices);
 
 				userImportOptions.json = jsonStringStream.str();
 
-				ImGui::OpenPopup("Import");
+				ImGui::OpenPopup("What needs importing?");
 			}
 		}
 	}
@@ -465,22 +478,26 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					applog.AddLog("[INFO] Copied controller %s %s to new virtual device.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
 				}
 			}
+			/* Just use the copy paste function
 			else {
-				ImGui::PushItemWidth(240 * s_loopVar.scale);
-				if (ImGui::BeginCombo("###senddevice", "Copy to Connected Device", 0))
-				{
-					for (int n = 0; n < adv.connectedDevices.size(); n++)
+				
+				if (adv.connectedDevices.size() > 1) {
+					ImGui::PushItemWidth(240 * s_loopVar.scale);
+					if (ImGui::BeginCombo("###senddevice", "Copy to Connected Device", 0))
 					{
-						if (ImGui::Selectable(ipString(adv.connectedDevices[n]->StaticIP).append(" ").append(adv.connectedDevices[n]->Nickname).c_str()))
+						for (int n = 0; n < adv.connectedDevices.size(); n++)
 						{
-							adv.copyDevice(adv.virtualDevices[i], adv.connectedDevices[n], false);
-							applog.AddLog("[INFO] Copied virtual controller to new device  %s %s.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
+							if (ImGui::Selectable(ipString(adv.connectedDevices[n]->StaticIP).append(" ").append(adv.connectedDevices[n]->Nickname).c_str()))
+							{
+								adv.copyDevice(adv.virtualDevices[i], adv.connectedDevices[n], false);
+								applog.AddLog("[INFO] Copied virtual controller to new device  %s %s.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
+							}
 						}
+						ImGui::EndCombo();
 					}
-					ImGui::EndCombo();
+					ImGui::PopItemWidth();
 				}
-				ImGui::PopItemWidth();
-			}
+			}*/
 
 			ImGui::PopStyleVar(); // ControllerButtons Top
 			//ImGui::Spacing();
@@ -997,14 +1014,14 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 			}
 
 			if (isConnected) {
-				if (ImGui::Button("Cancel###ClearDevice")) {
+				if (ImGui::Button("Cancel###ClearDevice", ImVec2(stdButtonWidth * s_loopVar.scale, 0))) {
 					s_updateRequest.clearConnectedDeviceIndex = i;
 				}
 			}
 
 			if (devices.size() > 1) {
 				ImGui::SameLine();
-				if (ImGui::Button("Open All###Tabs"))
+				if (ImGui::Button("Open All###Tabs", ImVec2(stdButtonWidth * s_loopVar.scale, 0)))
 				{
 					s_loopVar.open_action = 1;
 					switch (devices[i]->openTab) {
@@ -1046,6 +1063,7 @@ void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
+
 	colouredText("(Virtual Device)", COL_GREY);  ImGui::SameLine();
 	ImGui::Text(ipString(vdevice->StaticIP).c_str()); ImGui::SameLine();
 	colouredText(vdevice->Nickname, COL_LIGHTGREY);
@@ -1193,7 +1211,7 @@ void showWindow(GLFWwindow*& window)
 
 		showResult(result);
 
-		if (ImGui::Button("Search"))
+		if (ImGui::Button("Search", ImVec2(stdButtonWidth * s_loopVar.scale, 0)))
 		{
 			s_updateRequest.poll = true;
 		}
@@ -1253,29 +1271,39 @@ void showWindow(GLFWwindow*& window)
 					button_open_close_all();
 					
 					ImGui::SameLine();
+					ImGui::PushItemWidth(150 * s_loopVar.scale);
 					ImGui::Combo("###SortConnectedDevices", &adv.sortTypeConnected, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes));
+					ImGui::PopItemWidth();
 
 					std::string path;
-					int selected_export = 0;
 					ImGui::SameLine();
-					if (ImGui::Combo("###ExportTypes", &selected_export, ExportAllTypes, IM_ARRAYSIZE(ExportAllTypes))) {
-						switch (selected_export) {
-						case 1: //JSON
-							path = pfd::save_file("Select a file", "controllerPack.json").result();
-							if (!path.empty()) {
-								adv.exportJSON(adv.connectedDevices, path);
+					
+					if (ImGui::BeginCombo("###ExportTypes", "Export", 0))
+					{
+						for (int n = 0; n < IM_ARRAYSIZE(ExportAllTypes); n++)
+						{
+							if (ImGui::Selectable(ExportAllTypes[n]))
+							{
+								switch (n) {
+								case 0: //JSON
+									path = pfd::save_file("Select a file", "controllerPack.json").result();
+									if (!path.empty()) {
+										adv.exportJSON(adv.connectedDevices, path);
+									}
+									break;
+								case 1: // Virtual Devices Add
+									s_updateRequest.connectedDevicesToVirtualDevices = true;
+									break;
+								case 2: // Virtual Devices Clean
+									adv.clearDevices(adv.virtualDevices);
+									s_updateRequest.connectedDevicesToVirtualDevices = true;
+									break;
+								default:
+									break;
+								}
 							}
-							break;
-						case 2: // Virtual Devices Add
-							s_updateRequest.connectedDevicesToVirtualDevices = true;
-							break;
-						case 3: // Virtual Devices Clean
-							adv.clearDevices(adv.virtualDevices);
-							s_updateRequest.connectedDevicesToVirtualDevices = true;
-							break;
-						default:
-							break;
 						}
+						ImGui::EndCombo();
 					}
 				}
 
@@ -1292,17 +1320,24 @@ void showWindow(GLFWwindow*& window)
 			if (ImGui::BeginTabItem("<-"))
 			{
 				pushStandardTabStyleVar();
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8 * s_loopVar.scale, 6 * s_loopVar.scale));
 				ImGui::Spacing();
 				ImGui::PushItemWidth(182 * s_loopVar.scale);
 				ImGui::Combo("###SyncTypes", &s_loopVar.current_sync_type, SyncTypes, IM_ARRAYSIZE(SyncTypes));
 				ImGui::PopItemWidth();
 				ImGui::SameLine();
 
+				if (syncDevices.size() > 0) {
+					if (ImGui::Button("Update All###top"))
+					{
+						for (int i = 0; i < syncDevices.size(); i++) {
+							adv.updateConnectedDevice(syncDevices[i].first, syncDevices[i].second);
+						}
+					}
+				}
+
 				canSyncAll = true;
 				inSyncAll = true;
-
-				// Check static IP of all virtual devices for conflict
-				// In name mode check for dupplicate names
 
 				syncDevices.clear();
 
@@ -1314,10 +1349,10 @@ void showWindow(GLFWwindow*& window)
 
 				ImGui::Spacing();
 
-				if (canSyncAll && !inSyncAll) {
+				if (/*canSyncAll &&*/ !inSyncAll) {
 					ImGui::Separator();
 					ImGui::Spacing();
-					if (ImGui::Button("Update All"))
+					if (ImGui::Button("Update All###bottom"))
 					{
 						for (int i = 0; i < syncDevices.size(); i++) {
 							adv.updateConnectedDevice(syncDevices[i].first, syncDevices[i].second);
@@ -1325,7 +1360,7 @@ void showWindow(GLFWwindow*& window)
 					}
 					ImGui::Spacing();
 				}
-				ImGui::PopStyleVar(2); // TabStyle
+				ImGui::PopStyleVar(3); // TabStyle
 				ImGui::EndTabItem();
 			}
 			// -------------------------------------- END SYNC
@@ -1344,21 +1379,6 @@ void showWindow(GLFWwindow*& window)
 						ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes) - 2);
 					}
 
-					std::string path;
-					int selected_export = 0;
-					ImGui::SameLine();
-					if (ImGui::Combo("###ExportTypes", &selected_export, ExportAllTypes, IM_ARRAYSIZE(ExportAllTypes)-2)) {
-						switch (selected_export) {
-						case 1: //JSON
-							path = pfd::save_file("Select a file", "controllerPack.json").result();
-							if (!path.empty()) {
-								adv.exportJSON(adv.connectedDevices, path);
-							}
-							break;
-						default:
-							break;
-						}
-					}
 					ImGui::SameLine();
 				}
 
@@ -1390,6 +1410,31 @@ void showWindow(GLFWwindow*& window)
 					ImGui::EndCombo();
 				}
 
+				if (adv.virtualDevices.size() >= 1) {
+					ImGui::SameLine();
+					std::string path;
+					if (ImGui::BeginCombo("###ExportTypesV", "Export", 0))
+					{
+						for (int n = 0; n < IM_ARRAYSIZE(ExportAllTypes) - 2; n++)
+						{
+							if (ImGui::Selectable(ExportAllTypes[n]))
+							{
+								switch (n) {
+								case 0: //JSON
+									path = pfd::save_file("Select a file", "controllerPack.json").result();
+									if (!path.empty()) {
+										adv.exportJSON(adv.virtualDevices, path);
+									}
+									break;
+								default:
+									break;
+								}
+							}
+						}
+						ImGui::EndCombo();
+					}
+				}
+
 				ImGui::SameLine();
 				if (ImGui::Button("Clear All"))
 				{
@@ -1398,7 +1443,7 @@ void showWindow(GLFWwindow*& window)
 
 				if (adv.memoryDevices.size() == 1) {
 					ImGui::SameLine();
-					if (ImGui::Button("Paste"))
+					if (ImGui::Button("Paste", ImVec2(stdButtonWidth * s_loopVar.scale, 0)))
 					{
 						s_updateRequest.pasteToNewVirtualDevice = true;
 					}
@@ -1484,13 +1529,13 @@ void processUpdateRequests()
 
 	if (s_updateRequest.newVirtualDevice) {
 		adv.addVirtualDevice(virtualImportOptions);
-		applog.AddLog("[INFO] Created new Virtual Device.\n");
+		applog.AddLog("[INFO] Creating new Virtual Device(s).\n");
 		s_updateRequest.newVirtualDevice = false;
 	}
 
 	if (s_updateRequest.pasteToNewVirtualDevice) {
 		adv.pasteToNewVirtualDevice();
-		applog.AddLog("[INFO] Pasted data into new virtual device.\n");
+		applog.AddLog("[INFO] Pasting data into new virtual device.\n");
 		s_updateRequest.pasteToNewVirtualDevice = false;
 	}
 

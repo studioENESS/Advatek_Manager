@@ -1,10 +1,9 @@
 #include "defines.h"
 
-const char* ExportAllTypes[4] = {
-		"Export All",
-		"... JSON",
-		"... to Virtual Devices (Add)",
-		"... to Virtual Devices (Clean)"
+const char* ExportAllTypes[3] = {
+		"JSON",
+		"Virtual Devices (Add)",
+		"Virtual Devices (Clean)"
 };
 
 const char* SyncTypes[3] = {
