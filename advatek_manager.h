@@ -133,6 +133,12 @@ public:
 	IClient* m_pUdpClient;
 
 	bool bTestAll = false;
+
+	// ACT - Pixile Accessors
+	const std::vector<std::string>& NetworkAdaptors() const { return networkAdaptors; }
+	const std::vector<sAdvatekDevice*>& ConnectedDevices() const { return connectedDevices; }
+	const std::vector<sAdvatekDevice*>& VirtualDevices() const { return virtualDevices; }
+
 private:
 
 };

@@ -54,6 +54,22 @@ extern const char* TestModes[9];
 
 class IClient;
 
+enum ETestPattern
+{
+	ETP_NONE = 0,
+	ETP_CYCLE,
+	ETP_RED,
+	ETP_GREEN,
+	ETP_BLUE,
+	ETP_WHITE,
+	ETP_SET_COLOUR,
+	ETP_FADE,
+	ETP_STROBE_VERT,
+	ETP_STROBE_HORZ,
+	ETP_RAINBOW,
+	ETP_PIXELS
+};
+
 typedef struct sAdvatekDevice {
 	/*tAdvatekDevice(){
 		constructor?
@@ -130,6 +146,9 @@ typedef struct sAdvatekDevice {
 	size_t uid;
 	int openTab = 0;
 	bool autoChannels = false;
+
+	int MinUniverse() const;
+	int MaxUniverse() const;
 
 	~sAdvatekDevice() {
 		if (Model) delete Model;
