@@ -1,10 +1,10 @@
-# Advatek Assisitor
+# Advatek Manager
 
 ![preview](img/preview5.png)
 
 ## About
 
-Advatek Assistor is an [Advatek Assistent](https://www.advateklights.com/downloads/advatek-assistant) clone that allows you to easily configure and save your Advatek control devices. It will automatically list the Advatek devices on your network without knowing their IP address, making it easy to keep track of any size installation. It has the ability to detect devices with an address outside your computers IP range and save config settings of a complete installation to JSON format. This file can then be automatically uploaded onto an installation based on the connected controllers MAC, IP or Nickname.
+Advatek Manager is an [Advatek Assistent](https://www.advateklights.com/downloads/advatek-assistant) clone that allows you to easily configure and save your Advatek control devices. It will automatically list the Advatek devices on your network without knowing their IP address, making it easy to keep track of any size installation. It has the ability to detect devices with an address outside your computers IP range and save config settings of a complete installation to JSON format. This file can then be automatically uploaded onto an installation based on the connected controllers MAC, IP or Nickname.
 
   - Works and tested on Debian variants (Raspberry Pi / Ubuntu)
   - Save all controller settings to JSON format

@@ -120,7 +120,7 @@ void setupWindow(GLFWwindow*& window)
 	int center_y = (mode->height / 2) - (s_loopVar.window_h / 2);
 
 	// Create window with graphics context
-	window = glfwCreateWindow(s_loopVar.window_w, s_loopVar.window_h, "Advatek Assistor", NULL, NULL);
+	window = glfwCreateWindow(s_loopVar.window_w, s_loopVar.window_h, "Advatek Manager", NULL, NULL);
 
 	glfwSetWindowPos(window, center_x, center_y);
 
@@ -265,13 +265,13 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 	if (ImGui::BeginPopupModal("What needs importing?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		// Read in devices
-		pt::ptree pt_json_devices;
-		std::vector<pt::ptree> loadedJsonDevices;
+		boost::property_tree::ptree pt_json_devices;
+		std::vector<boost::property_tree::ptree> loadedJsonDevices;
 		std::vector<std::string> jsonDeviceNames;
 
 		std::stringstream ss_json_devices;
 		ss_json_devices << importOptions.json;
-		pt::read_json(ss_json_devices, pt_json_devices);
+		boost::property_tree::read_json(ss_json_devices, pt_json_devices);
 
 		if (pt_json_devices.count("advatek_devices") > 0) {
 			for (auto& json_device : pt_json_devices.get_child("advatek_devices")) {
@@ -478,6 +478,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					applog.AddLog("[INFO] Copied controller %s %s to new virtual device.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
 				}
 			}
+
 			/* Just use the copy paste function
 			else {
 				
@@ -1564,7 +1565,7 @@ void AppLog::Clear()
 	Buf.clear();
 	LineOffsets.clear();
 	LineOffsets.push_back(0);
-	AddLog("[INFO] Advatek Assistor v%s\n", Version);
+	AddLog("[INFO] Advatek Manager v%s\n", Version);
 }
 
 void AppLog::AddLog(const char* fmt, ...)

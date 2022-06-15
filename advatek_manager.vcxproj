@@ -158,7 +158,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="advatek_assistor.cpp" />
+    <ClCompile Include="advatek_manager.cpp" />
     <ClCompile Include="defines.cpp" />
     <ClCompile Include="External\imgui\imgui.cpp" />
     <ClCompile Include="External\imgui\imgui_demo.cpp" />
@@ -172,7 +172,7 @@
     <ClCompile Include="udpclient.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="advatek_assistor.h" />
+    <ClInclude Include="advatek_manager.h" />
     <ClInclude Include="defines.h" />
     <ClInclude Include="External\imgui\imconfig.h" />
     <ClInclude Include="External\imgui\imgui.h" />

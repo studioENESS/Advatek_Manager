@@ -12,12 +12,10 @@
 #include <GLES2/gl2.h>
 #endif
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
-#include "advatek_assistor.h"
+#include "advatek_manager.h"
 #include "portable-file-dialogs.h"
 
 #define Version "1.4.0"
-
-namespace pt = boost::property_tree;
 
 bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
 
@@ -76,7 +74,7 @@ struct loopVar {
 	float xscale;
 	float yscale;
 
-	pt::ptree pt_json_device;
+	boost::property_tree::ptree pt_json_device;
 };
 
 struct AppLog {

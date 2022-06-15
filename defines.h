@@ -34,13 +34,13 @@
 #define EqualValueJson(type, atr) (device->atr == json_device.get<type>(#atr));
 #define SetValueFromJson(type, atr) device->atr = json_device.get<type>(#atr);
 #define SetChildIntValuesFromJson(atr) \
-	for (pt::ptree::value_type &node : json_device.get_child(#atr)) { \
+	for (boost::property_tree::ptree::value_type &node : json_device.get_child(#atr)) { \
 	 device->atr[std::stoi(node.first)] = std::stoi(node.second.data()); }
 #define SetChildFloatValuesFromJson(atr) \
-	for (pt::ptree::value_type &node : json_device.get_child(#atr)) { \
+	for (boost::property_tree::ptree::value_type &node : json_device.get_child(#atr)) { \
 	 device->atr[std::stoi(node.first)] = std::stof(node.second.data()); }
 #define SetChildStringValuesFromJson(atr) \
-	for (pt::ptree::value_type &node : json_device.get_child(#atr)) { \
+	for (boost::property_tree::ptree::value_type &node : json_device.get_child(#atr)) { \
 	std::string sTempValue = node.second.data(); \\
 	 device->atr[std::stoi(node.first)] = sTempValue.c_str(); }
 
@@ -130,6 +130,7 @@ typedef struct sAdvatekDevice {
 	size_t uid;
 	int openTab = 0;
 	bool autoChannels = false;
+
 	~sAdvatekDevice() {
 		if (Model) delete Model;
 		if (Firmware) delete Firmware;

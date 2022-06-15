@@ -34,7 +34,7 @@
     <ClCompile Include="External\imgui\backends\imgui_impl_opengl3.cpp">
       <Filter>sources</Filter>
     </ClCompile>
-    <ClCompile Include="advatek_assistor.cpp">
+    <ClCompile Include="advatek_manager.cpp">
       <Filter>sources</Filter>
     </ClCompile>
     <ClCompile Include="udpclient.cpp">
@@ -66,7 +66,7 @@
     <ClInclude Include="External\imgui\backends\imgui_impl_opengl3_loader.h">
       <Filter>sources</Filter>
     </ClInclude>
-    <ClInclude Include="advatek_assistor.h">
+    <ClInclude Include="advatek_manager.h">
       <Filter>sources</Filter>
     </ClInclude>
     <ClInclude Include="udpclient.h">

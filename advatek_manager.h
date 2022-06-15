@@ -2,28 +2,45 @@
 
 #include "defines.h"
 
-namespace pt = boost::property_tree;
-
 class advatek_manager {
 public:
 	uint8_t ProtVer = 8;
 
-	pt::ptree OutputPixels;
-	pt::ptree OutputUniv;
-	pt::ptree OutputChan;
-	pt::ptree OutputNull;
-	pt::ptree OutputZig;
-	pt::ptree OutputReverse;
-	pt::ptree OutputColOrder;
-	pt::ptree OutputGrouping;
-	pt::ptree OutputBrightness;
-	pt::ptree DmxOutOn;
-	pt::ptree DmxOutUniv;
-	pt::ptree DriverType;
-	pt::ptree DriverSpeed;
-	pt::ptree DriverExpandable;
-	pt::ptree DriverNames;
-	pt::ptree Gamma;
+	boost::property_tree::ptree OutputPixels;
+	boost::property_tree::ptree OutputUniv;
+	boost::property_tree::ptree OutputChan;
+	boost::property_tree::ptree OutputNull;
+	boost::property_tree::ptree OutputZig;
+	boost::property_tree::ptree OutputReverse;
+	boost::property_tree::ptree OutputColOrder;
+	boost::property_tree::ptree OutputGrouping;
+	boost::property_tree::ptree OutputBrightness;
+	boost::property_tree::ptree DmxOutOn;
+	boost::property_tree::ptree DmxOutUniv;
+	boost::property_tree::ptree DriverType;
+	boost::property_tree::ptree DriverSpeed;
+	boost::property_tree::ptree DriverExpandable;
+	boost::property_tree::ptree DriverNames;
+	boost::property_tree::ptree Gamma;
+	boost::property_tree::ptree MinAssistantVer;
+
+	boost::property_tree::ptree tree_virt_device;
+	boost::property_tree::ptree tree_add_virt_device;
+	boost::property_tree::ptree import_json_device;
+	boost::property_tree::ptree tree_getJSON;
+	boost::property_tree::ptree tree_exportJSON_device;
+	boost::property_tree::ptree tree_exportJSON_devices;
+	boost::property_tree::ptree tree_exportJSON_devicesArr;
+
+	std::vector<boost::property_tree::ptree> checkDevices;
+
+	std::vector<uint8_t> testTape;
+	std::vector<uint8_t> dataTape;
+	std::vector<uint8_t> idTape;
+	std::vector<uint8_t> pollTape;
+
+	std::stringstream ss_import_json_device;
+	std::stringstream ss_json;
 
 	const char* SortTypes[5] = {
 		"Sort Nickname",
@@ -41,6 +58,14 @@ public:
 	bool sameNetworkSettings(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
 	bool deviceCompatible(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
 	bool devicesInSync(sAdvatekDevice* fromDevice, sAdvatekDevice* toDevice);
+
+	static bool compareDriverNames(std::pair<int, char*> Driver1, std::pair<int, char*> Driver2);
+	static bool compareID(sAdvatekDevice* device1, sAdvatekDevice* device2);
+	static bool compareTemperature(sAdvatekDevice* device1, sAdvatekDevice* device2);
+	static bool compareModel(sAdvatekDevice* device1, sAdvatekDevice* device2);
+	static bool compareStaticIP(sAdvatekDevice* device1, sAdvatekDevice* device2);
+	static bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2);
+	static bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2);
 
 	std::string macStr(uint8_t * address);
 	std::string ipStr(uint8_t * address);
@@ -107,7 +132,7 @@ public:
 
 	IClient* m_pUdpClient;
 
-	bool bTestAll=false;
+	bool bTestAll = false;
 private:
 
 };

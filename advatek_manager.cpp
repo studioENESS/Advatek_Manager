@@ -1,4 +1,4 @@
-#include "advatek_assistor.h"
+#include "advatek_manager.h"
 #include "udpclient.h"
 
 #ifndef _WIN32
@@ -6,47 +6,44 @@
 #include <ifaddrs.h>
 #endif
 
-namespace pt = boost::property_tree;
-std::vector<uint8_t> dataTape;
-
-bool compareDriverNames(std::pair<int, char*> Driver1, std::pair<int, char*> Driver2)
+bool advatek_manager::compareDriverNames(std::pair<int, char*> Driver1, std::pair<int, char*> Driver2)
 {
 	return (std::string(Driver1.second).compare(std::string(Driver2.second)) < 0);
 }
 
-bool compareID(sAdvatekDevice* device1, sAdvatekDevice* device2)
+bool advatek_manager::compareID(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
 	return (device1->uid < device2->uid);
 }
 
-bool compareTemperature(sAdvatekDevice* device1, sAdvatekDevice* device2)
+bool advatek_manager::compareTemperature(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
 	if (device1->Temperature == device2->Temperature) return compareID(device1, device2);
 	return (device1->Temperature < device2->Temperature);
 }
 
-bool compareModel(sAdvatekDevice* device1, sAdvatekDevice* device2)
+bool advatek_manager::compareModel(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
 	int result = std::string((char*)device1->Model).compare(std::string((char*)device2->Model));
 	if (result == 0) return compareTemperature(device1, device2);
 	return (result < 0);
 }
 
-bool compareStaticIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
+bool advatek_manager::compareStaticIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
 	int result = ipString(device1->StaticIP).compare(ipString(device2->StaticIP));
 	if (result == 0) return compareModel(device1, device2);
 	return (result < 0);
 }
 
-bool compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
+bool advatek_manager::compareCurrentIP(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
 	int result = ipString(device1->CurrentIP).compare(ipString(device2->CurrentIP));
 	if (result == 0) return compareStaticIP(device1, device2);
 	return (result < 0);
 }
 
-bool compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
+bool advatek_manager::compareNickname(sAdvatekDevice* device1, sAdvatekDevice* device2)
 {
 	int result = std::string(device1->Nickname).compare(std::string(device2->Nickname));
 	if (result == 0) return compareCurrentIP(device1, device2);
@@ -209,7 +206,6 @@ void advatek_manager::broadcast_udp_message(std::vector<uint8_t> message)
 	send_udp_message(AdvAdr, AdvPort, true, message);
 }
 
-std::vector<uint8_t> idTape;
 void advatek_manager::identifyDevice(int d, uint8_t duration) {
 	auto device = advatek_manager::connectedDevices[d];
 	idTape.clear();
@@ -248,7 +244,6 @@ void advatek_manager::pasteFromMemoryDeviceTo(sAdvatekDevice* toDevice) {
 	copyDevice(memoryDevices[0], toDevice, false);
 }
 
-pt::ptree tree_virt_device;
 void advatek_manager::copyToNewVirtualDevice(sAdvatekDevice* fromDevice) {
 	tree_virt_device.clear();
 	getJSON(fromDevice, tree_virt_device);
@@ -267,14 +262,12 @@ void advatek_manager::addVirtualDevice(boost::property_tree::ptree json_device, 
 	virtualDevices.emplace_back(device);
 }
 
-std::stringstream ss_json;
-pt::ptree tree_add_virt_device;
 void advatek_manager::addVirtualDevice(sImportOptions &importOptions) {
 	tree_add_virt_device.clear();
 	ss_json.str(std::string());
 	ss_json.clear();
 	ss_json << importOptions.json;
-	pt::read_json(ss_json, tree_add_virt_device);
+	boost::property_tree::read_json(ss_json, tree_add_virt_device);
 	
 	if (tree_add_virt_device.count("advatek_devices") > 0) {
 		// Might have multiple devices
@@ -415,7 +408,6 @@ void advatek_manager::updateConnectedDevice(sAdvatekDevice* device) {
 	updateConnectedDevice(device, device);
 }
 
-std::vector<uint8_t> testTape;
 void advatek_manager::setTest(sAdvatekDevice* device) {
 
 	if (bTestAll) {
@@ -556,7 +548,6 @@ void advatek_manager::poll() {
 	softPoll();
 }
 
-std::vector<uint8_t> pollTape;
 void advatek_manager::softPoll() {
 	pollTape.clear();
 	pollTape.resize(12);
@@ -961,40 +952,8 @@ void advatek_manager::process_simple_config(sAdvatekDevice* device) {
 void advatek_manager::refreshAdaptors() {
 
 	networkAdaptors.clear();
-	#ifndef _WIN32
-	struct ifaddrs *ifaddr, *ifa;
-    int family, s;
-    char host[NI_MAXHOST];
 
-    if (getifaddrs(&ifaddr) == -1)
-    {
-        perror("getifaddrs");
-        exit(EXIT_FAILURE); 
-    }
-
-
-    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
-    {
-        if (ifa->ifa_addr == NULL)
-            continue;
-
-        s=getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in),host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-
-        if((strcmp(ifa->ifa_name,"lo")!=0)&&(ifa->ifa_addr->sa_family==AF_INET))
-        {
-            if (s != 0)
-            {
-                printf("getnameinfo() failed: %s\n", gai_strerror(s));
-                exit(EXIT_FAILURE);
-            }
-            printf("\tInterface : <%s>\n",ifa->ifa_name );
-            printf("\t  Address : <%s>\n", host);
-            networkAdaptors.push_back(std::string(host));
-        }
-    }
-
-    freeifaddrs(ifaddr);
-	    #else
+#ifdef _WIN32
 
 	boost::asio::ip::tcp::resolver::iterator it;
 	try
@@ -1006,7 +965,7 @@ void advatek_manager::refreshAdaptors() {
 
 		boost::asio::ip::tcp::resolver resolver(io_context);
 
-		boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "",boost::asio::ip::resolver_query_base::flags());
+		boost::asio::ip::tcp::resolver::query query(boost::asio::ip::host_name(), "", boost::asio::ip::resolver_query_base::flags());
 		it = resolver.resolve(query);
 	}
 	catch (boost::exception& e)
@@ -1023,7 +982,44 @@ void advatek_manager::refreshAdaptors() {
 			networkAdaptors.push_back(addr.to_string());
 		}
 	}
-	#endif
+
+#elif __linux__ // __arm__
+
+	struct ifaddrs* ifaddr, * ifa;
+	int family, s;
+	char host[NI_MAXHOST];
+
+	if (getifaddrs(&ifaddr) == -1)
+	{
+		perror("getifaddrs");
+		exit(EXIT_FAILURE);
+	}
+
+
+	for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+	{
+		if (ifa->ifa_addr == NULL)
+			continue;
+
+		s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+		if ((strcmp(ifa->ifa_name, "lo") != 0) && (ifa->ifa_addr->sa_family == AF_INET))
+		{
+			if (s != 0)
+			{
+				printf("getnameinfo() failed: %s\n", gai_strerror(s));
+				exit(EXIT_FAILURE);
+			}
+			printf("\tInterface : <%s>\n", ifa->ifa_name);
+			printf("\t  Address : <%s>\n", host);
+			networkAdaptors.push_back(std::string(host));
+		}
+	}
+
+	freeifaddrs(ifaddr);
+
+//#elif __APPLE__
+#endif
 
 	currentAdaptor = (networkAdaptors.empty()) ? -1 : 0;
 	setCurrentAdaptor(currentAdaptor);
@@ -1050,8 +1046,12 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 		SetValueFromJson(uint8_t, ProtVer);
 		SetValueFromJson(uint8_t, CurrentProtVer);
 		SetValueFromJson(uint8_t, ModelLength);
-		//SetValueFromJson(uint8_t, LenFirmware);
-		device->LenFirmware = 20;
+		if (json_device.count("LenFirmware") != 0) {
+			SetValueFromJson(uint8_t, LenFirmware);
+		} else {
+			device->LenFirmware = 20; // Current Protver
+		}
+
 		if (device->Model) delete[] device->Model;
 		device->Model = new uint8_t[device->ModelLength + 1];
 		memset(device->Model, 0x00, sizeof(uint8_t) * (device->ModelLength + 1));
@@ -1185,7 +1185,7 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 				memset(device->DriverNames[i], 0, sizeof(char) * (device->DriverNameLength + 1));
 			}
 			SetValueFromJson(uint8_t, DriverNameLength);
-			for (pt::ptree::value_type &node : json_device.get_child("DriverNames"))
+			for (boost::property_tree::ptree::value_type &node : json_device.get_child("DriverNames"))
 			{
 				std::string sTempValue = node.second.data();
 				int index = std::stoi(node.first);
@@ -1228,9 +1228,6 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, boost::property_
 	return report.str();
 }
 
-pt::ptree import_json_device;
-std::stringstream ss_import_json_device;
-
 std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &importOptions) {
 	import_json_device.clear();
 	ss_import_json_device.str(std::string());
@@ -1239,7 +1236,7 @@ std::string advatek_manager::importJSON(sAdvatekDevice *device, sImportOptions &
 		return "Error: No JSON data found.";
 	} else { // data
 		ss_import_json_device << importOptions.json;
-		pt::read_json(ss_import_json_device, import_json_device);
+		boost::property_tree::read_json(ss_import_json_device, import_json_device);
 	}
 	if (import_json_device.count("advatek_devices") > 0) {
 		return importJSON(device, import_json_device.get_child("advatek_devices").front().second, importOptions);
@@ -1266,8 +1263,10 @@ void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptre
 	DriverExpandable.clear();
 	DriverNames.clear();
 	Gamma.clear();
+	MinAssistantVer.clear();
 
 	JSONdevice.put("ProtVer", device->ProtVer);
+	//JSONdevice.put("HwRev", device->HwRev);
 	JSONdevice.put("CurrentProtVer", device->CurrentProtVer);
 	JSONdevice.put("Mac", macString(device->Mac));
 	JSONdevice.put("DHCP", device->DHCP);
@@ -1279,6 +1278,9 @@ void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptre
 	JSONdevice.put("ModelLength", device->ModelLength);
 	JSONdevice.put("Model", device->Model);
 	JSONdevice.put("Brand", device->Brand);
+
+	JSONdevice.put("LenFirmware", device->LenFirmware);
+	JSONdevice.put("Firmware", device->Firmware);
 
 	JSONdevice.put("Protocol", device->Protocol);
 	JSONdevice.put("HoldLastFrame", device->HoldLastFrame);
@@ -1346,15 +1348,19 @@ void advatek_manager::getJSON(sAdvatekDevice *device, boost::property_tree::ptre
 	{
 		Gamma.put(std::to_string(c), std::to_string(device->Gamma[c]));
 	}
-
 	JSONdevice.add_child("Gamma", Gamma);
+
+	//for (int c = 0; c < 3; c++)
+	//{
+	//	MinAssistantVer.put(std::to_string(c), std::to_string(device->MinAssistantVer[c]));
+	//}
+	//JSONdevice.add_child("MinAssistantVer", MinAssistantVer);
 
 	JSONdevice.put("Nickname", device->Nickname);
 	JSONdevice.put("MaxTargetTemp", device->MaxTargetTemp);
 	JSONdevice.put("NumBanks", device->NumBanks);
 }
 
-pt::ptree tree_getJSON;
 void advatek_manager::getJSON(sAdvatekDevice *fromDevice, sImportOptions &importOptions) {
 	tree_getJSON.clear();
 	getJSON(fromDevice, tree_getJSON);
@@ -1364,10 +1370,6 @@ void advatek_manager::getJSON(sAdvatekDevice *fromDevice, sImportOptions &import
 
 	importOptions.json = jsonStringStream.str();
 }
-
-pt::ptree tree_exportJSON_device;
-pt::ptree tree_exportJSON_devices;
-pt::ptree tree_exportJSON_devicesArr;
 
 void advatek_manager::exportJSON(std::vector<sAdvatekDevice*> &devices, std::string path) {
 	tree_exportJSON_devices.clear();
@@ -1383,7 +1385,7 @@ void advatek_manager::exportJSON(std::vector<sAdvatekDevice*> &devices, std::str
 
 	std::ofstream outfile;
 	outfile.open(path, std::ios::out | std::ios::trunc);
-	pt::write_json(outfile, tree_exportJSON_devices);
+	boost::property_tree::write_json(outfile, tree_exportJSON_devices);
 	outfile.close();
 }
 
@@ -1399,14 +1401,12 @@ void advatek_manager::exportJSON(sAdvatekDevice *device, std::string path) {
 
 	std::ofstream outfile;
 	outfile.open(path, std::ios::out | std::ios::trunc);
-	pt::write_json(outfile, tree_exportJSON_devices);
+	boost::property_tree::write_json(outfile, tree_exportJSON_devices);
 	outfile.close();
 }
 
-std::vector<pt::ptree> checkDevices;
-
 std::string advatek_manager::validateJSON(boost::property_tree::ptree advatek_devices) {
-	for (pt::ptree &e : checkDevices) {
+	for (boost::property_tree::ptree &e : checkDevices) {
 		e.clear();
 	}
 
@@ -1422,7 +1422,7 @@ std::string advatek_manager::validateJSON(boost::property_tree::ptree advatek_de
 	
 	// OK let's check these monsters
 	for (auto &device : checkDevices) {
-		boost::optional< pt::ptree& > child = device.get_child_optional("ProtVer");
+		boost::optional< boost::property_tree::ptree& > child = device.get_child_optional("ProtVer");
 		if (!child)
 		{
 			return "Not a valid JSON";
@@ -1433,7 +1433,7 @@ std::string advatek_manager::validateJSON(boost::property_tree::ptree advatek_de
 }
 
 void advatek_manager::copyDevice(sAdvatekDevice *fromDevice, sAdvatekDevice *toDevice, bool initialise) {
-	pt::ptree json_device;
+	boost::property_tree::ptree json_device;
 	getJSON(fromDevice, json_device);
 
 	std::stringstream jsonStringStream;
