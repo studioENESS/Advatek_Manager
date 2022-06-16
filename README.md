@@ -22,15 +22,15 @@ Advatek Manager is an [Advatek Assistent](https://www.advateklights.com/download
 
 ## Download and Run
 
-  1. Download and install the latest [release package](https://github.com/studioENESS/advatek_assistor/releases)
+  1. Download and install the latest [release package](https://github.com/studioENESS/AdvatekManager/releases)
   2. run the executable:
 
-    advatek_assistor
+    AdvatekManager
 
 ## Setup
 
-    git clone git clone https://github.com/studioENESS/advatek_manager.git
-    cd advatek_manager && chmod u+x ./setup.sh && ./setup.sh
+    git clone git clone https://github.com/studioENESS/AdvatekManager.git
+    cd AdvatekManager && chmod u+x ./setup.sh && ./setup.sh
 
 ## Build
     
@@ -38,14 +38,6 @@ Advatek Manager is an [Advatek Assistent](https://www.advateklights.com/download
     cmake ../
     make -j6
 
-
- **For debugging on Raspberry Pi use GDB**
-
-    cmake -DCMAKE_BUILD_TYPE=Debug ../
-    
-    make
-    
-    gdb ./advatek_assistor
     
 ## Creating Debian/Ubuntu .deb package
 
