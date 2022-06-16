@@ -1,0 +1,7 @@
+Package: AdvatekManager
+Version: 1.0
+Architecture: armhf
+Depends: libglfw3-dev
+Maintainer: Bruno Hefst <bruno0eness.com>
+Description: Advatek Manager for Linux variants.
+ A version of the Advatek Assistant software that is able to run on ARM/Debian varients, aka Raspberry.

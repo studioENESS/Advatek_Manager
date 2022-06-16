@@ -12,9 +12,10 @@ set(IMGUI_BACKENDS "${PROJECT_SOURCE_DIR}/External/imgui/backends")
 
 set(PFD_ROOT "${PROJECT_SOURCE_DIR}/External/portable-file-dialogs")
 
+set(LIBADV_ROOT "${PROJECT_SOURCE_DIR}/External/libAdvatek")
+
 add_executable(advatek_assistor main.cpp
 	defines.cpp
-	advatek_manager.cpp
 	udpclient.cpp
 	gui_elements.cpp
 	${IMGUI_ROOT}/imgui.cpp
@@ -24,8 +25,11 @@ add_executable(advatek_assistor main.cpp
 	${IMGUI_ROOT}/backends/imgui_impl_opengl3.cpp
 	${IMGUI_ROOT}/backends/imgui_impl_glfw.cpp
 	${IMGUI_ROOT}/misc/cpp/imgui_stdlib.cpp
+	${LIBADV_ROOT}/source/defines.cpp
+	${LIBADV_ROOT}/source/udpclient.cpp
+	${LIBADV_ROOT}/source/advatek_manager.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${BOOST_ROOT} ${IMGUI_ROOT} ${IMGUI_BACKENDS} ${PFD_ROOT} )
+target_include_directories(${PROJECT_NAME} PRIVATE ${BOOST_ROOT} ${IMGUI_ROOT} ${IMGUI_BACKENDS} ${PFD_ROOT} ${LIBADV_ROOT} )
 
 target_link_libraries(${PROJECT_NAME} GLESv2 EGL X11 pthread rt m c dl glfw)

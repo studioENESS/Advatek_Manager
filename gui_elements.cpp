@@ -345,7 +345,7 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 	if (ImGui::Button("Copy"))
 	{
 		adv.copyToMemoryDevice(device);
-		applog.AddLog("[INFO] Copied data from %s (%s)\n", device->Nickname, ipString(device->CurrentIP).c_str());
+		applog.AddLog("[INFO] Copied data from %s (%s)\n", device->Nickname, ipStr(device->CurrentIP).c_str());
 	}
 
 	ImGui::SameLine();
@@ -428,10 +428,10 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 		Title.clear();
 		Title << " " << modelName.c_str() << devices[i]->Firmware << "	";
 		if (isConnected) {
-			Title << ipString(devices[i]->CurrentIP);
+			Title << ipStr(devices[i]->CurrentIP);
 		}
 		else {
-			Title << ipString(devices[i]->StaticIP);
+			Title << ipStr(devices[i]->StaticIP);
 		}
 		Title.setf(std::ios::fixed, std::ios::floatfield);
 		Title.precision(2);
@@ -475,7 +475,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 				if (ImGui::Button("New Virtual Device"))
 				{
 					adv.copyToNewVirtualDevice(adv.connectedDevices[i]);
-					applog.AddLog("[INFO] Copied controller %s %s to new virtual device.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
+					applog.AddLog("[INFO] Copied controller %s %s to new virtual device.\n", adv.connectedDevices[i]->Nickname, ipStr(adv.connectedDevices[i]->CurrentIP).c_str());
 				}
 			}
 
@@ -488,10 +488,10 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					{
 						for (int n = 0; n < adv.connectedDevices.size(); n++)
 						{
-							if (ImGui::Selectable(ipString(adv.connectedDevices[n]->StaticIP).append(" ").append(adv.connectedDevices[n]->Nickname).c_str()))
+							if (ImGui::Selectable(ipStr(adv.connectedDevices[n]->StaticIP).append(" ").append(adv.connectedDevices[n]->Nickname).c_str()))
 							{
 								adv.copyDevice(adv.virtualDevices[i], adv.connectedDevices[n], false);
-								applog.AddLog("[INFO] Copied virtual controller to new device  %s %s.\n", adv.connectedDevices[i]->Nickname, ipString(adv.connectedDevices[i]->CurrentIP).c_str());
+								applog.AddLog("[INFO] Copied virtual controller to new device  %s %s.\n", adv.connectedDevices[i]->Nickname, ipStr(adv.connectedDevices[i]->CurrentIP).c_str());
 							}
 						}
 						ImGui::EndCombo();
@@ -636,7 +636,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 							{
 								ImGui::TableNextRow();
 
-								setEndUniverseChannel(devices[i]->OutputUniv[output], devices[i]->OutputChan[output], devices[i]->OutputPixels[output], devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
+								adv.setEndUniverseChannel(devices[i]->OutputUniv[output], devices[i]->OutputChan[output], devices[i]->OutputPixels[output], devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
 								ImGui::PushID(output);
 
 								ImGui::TableNextColumn();
@@ -943,7 +943,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 					ImGui::Spacing();
 
 					if (isConnected) {
-						ImGui::Text("MAC: %s", macString(devices[i]->Mac).c_str());
+						ImGui::Text("MAC: %s", macStr(devices[i]->Mac).c_str());
 					}
 					else {
 						ImGui::AlignTextToFramePadding();
@@ -1066,7 +1066,7 @@ void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
 	ImGui::Spacing();
 
 	colouredText("(Virtual Device)", COL_GREY);  ImGui::SameLine();
-	ImGui::Text(ipString(vdevice->StaticIP).c_str()); ImGui::SameLine();
+	ImGui::Text(ipStr(vdevice->StaticIP).c_str()); ImGui::SameLine();
 	colouredText(vdevice->Nickname, COL_LIGHTGREY);
 
 	bool deviceInRange = adv.ipInRange(adaptor_string, vdevice);
@@ -1082,19 +1082,19 @@ void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
 
 	switch (s_loopVar.current_sync_type) {
 	case 0: // Match Static IP
-		flirtDevices = adv.getDevicesWithStaticIP(adv.virtualDevices, ipString(vdevice->StaticIP));
+		flirtDevices = adv.getDevicesWithStaticIP(adv.virtualDevices, ipStr(vdevice->StaticIP));
 		if (flirtDevices.size() > 1) {
-			colouredText(std::string("Multiple virtual devices with static IP ").append(ipString(vdevice->StaticIP)).c_str(), COL_RED);
+			colouredText(std::string("Multiple virtual devices with static IP ").append(ipStr(vdevice->StaticIP)).c_str(), COL_RED);
 			canSyncAll = false;
 			return;
 		}
-		foundDevices = adv.getDevicesWithStaticIP(adv.connectedDevices, ipString(vdevice->StaticIP));
+		foundDevices = adv.getDevicesWithStaticIP(adv.connectedDevices, ipStr(vdevice->StaticIP));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
-				colouredText(std::string("Multiple connected devices with static IP ").append(ipString(vdevice->StaticIP)).c_str(), COL_RED);
+				colouredText(std::string("Multiple connected devices with static IP ").append(ipStr(vdevice->StaticIP)).c_str(), COL_RED);
 			}
 			else {
-				colouredText(std::string("No connected device with static IP ").append(ipString(vdevice->StaticIP)).c_str(), COL_RED);
+				colouredText(std::string("No connected device with static IP ").append(ipStr(vdevice->StaticIP)).c_str(), COL_RED);
 			}
 			canSyncAll = false;
 			return;
@@ -1120,20 +1120,20 @@ void showSyncDevice(sAdvatekDevice* vdevice, bool& canSyncAll, bool& inSyncAll)
 		}
 		break;
 	case 2: // Match MAC
-		flirtDevices = adv.getDevicesWithMac(adv.virtualDevices, macString(vdevice->Mac));
+		flirtDevices = adv.getDevicesWithMac(adv.virtualDevices, macStr(vdevice->Mac));
 		if (flirtDevices.size() > 1) {
-			colouredText(std::string("Multiple vuirtual devices with MAC address ").append(macString(vdevice->Mac)).c_str(), COL_RED);
+			colouredText(std::string("Multiple vuirtual devices with MAC address ").append(macStr(vdevice->Mac)).c_str(), COL_RED);
 			canSyncAll = false;
 			return;
 		}
-		foundDevices = adv.getDevicesWithMac(adv.connectedDevices, macString(vdevice->Mac));
+		foundDevices = adv.getDevicesWithMac(adv.connectedDevices, macStr(vdevice->Mac));
 		if (foundDevices.size() != 1) {
 			if (foundDevices.size()) {
 				// This should never happen :)
-				colouredText(std::string("Whoah!! Multiple connected devices with MAC address ").append(macString(vdevice->Mac)).c_str(), COL_RED);
+				colouredText(std::string("Whoah!! Multiple connected devices with MAC address ").append(macStr(vdevice->Mac)).c_str(), COL_RED);
 			}
 			else {
-				colouredText(std::string("No connected device with MAC address ").append(macString(vdevice->Mac)).c_str(), COL_RED);
+				colouredText(std::string("No connected device with MAC address ").append(macStr(vdevice->Mac)).c_str(), COL_RED);
 			}
 			canSyncAll = false;
 			return;
@@ -1517,13 +1517,13 @@ void processUpdateRequests()
 	}
 
 	if (s_updateRequest.clearVirtualDeviceIndex >= 0) {
-		applog.AddLog(("[INFO] Removing Virtual Device " + ipString(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->StaticIP).append(" ").append(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->Nickname).append("\n")).c_str());
+		applog.AddLog(("[INFO] Removing Virtual Device " + ipStr(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->StaticIP).append(" ").append(adv.virtualDevices[s_updateRequest.clearVirtualDeviceIndex]->Nickname).append("\n")).c_str());
 		adv.virtualDevices.erase(adv.virtualDevices.begin() + s_updateRequest.clearVirtualDeviceIndex);
 		s_updateRequest.clearVirtualDeviceIndex = -1;
 	}
 
 	if (s_updateRequest.clearConnectedDeviceIndex >= 0) {
-		applog.AddLog(("[INFO] Removing Connected Device " + ipString(adv.connectedDevices[s_updateRequest.clearConnectedDeviceIndex]->StaticIP).append(" ").append(adv.connectedDevices[s_updateRequest.clearConnectedDeviceIndex]->Nickname).append("\n")).c_str());
+		applog.AddLog(("[INFO] Removing Connected Device " + ipStr(adv.connectedDevices[s_updateRequest.clearConnectedDeviceIndex]->StaticIP).append(" ").append(adv.connectedDevices[s_updateRequest.clearConnectedDeviceIndex]->Nickname).append("\n")).c_str());
 		adv.connectedDevices.erase(adv.connectedDevices.begin() + s_updateRequest.clearConnectedDeviceIndex);
 		s_updateRequest.clearConnectedDeviceIndex = -1;
 	}
