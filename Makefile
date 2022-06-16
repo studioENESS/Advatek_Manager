@@ -14,12 +14,12 @@
 #CXX = g++
 #CXX = clang++
 
-EXE = advatek_assistor
+EXE = advatek_manager
 IMGUI_DIR = ./External/imgui
 BOOST_DIR = ./External/boost
 PFD_DIR = ./External/portable-file-dialogs
 SOURCES = main.cpp
-SOURCES += defines.cpp advatek_assistor.cpp gui_elements.cpp udpclient.cpp
+SOURCES += defines.cpp advatek_manager.cpp gui_elements.cpp udpclient.cpp
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_widgets.cpp $(IMGUI_DIR)/imgui_tables.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp
 SOURCES += $(PFD_DIR)/portable-file-dialogs.h
