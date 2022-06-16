@@ -7,6 +7,6 @@
 [submodule "portable-file-dialogs"]
 	path = External/portable-file-dialogs
 	url = https://github.com/samhocevar/portable-file-dialogs
-[submodule "libAdvatek"]
+[submodule "External/libAdvatek"]
 	path = External/libAdvatek
 	url = https://github.com/studioENESS/libAdvatek
