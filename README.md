@@ -26,24 +26,15 @@ Advatek Manager is an [Advatek Assistent](https://www.advateklights.com/download
 
     advatek_assistor
 
+## Setup
+
+    git clone git clone https://github.com/studioENESS/advatek_manager.git
+    cd advatek_manager && chmod u+x ./setup.sh && ./setup.sh
 
 ## Build
     
-    git clone https://github.com/studioENESS/advatek_assistor.git
-    git submodule update --init
-    
-    cd External/boost
-    git submodule update --init
-
-    ./bootstrap.sh or bootstrap.bat
-    ./b2
-    
-    sudo apt-get install libglfw3-dev
-    
-    mkdir build && cd build
-    
-    cmake ../ 
-    
+    cd build
+    cmake ../
     make -j6
 
 
