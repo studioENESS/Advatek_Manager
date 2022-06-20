@@ -29,8 +29,7 @@ Advatek Manager is an [Advatek Assistent](https://www.advateklights.com/download
 
 ## Setup
 
-    git clone https://github.com/studioENESS/AdvatekManager.git
-    && cd AdvatekManager && chmod u+x ./setup.sh && ./setup.sh
+    git clone https://github.com/studioENESS/AdvatekManager.git && cd AdvatekManager && chmod u+x ./setup.sh && ./setup.sh
 
 ## Build
     
