@@ -15,8 +15,6 @@ set(PFD_ROOT "${PROJECT_SOURCE_DIR}/External/portable-file-dialogs")
 set(LIBADV_ROOT "${PROJECT_SOURCE_DIR}/External/libAdvatek")
 
 add_executable(advatek_assistor main.cpp
-	defines.cpp
-	udpclient.cpp
 	gui_elements.cpp
 	${IMGUI_ROOT}/imgui.cpp
 	${IMGUI_ROOT}/imgui_draw.cpp
