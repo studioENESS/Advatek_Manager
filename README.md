@@ -41,7 +41,7 @@ Advatek Manager is an [Advatek Assistent](https://www.advateklights.com/download
     
 ## Creating Debian/Ubuntu .deb package
 
-Copy appplication file to `advatek_assistor_<major version>.<minor version>-<package revision>_<architecture>/usr/local/bin`
+Copy appplication file to `AdvatekManager_<major version>.<minor version>-<package revision>_<architecture>/usr/local/bin`
 
     dpkg-deb --build advatek_assistor_<major version>.<minor version>-<package revision>_<architecture>
 

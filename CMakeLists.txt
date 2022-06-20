@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 # set the project name
-project(advatek_assistor)
+project(AdvatekManager)
 
 set(BOOST_ROOT "${PROJECT_SOURCE_DIR}/External/boost")
 set(Boost_INCLUDE_DIR  "${PROJECT_SOURCE_DIR}/External/boost")
@@ -14,7 +14,7 @@ set(PFD_ROOT "${PROJECT_SOURCE_DIR}/External/portable-file-dialogs")
 
 set(LIBADV_ROOT "${PROJECT_SOURCE_DIR}/External/libAdvatek")
 
-add_executable(advatek_assistor main.cpp
+add_executable(AdvatekManager main.cpp
 	gui_elements.cpp
 	${IMGUI_ROOT}/imgui.cpp
 	${IMGUI_ROOT}/imgui_draw.cpp

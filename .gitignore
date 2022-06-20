@@ -28,4 +28,5 @@ ipch
 build/
 
 #Executables
-advatek_assistor
+AdvatekManager
+*.deb
