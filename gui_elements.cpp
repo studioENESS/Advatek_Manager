@@ -109,8 +109,8 @@ void setupWindow(GLFWwindow*& window)
 #endif
 
 	GLFWmonitor * primaryMonitor = glfwGetPrimaryMonitor();
-	int center_x = 0;
-	int center_y = 0;
+	int center_x = 50;
+	int center_y = 50;
 
 	if (primaryMonitor != NULL) {
 		const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
