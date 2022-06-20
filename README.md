@@ -45,6 +45,3 @@ Copy appplication file to `advatek_assistor_<major version>.<minor version>-<pac
 
     dpkg-deb --build advatek_assistor_<major version>.<minor version>-<package revision>_<architecture>
 
-
-
-

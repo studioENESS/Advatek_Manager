@@ -15,7 +15,7 @@
 #include "advatek_manager.h"
 #include "portable-file-dialogs.h"
 
-#define Version "1.4.0"
+#define Version "1.0.0"
 
 bool SliderInt8(const char* label, int* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
 
