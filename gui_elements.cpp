@@ -418,7 +418,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 	
 	for (int i = 0; i < devices.size(); i++) {
 		pushStyleColours18(devices[i]->idCol[0]);
-
+		ImGui::Separator();
 		bool deviceInRange = adv.ipInRange(adaptor_string, devices[i]);
 		std::string modelName((char*)devices[i]->Model);
 		modelName.append("          ").resize(19);
