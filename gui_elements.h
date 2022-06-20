@@ -58,7 +58,8 @@ struct loopVar {
 	bool logOpen = true;
 	bool b_testPixelsReady = true;
 
-	int window_w, window_h;
+	int window_w = 800;
+	int window_h = 600;
 	int open_action = -1;
 	int selectedNewImportIndex = -1;
 	int current_sync_type = 0;
@@ -71,8 +72,8 @@ struct loopVar {
 	float testCycleSpeed = 0.5;
 	float scale = 1;
 
-	float xscale;
-	float yscale;
+	float xscale = 1;
+	float yscale = 1;
 
 	boost::property_tree::ptree pt_json_device;
 };

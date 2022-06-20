@@ -108,16 +108,22 @@ void setupWindow(GLFWwindow*& window)
 	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	GLFWmonitor * primaryMonitor = glfwGetPrimaryMonitor();
+	int center_x = 0;
+	int center_y = 0;
 
-	s_loopVar.xscale = mode->width / 1920.f;
-	s_loopVar.yscale = mode->height / 1080.f;
-	s_loopVar.window_w = 800 * s_loopVar.xscale;
-	s_loopVar.window_h = 600 * s_loopVar.yscale;
-	s_loopVar.scale = std::max(s_loopVar.xscale, s_loopVar.yscale);
+	if (primaryMonitor != NULL) {
+		const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
-	int center_x = (mode->width / 2) - (s_loopVar.window_w / 2);
-	int center_y = (mode->height / 2) - (s_loopVar.window_h / 2);
+		s_loopVar.xscale = mode->width / 1920.f;
+		s_loopVar.yscale = mode->height / 1080.f;
+		s_loopVar.window_w = s_loopVar.window_w * s_loopVar.xscale;
+		s_loopVar.window_h = s_loopVar.window_h * s_loopVar.yscale;
+		s_loopVar.scale = std::max(s_loopVar.xscale, s_loopVar.yscale);
+
+		center_x = (mode->width / 2) - (s_loopVar.window_w / 2);
+		center_y = (mode->height / 2) - (s_loopVar.window_h / 2);
+	}
 
 	// Create window with graphics context
 	window = glfwCreateWindow(s_loopVar.window_w, s_loopVar.window_h, "Advatek Manager", NULL, NULL);
