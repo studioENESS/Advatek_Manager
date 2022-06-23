@@ -249,10 +249,10 @@ void button_update_controller_settings(sAdvatekDevice* device) {
 
 void button_open_close_all() {
 	if (ImGui::Button("Open All", ImVec2(stdButtonWidth * s_loopVar.scale, 0)))
-		s_loopVar.open_action = 1;
+		s_updateRequest.openTabs = 1;
 	ImGui::SameLine();
 	if (ImGui::Button("Close All", ImVec2(stdButtonWidth * s_loopVar.scale, 0)))
-		s_loopVar.open_action = 0;
+		s_updateRequest.openTabs = 0;
 }
 
 void colouredText(const char* txt, uint32_t color) {
@@ -1024,13 +1024,13 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 				if (ImGui::Button("Cancel###ClearDevice", ImVec2(stdButtonWidth * s_loopVar.scale, 0))) {
 					s_updateRequest.clearConnectedDeviceIndex = i;
 				}
+				ImGui::SameLine();
 			}
 
 			if (devices.size() > 1) {
-				ImGui::SameLine();
 				if (ImGui::Button("Open All###Tabs", ImVec2(stdButtonWidth * s_loopVar.scale, 0)))
 				{
-					s_loopVar.open_action = 1;
+					s_updateRequest.openTabs = 1;
 					switch (devices[i]->openTab) {
 					case 1:
 						s_myTabBarFlags.select_network();
@@ -1279,7 +1279,9 @@ void showWindow(GLFWwindow*& window)
 					
 					ImGui::SameLine();
 					ImGui::PushItemWidth(150 * s_loopVar.scale);
-					ImGui::Combo("###SortConnectedDevices", &adv.sortTypeConnected, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes));
+					if (ImGui::Combo("###SortConnectedDevices", &adv.sortTypeConnected, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes))) {
+						adv.sortAllDevices();
+					}
 					ImGui::PopItemWidth();
 
 					std::string path;
@@ -1383,7 +1385,9 @@ void showWindow(GLFWwindow*& window)
 					
 					if (adv.virtualDevices.size() > 1) {
 						ImGui::SameLine();
-						ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes) - 2);
+						if (ImGui::Combo("###SortVirtualDevices", &adv.sortTypeVirtual, adv.SortTypes, IM_ARRAYSIZE(adv.SortTypes) - 2)) {
+							adv.sortAllDevices();
+						}
 					}
 
 					ImGui::SameLine();
@@ -1495,6 +1499,21 @@ void showWindow(GLFWwindow*& window)
 
 void processUpdateRequests()
 {
+	switch(s_updateRequest.openTabs) {
+	case 1: // Open
+		s_loopVar.open_action = 1;
+		s_updateRequest.openTabs = -1;
+		break;
+	case 0: // Close
+		s_loopVar.open_action = 0;
+		s_updateRequest.openTabs = -1;
+		break;
+	default:
+		s_loopVar.open_action = -1;
+		s_myTabBarFlags.Clear();
+		break;
+	}
+
 	if (s_updateRequest.refreshAdaptors) {
 		applog.AddLog("[INFO] Refreshing network adaptors...\n");
 		s_updateRequest.refreshAdaptors = false;
@@ -1558,6 +1577,7 @@ void processUpdateRequests()
 		}
 		s_updateRequest.connectedDevicesToVirtualDevices = false;
 	}
+
 }
 
 AppLog::AppLog()

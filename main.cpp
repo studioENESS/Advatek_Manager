@@ -46,11 +46,6 @@ int main(int, char**)
 		ImGui::SetNextWindowSize(ImVec2(s_loopVar.window_w, s_loopVar.window_h));
 		showWindow(window);
 		processUpdateRequests();
-		if (ImGui::GetFrameCount() % 3 == 0) {
-			adv.sortAllDevices();
-			s_myTabBarFlags.Clear();
-			s_loopVar.open_action = -1;
-		}
     }
 
     // Cleanup

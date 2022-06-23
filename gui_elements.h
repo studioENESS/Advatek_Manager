@@ -26,12 +26,13 @@ bool SliderInt8(const char* label, uint8_t* v, int v_min, int v_max, const char*
 bool SliderInt16(const char* label, uint16_t* v, int v_min, int v_max, const char* format = "%d", ImGuiSliderFlags flags = 0);
 
 struct updateRequest {
+	int openTabs = 0;
 	int poll = 0;
 	int refreshAdaptors = 0;
 	int newVirtualDevice = 0;
 	int pasteToNewVirtualDevice = 0;
-	int clearVirtualDevices = 0;
 	int connectedDevicesToVirtualDevices = 0;
+	int clearVirtualDevices = 0;
 	int clearVirtualDeviceIndex = -1;
 	int clearConnectedDeviceIndex = -1;
 };
