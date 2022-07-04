@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt-get install make cmake libglfw3-dev
+sudo apt-get install make g++ cmake libglfw3-dev
 
 git submodule update --init
 cd External/boost
