@@ -1,5 +1,7 @@
 #include "gui_elements.h"
 #include "standard_json_config.h"
+#include <fstream>
+#include <iostream>
 
 uint32_t COL_GREY = IM_COL32(80, 80, 80, 255);
 uint32_t COL_LIGHTGREY = IM_COL32(180, 180, 180, 255);
@@ -119,7 +121,8 @@ void setupWindow(GLFWwindow*& window)
 		s_loopVar.yscale = mode->height / 1080.f;
 		s_loopVar.window_w = s_loopVar.window_w * s_loopVar.xscale;
 		s_loopVar.window_h = s_loopVar.window_h * s_loopVar.yscale;
-		s_loopVar.scale = std::max(s_loopVar.xscale, s_loopVar.yscale);
+		//s_loopVar.scale = std::max(s_loopVar.xscale, s_loopVar.yscale);
+		s_loopVar.scale = (s_loopVar.xscale + s_loopVar.yscale) / 2.f;
 
 		center_x = (mode->width / 2) - (s_loopVar.window_w / 2);
 		center_y = (mode->height / 2) - (s_loopVar.window_h / 2);
@@ -271,20 +274,22 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 	if (ImGui::BeginPopupModal("What needs importing?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		// Read in devices
-		boost::property_tree::ptree pt_json_devices;
-		std::vector<boost::property_tree::ptree> loadedJsonDevices;
+		JSON_TYPE pt_json_devices;
+		std::vector<JSON_TYPE> loadedJsonDevices;
 		std::vector<std::string> jsonDeviceNames;
 
 		std::stringstream ss_json_devices;
 		ss_json_devices << importOptions.json;
-		boost::property_tree::read_json(ss_json_devices, pt_json_devices);
+		pt_json_devices << ss_json_devices;
 
 		if (pt_json_devices.count("advatek_devices") > 0) {
-			for (auto& json_device : pt_json_devices.get_child("advatek_devices")) {
+			for (auto& json_device : pt_json_devices["advatek_devices"]) {
 				//	advatek_device = device.second;
-				loadedJsonDevices.emplace_back(json_device.second);
-				std::string sModelName = json_device.second.get<std::string>("Model");
-				std::string sNickName = json_device.second.get<std::string>("Nickname");
+				loadedJsonDevices.emplace_back(json_device);
+				std::string sModelName;
+				json_device["Model"].get_to(sModelName);
+				std::string sNickName;
+				json_device["Nickname"].get_to(sNickName);
 				jsonDeviceNames.emplace_back(std::string(sModelName + " " + sNickName));
 			}
 		}
@@ -331,7 +336,8 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 
 		if (ImGui::Button("Import", ImVec2(stdButtonWidth * s_loopVar.scale, 0))) {
 			std::stringstream jsonStringStream;
-			write_json(jsonStringStream, s_loopVar.pt_json_device);
+			//write_json(jsonStringStream, s_loopVar.pt_json_device);
+			jsonStringStream << s_loopVar.pt_json_device;
 			importOptions.json = jsonStringStream.str();
 			importOptions.userSet = true;
 			ImGui::CloseCurrentPopup();
@@ -370,8 +376,13 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 		auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
 		if (!path.empty()) {
 			applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
-			boost::property_tree::ptree json_devices;
-			boost::property_tree::read_json(path.at(0), json_devices);
+			JSON_TYPE json_devices;
+			//boost::property_tree::read_json(path.at(0), json_devices);
+			std::ifstream file;
+			file.open(path.at(0));
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			json_devices= JSON_TYPE::parse(buffer);
 
 			std::string result = adv.validateJSON(json_devices);
 			if (!result.empty()) {
@@ -379,7 +390,8 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 			}
 			else {
 				std::stringstream jsonStringStream;
-				write_json(jsonStringStream, json_devices);
+				//write_json(jsonStringStream, json_devices);
+				jsonStringStream << json_devices;
 
 				userImportOptions.json = jsonStringStream.str();
 
@@ -1179,8 +1191,14 @@ void guiLoadJSON() {
 	auto path = pfd::open_file("Select a file", ".", { "JSON Files", "*.json *.JSON" }).result();
 	if (!path.empty()) {
 		applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
-		boost::property_tree::ptree advatek_devices;
-		boost::property_tree::read_json(path.at(0), advatek_devices);
+		JSON_TYPE advatek_devices;
+		//boost::property_tree::read_json(path.at(0), advatek_devices);
+		std::ifstream file;
+		file.open( path.at(0));
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		advatek_devices = JSON_TYPE::parse(buffer);
+
 
 		std::string result = adv.validateJSON(advatek_devices);
 
@@ -1189,10 +1207,11 @@ void guiLoadJSON() {
 		}
 		else {
 			std::stringstream jsonStringStream;
-			write_json(jsonStringStream, advatek_devices);
+			//write_json(jsonStringStream, advatek_devices);
+			jsonStringStream << advatek_devices;
 
 			virtualImportOptions = sImportOptions();
-			virtualImportOptions.json = jsonStringStream.str();
+			virtualImportOptions.json = advatek_devices.dump();
 			virtualImportOptions.init = true;
 
 			s_updateRequest.newVirtualDevice = true;
@@ -1569,7 +1588,7 @@ void processUpdateRequests()
 		applog.AddLog("[INFO] Copying Connected Devices to Virtual Devices...");
 		// Show loading bar here?
 		for (auto device : adv.connectedDevices) {
-			boost::property_tree::ptree advatek_device;
+			JSON_TYPE advatek_device;
 			adv.getJSON(device, advatek_device);
 			sImportOptions conImportOptions = sImportOptions();
 			conImportOptions.init = true;

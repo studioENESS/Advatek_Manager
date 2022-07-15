@@ -13,6 +13,7 @@
 #endif
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 #include "advatek_manager.h"
+
 #include "portable-file-dialogs.h"
 
 #define Version "1.0.0"
@@ -76,7 +77,7 @@ struct loopVar {
 	float xscale = 1;
 	float yscale = 1;
 
-	boost::property_tree::ptree pt_json_device;
+	JSON_TYPE pt_json_device;
 };
 
 struct AppLog {
