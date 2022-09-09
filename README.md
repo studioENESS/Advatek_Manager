@@ -15,10 +15,8 @@ Advatek Manager is an [Advatek Assistent](https://www.advateklights.com/download
 
   - [GLFW](https://github.com/glfw/glfw)
   - [ImGui](https://github.com/ocornut/imgui) ([Interactive Manual](https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html))  
-  - [Boost](https://github.com/boostorg/boost)  
   - [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)  
   - [libAdvatek](https://github.com/studioENESS/libAdvatek)  
-
 
 ## Download and Run
 
