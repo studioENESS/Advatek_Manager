@@ -1,4 +1,4 @@
-Package: AdvatekManager
+Package: advatekmanager
 Version: 1.0
 Architecture: armhf
 Depends: libglfw3-dev

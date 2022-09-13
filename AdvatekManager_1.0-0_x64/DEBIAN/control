@@ -1,4 +1,4 @@
-Package: AdvatekManager
+Package: advatekmanager
 Version: 1.0
 Architecture: amd64
 Depends: libglfw3-dev
