@@ -844,6 +844,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 						if (ImGui::Combo("Set Test ", &devices[i]->TestMode, TestModes, sizeof(TestModes) / sizeof(TestModes[0]))) {
 							devices[i]->TestPixelNum = 0;
+							devices[i]->TestOutputNum = 0;
 							s_loopVar.b_testPixelsReady = true;
 							b_setTest = true;
 						}
