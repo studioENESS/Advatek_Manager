@@ -1,3 +1,7 @@
+#include <nlohmann/json.hpp>
+
+#define JSON_TYPE nlohmann::json
+
 #include "gui_elements.h"
 
 #ifndef DEBUG

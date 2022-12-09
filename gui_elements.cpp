@@ -2,9 +2,6 @@
 #include "standard_json_config.h"
 #include <fstream>
 #include <iostream>
-#include <nlohmann/json.hpp>
-
-#define JSON_TYPE nlohmann::json
 
 uint32_t COL_GREY = IM_COL32(80, 80, 80, 255);
 uint32_t COL_LIGHTGREY = IM_COL32(180, 180, 180, 255);
