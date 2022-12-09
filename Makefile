@@ -19,7 +19,7 @@ IMGUI_DIR = ./External/imgui
 ADV_DIR = ./External/libAdvatek
 PFD_DIR = ./External/portable-file-dialogs
 SOURCES = main.cpp
-SOURCES += defines.cpp advatek_manager.cpp gui_elements.cpp udpclient.cpp
+SOURCES += defines.cpp gui_elements.cpp
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_widgets.cpp $(IMGUI_DIR)/imgui_tables.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp
 SOURCES += $(PFD_DIR)/portable-file-dialogs.h
@@ -78,13 +78,13 @@ endif
 %.o:%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+%.o:$(ADV_DIR)/source/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
 %.o:$(IMGUI_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.o:$(IMGUI_DIR)/backends/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-%.o:$(ADV_DIR)/source/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 all: $(EXE)
