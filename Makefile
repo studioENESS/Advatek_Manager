@@ -16,7 +16,7 @@
 
 EXE = advatek_manager
 IMGUI_DIR = ./External/imgui
-BOOST_DIR = ./External/boost
+ADV_DIR = ./External/libAdvatek
 PFD_DIR = ./External/portable-file-dialogs
 SOURCES = main.cpp
 SOURCES += defines.cpp advatek_manager.cpp gui_elements.cpp udpclient.cpp
@@ -27,9 +27,8 @@ OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
 LINUX_GL_LIBS = -lGL -lpthread
 
-CXXFLAGS = -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(BOOST_DIR)
+CXXFLAGS = -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(ADV_DIR)/source
 CXXFLAGS += -g -Wall -Wformat
-LIBS =
 
 ##---------------------------------------------------------------------
 ## OPENGL ES
@@ -81,6 +80,9 @@ endif
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.o:$(IMGUI_DIR)/backends/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+%.o:$(ADV_DIR)/source/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 all: $(EXE)
