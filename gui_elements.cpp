@@ -286,13 +286,12 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 		pt_json_devices << ss_json_devices;
 
 		if (pt_json_devices.count("advatek_devices") > 0) {
-			for (auto& json_device : pt_json_devices["advatek_devices"]) {
-				//	advatek_device = device.second;
-				loadedJsonDevices.emplace_back(json_device);
+			for (auto& json_device : pt_json_devices["advatek_devices"].items()) {
+				loadedJsonDevices.emplace_back(json_device.value());
 				std::string sModelName;
-				json_device["Model"].get_to(sModelName);
+				json_device.value()["Model"].get_to(sModelName);
 				std::string sNickName;
-				json_device["Nickname"].get_to(sNickName);
+				json_device.value()["Nickname"].get_to(sNickName);
 				jsonDeviceNames.emplace_back(std::string(sModelName + " " + sNickName));
 			}
 		}
