@@ -32,6 +32,8 @@ LINUX_GL_LIBS = -lGL -lpthread
 CXXFLAGS = -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(ADV_DIR)/source
 CXXFLAGS += -g -Wall -Wformat
 
+LIBS = 
+
 ##---------------------------------------------------------------------
 ## OPENGL ES
 ##---------------------------------------------------------------------
