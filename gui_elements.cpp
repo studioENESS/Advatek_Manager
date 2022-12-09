@@ -286,9 +286,9 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 			for (auto& json_device : pt_json_devices["advatek_devices"]) {
 				loadedJsonDevices.emplace_back(json_device);
 				std::string sModelName;
-				json_device["Model"].get_to(sModelName);
+				json_device.at("Model").get_to(sModelName);
 				std::string sNickName;
-				json_device["Nickname"].get_to(sNickName);
+				json_device.at("Nickname").get_to(sNickName);
 				jsonDeviceNames.emplace_back(std::string(sModelName + " " + sNickName));
 			}
 		}
