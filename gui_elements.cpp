@@ -293,6 +293,14 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 				jsonDeviceNames.emplace_back(std::string(sModelName + " " + sNickName));
 			}
 		}
+		else
+		{
+			std::string sModelName;
+			pt_json_devices["Model"].get_to(sModelName);
+			std::string sNickName;
+			pt_json_devices["Nickname"].get_to(sNickName);
+			jsonDeviceNames.emplace_back(std::string(sModelName + " " + sNickName));
+		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
@@ -301,24 +309,31 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
-		if (loadedJsonDevices.size() > 1) {
-			if (ImGui::BeginCombo("###jsondevices", json_device_string.c_str(), 0))
-			{
-				for (int n = 0; n < jsonDeviceNames.size(); n++)
+		if (pt_json_devices.is_array())
+		{
+			if (pt_json_devices.size() > 1) {
+				if (ImGui::BeginCombo("###jsondevices", json_device_string.c_str(), 0))
 				{
-					const bool is_selected = (s_loopVar.selectedNewImportIndex == n);
-					if (ImGui::Selectable(jsonDeviceNames[n].c_str(), is_selected))
+					for (int n = 0; n < jsonDeviceNames.size(); n++)
 					{
-						json_device_string = jsonDeviceNames[n];
-						s_loopVar.pt_json_device = loadedJsonDevices[n];
+						const bool is_selected = (s_loopVar.selectedNewImportIndex == n);
+						if (ImGui::Selectable(jsonDeviceNames[n].c_str(), is_selected))
+						{
+							json_device_string = jsonDeviceNames[n];
+							s_loopVar.pt_json_device = pt_json_devices[n];
+						}
 					}
+					ImGui::EndCombo();
 				}
-				ImGui::EndCombo();
+				ImGui::Spacing();
 			}
-			ImGui::Spacing();
+			else {
+				s_loopVar.pt_json_device = pt_json_devices[0];
+			}
 		}
-		else {
-			s_loopVar.pt_json_device = loadedJsonDevices[0];
+		else
+		{
+			s_loopVar.pt_json_device = pt_json_devices;
 		}
 
 		ImGui::Checkbox("Network", &importOptions.network);
