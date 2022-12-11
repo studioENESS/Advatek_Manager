@@ -278,17 +278,18 @@ void importUI(sAdvatekDevice* device, sImportOptions& importOptions) {
 		std::vector<JSON_TYPE> loadedJsonDevices;
 		std::vector<std::string> jsonDeviceNames;
 
-		std::stringstream ss_json_devices;
-		ss_json_devices << importOptions.json;
-		pt_json_devices << ss_json_devices;
+		//std::stringstream ss_json_devices;
+		//ss_json_devices << importOptions.json;
+		//pt_json_devices << ss_json_devices;
 
+		pt_json_devices = JSON_TYPE::parse(importOptions.json);
+		
 		if (pt_json_devices.count("advatek_devices") > 0) {
-			for (auto& json_device : pt_json_devices) {
-				loadedJsonDevices.emplace_back(json_device);
+			for (auto& json_device : pt_json_devices["advatek_devices"]) {
 				std::string sModelName;
-				json_device.at("Model").get_to(sModelName);
+				json_device["Model"].get_to(sModelName);
 				std::string sNickName;
-				json_device.at("Nickname").get_to(sNickName);
+				json_device["Nickname"].get_to(sNickName);
 				jsonDeviceNames.emplace_back(std::string(sModelName + " " + sNickName));
 			}
 		}
