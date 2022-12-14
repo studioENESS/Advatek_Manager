@@ -146,7 +146,8 @@ void setupWindow(GLFWwindow*& window)
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
-	scaleToScreenDPI(io);
+	//TODO FIX: 
+	// scaleToScreenDPI(io);
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);

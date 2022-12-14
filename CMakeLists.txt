@@ -19,8 +19,9 @@ add_executable(AdvatekManager main.cpp
 	${LIBADV_ROOT}/source/defines.cpp
 	${LIBADV_ROOT}/source/udpclient.cpp
 	${LIBADV_ROOT}/source/advatek_manager.cpp
+	${LIBADV_ROOT}/source/SAdvatekDevice.cpp
 )
 
-target_include_directories(${PROJECT_NAME} ${IMGUI_ROOT} ${IMGUI_BACKENDS} ${PFD_ROOT} ${LIBADV_ROOT} ${LIBADV_ROOT}/include )
+target_include_directories(${PROJECT_NAME} PRIVATE ${IMGUI_ROOT} ${IMGUI_BACKENDS} ${PFD_ROOT} ${LIBADV_ROOT} ${LIBADV_ROOT}/include )
 
 target_link_libraries(${PROJECT_NAME} GLESv2 EGL X11 pthread rt m c dl glfw)
