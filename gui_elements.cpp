@@ -676,8 +676,12 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 								ImGui::TableNextColumn();
 								ImGui::AlignTextToFramePadding();
 								ImGui::Text("Output %i", output + 1); ImGui::TableNextColumn();
-								ImGui::InputScalar("##StartUniv", ImGuiDataType_U16, &devices[i]->OutputUniv[output], 0, 0, 0); ImGui::TableNextColumn();
-								ImGui::InputScalar("##StartChan", ImGuiDataType_U16, &devices[i]->OutputChan[output], 0, 0, 0); ImGui::TableNextColumn();
+								if (ImGui::InputScalar("##StartUniv", ImGuiDataType_U16, &devices[i]->OutputUniv[output], 0, 0, 0)) {
+									if (devices[i]->OutputUniv[output] == 0) devices[i]->OutputUniv[output] = 1;
+								}; ImGui::TableNextColumn();
+								if (ImGui::InputScalar("##StartChan", ImGuiDataType_U16, &devices[i]->OutputChan[output], 0, 0, 0)) {
+									if (devices[i]->OutputChan[output] == 0) devices[i]->OutputChan[output] = 1;
+								}; ImGui::TableNextColumn();
 								ImGui::InputScalar("##EndUniv", ImGuiDataType_U16, &tempEndUniverse[output], 0, 0, 0); ImGui::TableNextColumn();
 								ImGui::InputScalar("##EndChan", ImGuiDataType_U16, &tempEndChannel[output], 0, 0, 0); ImGui::TableNextColumn();
 								ImGui::InputScalar("##NumPix", ImGuiDataType_U16, &devices[i]->OutputPixels[output], 0, 0, 0); ImGui::TableNextColumn();
