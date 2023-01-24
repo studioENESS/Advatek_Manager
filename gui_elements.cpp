@@ -670,7 +670,7 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 							{
 								ImGui::TableNextRow();
 
-								adv.setEndUniverseChannel(devices[i]->OutputUniv[output], devices[i]->OutputChan[output], devices[i]->OutputPixels[output], devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output]);
+								adv.setEndUniverseChannel(devices[i]->OutputUniv[output], devices[i]->OutputChan[output], devices[i]->OutputPixels[output], devices[i]->OutputGrouping[output], tempEndUniverse[output], tempEndChannel[output], devices[i]->CurrentDriverType);
 								ImGui::PushID(output);
 
 								ImGui::TableNextColumn();
