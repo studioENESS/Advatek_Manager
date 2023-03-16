@@ -393,7 +393,6 @@ void button_import_export_JSON(sAdvatekDevice* device) {
 		if (!path.empty()) {
 			applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
 			JSON_TYPE json_devices;
-			//boost::property_tree::read_json(path.at(0), json_devices);
 			std::ifstream file;
 			file.open(path.at(0));
 			std::stringstream buffer;
@@ -469,7 +468,12 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 		}
 		Title.setf(std::ios::fixed, std::ios::floatfield);
 		Title.precision(2);
-		Title << "	" << (float)devices[i]->Temperature * 0.1 << " °C" << "	" << devices[i]->Nickname;
+		if (isConnected) {
+			Title << "	" << (float)devices[i]->Temperature * 0.1 << " °C" << "	" << (float)devices[i]->VoltageBanks[0] * 0.1 << " V   " << devices[i]->Nickname;
+		}
+		else {
+			Title << "	" << (float)devices[i]->Temperature * 0.1 << " °C" << "	" << "0.00 V   " << devices[i]->Nickname;
+		}
 		Title << "###" << devices[i]->uid;
 
 		if (s_loopVar.open_action != -1)
@@ -503,9 +507,8 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 
 			button_import_export_JSON(devices[i]);
 
-			ImGui::SameLine();
-
 			if (isConnected) {
+				ImGui::SameLine();
 				if (ImGui::Button("New Virtual Device"))
 				{
 					adv.copyToNewVirtualDevice(adv.connectedDevices[i]);
@@ -1213,7 +1216,6 @@ void guiLoadJSON() {
 	if (!path.empty()) {
 		applog.AddLog("[INFO] Loading JSON file from:\n%s\n", path.at(0).c_str());
 		JSON_TYPE advatek_devices;
-		//boost::property_tree::read_json(path.at(0), advatek_devices);
 		std::ifstream file;
 		file.open( path.at(0));
 		std::stringstream buffer;
@@ -1228,7 +1230,6 @@ void guiLoadJSON() {
 		}
 		else {
 			std::stringstream jsonStringStream;
-			//write_json(jsonStringStream, advatek_devices);
 			jsonStringStream << advatek_devices;
 
 			virtualImportOptions = sImportOptions();
