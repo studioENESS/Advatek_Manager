@@ -469,10 +469,16 @@ void showDevices(std::vector<sAdvatekDevice*>& devices, bool isConnected) {
 		Title.setf(std::ios::fixed, std::ios::floatfield);
 		Title.precision(2);
 		if (isConnected) {
-			Title << "	" << (float)devices[i]->Temperature * 0.1 << " °C" << "	" << (float)devices[i]->VoltageBanks[0] * 0.1 << " V   " << devices[i]->Nickname;
+			float v = (float)devices[i]->VoltageBanks[0] * 0.1;
+			std::string voltage = "";
+			if (v < 10) {
+				voltage.append("0");
+			}
+			voltage.append(std::to_string(v)).resize(5);
+			Title << "	" << (float)devices[i]->Temperature * 0.1 << " °C" << "	" << voltage << " V   " << devices[i]->Nickname;
 		}
 		else {
-			Title << "	" << (float)devices[i]->Temperature * 0.1 << " °C" << "	" << "0.00 V   " << devices[i]->Nickname;
+			Title << "	" << (float)devices[i]->Temperature * 0.1 << " °C" << "	" << "00.00 V   " << devices[i]->Nickname;
 		}
 		Title << "###" << devices[i]->uid;
 
