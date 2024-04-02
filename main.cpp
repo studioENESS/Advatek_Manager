@@ -43,7 +43,7 @@ int main(int, char**)
 		if (s_loopVar.currTime - s_loopVar.lastPoll > s_loopVar.rePollTime) {
 			adv.softPoll();
 			s_loopVar.lastPoll = s_loopVar.currTime;
-			//applog.AddLog(("[INFO] Polling using network adaptor " + adaptor_string + "...\n").c_str());
+			//applog.AddLog(("[INFO] Polling using network adapter " + adaptor_string + "...\n").c_str());
 		}
 
 		ImGui::SetNextWindowPos(ImVec2(0, 0));
