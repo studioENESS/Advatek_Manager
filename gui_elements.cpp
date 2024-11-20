@@ -2,6 +2,11 @@
 #include "standard_json_config.h"
 #include <fstream>
 #include <iostream>
+#include <algorithm>
+#include <vector>
+#include <string>
+#include <utility>
+#include <cmath>
 
 uint32_t COL_GREY = IM_COL32(80, 80, 80, 255);
 uint32_t COL_LIGHTGREY = IM_COL32(180, 180, 180, 255);
@@ -121,7 +126,7 @@ void setupWindow(GLFWwindow*& window)
 		s_loopVar.yscale = mode->height / 1080.f;
 		s_loopVar.window_w = s_loopVar.window_w * s_loopVar.xscale;
 		s_loopVar.window_h = s_loopVar.window_h * s_loopVar.yscale;
-		//s_loopVar.scale = std::max(s_loopVar.xscale, s_loopVar.yscale);
+		s_loopVar.scale = std::fmax(s_loopVar.xscale, s_loopVar.yscale);
 		s_loopVar.scale = (s_loopVar.xscale + s_loopVar.yscale) / 2.f;
 
 		center_x = (mode->width / 2) - (s_loopVar.window_w / 2);
